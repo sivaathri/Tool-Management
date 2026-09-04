@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool Management System | Modern Enterprise Manufacturing</title>
+  <meta name="description"
+    content="Digitized Tool Master Card and Tool Service History Card system for precision manufacturing and tooling lifecycle management.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+            </path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">Tool Management</div>
+          <div class="brand-subtitle">Manufacturing ERP</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Operations</div>
+        <a class="nav-item active" data-view="dashboard" id="navDashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="9"></rect>
+            <rect x="14" y="3" width="7" height="5"></rect>
+            <rect x="14" y="12" width="7" height="9"></rect>
+            <rect x="3" y="16" width="7" height="5"></rect>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+
+        <a class="nav-item" data-view="tool-master" id="navToolMaster">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>Tool Master</span>
+          <span class="nav-badge" id="sidebarToolCount">15</span>
+        </a>
+
+        <a class="nav-item" data-view="service-history" id="navServiceHistory">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Tool Service History</span>
+        </a>
+
+        <a class="nav-item" data-view="production-tracking" id="navProductionTracking">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span>Production Tracking</span>
+        </a>
+
+        <div class="nav-section-label">Maintenance & Audits</div>
+        <a class="nav-item" data-view="replacement-alerts" id="navReplacementAlerts">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Replacement Alerts</span>
+          <span class="nav-badge danger" id="sidebarAlertCount">0</span>
+        </a>
+
+        <a class="nav-item" data-view="reports" id="navReports">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Reports</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar">EN</div>
+          <div class="user-info">
+            <div class="user-name">Eng. Rajesh Patel</div>
+            <div class="user-role">Senior Tooling Lead</div>
+          </div>
+        </div>
+        <button class="reset-demo-btn" id="btnResetData" title="Reset to original sample data">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          <span>Restore Demo Data</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <div class="main-wrapper">
+      <!-- TOP HEADER -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle-btn" id="sidebarToggle" aria-label="Toggle Navigation">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="header-search">
+            <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="globalSearchInput" placeholder="Quick search Tool No. (e.g. TOOL-001)..."
+              autocomplete="off">
+            <div class="header-search-results" id="globalSearchResults"></div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button class="header-action-btn" id="headerNotificationsBtn" title="View Urgent Tool Alerts">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="header-badge-dot" id="headerNotificationDot"></span>
+          </button>
+
+          <button class="btn btn-primary" id="btnQuickAddTool">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span> Add New Tool</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT VIEWS -->
+      <main class="app-content">
+
+        <!-- ===================================================================
+           VIEW 1: DASHBOARD
+           =================================================================== -->
+        <section class="view-section active" id="view-dashboard">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Tooling Performance Dashboard</h1>
+              <p class="page-subtitle">Real-time lifecycle monitoring, replacement limits, and shop-floor activity</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary btn-sm" id="btnRefreshDashboard">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>Refresh Metrics</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI CARDS -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue">
+              <div class="kpi-header">
+                <span class="kpi-label">Total Machines</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiTotalMachines">10</div>
+              <div class="kpi-subtext">Operating manufacturing bays</div>
+            </div>
+
+            <div class="kpi-card kpi-blue">
+              <div class="kpi-header">
+                <span class="kpi-label">Total Tools</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                    </path>
+                  </svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiTotalTools">15</div>
+              <div class="kpi-subtext">Registered in Tool Master</div>
+            </div>
+
+            <div class="kpi-card kpi-green">
+              <div class="kpi-header">
+                <span class="kpi-label">Active / Healthy</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiHealthyTools">8</div>
+              <div class="kpi-subtext">Utilization &lt; 80% limit</div>
+            </div>
+
+            <div class="kpi-card kpi-amber">
+              <div class="kpi-header">
+                <span class="kpi-label">Near Replacement</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiNearLimit">4</div>
+              <div class="kpi-subtext">80% – 99% threshold reached</div>
+            </div>
+
+            <div class="kpi-card kpi-red">
+              <div class="kpi-header">
+                <span class="kpi-label">Replacement Due</span>
+                <div class="kpi-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiReplacementDue">3</div>
+              <div class="kpi-subtext">Exceeded 100% capacity</div>
+            </div>
+          </div>
+
+          <!-- CHARTS SECTION -->
+          <div class="dashboard-grid">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 2a10 10 0 0 1 10 10"></path>
+                    </svg>
+                    <span>Tool Replacement Status Breakdown</span>
+                  </div>
+                  <div class="card-subtitle">Active distribution of tooling wear status across plant</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" id="statusDonutChartContainer"></div>
+                <div class="chart-legend" id="statusDonutLegend"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Monthly Tool Output Production</span>
+                  </div>
+                  <div class="card-subtitle">Recent aggregated components stamped & forged (pcs)</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" id="monthlyProductionChartContainer"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOOLS REQUIRING ATTENTION -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div>
+                <div class="card-title" style="color: #dc2626;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                    </path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  <span>Tools Requiring Attention</span>
+                </div>
+                <div class="card-subtitle">Immediate tool replacement or regrinding required</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btnGoToAlerts">View All Alerts &rarr;</button>
+            </div>
+            <div class="table-responsive">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Tool No.</th>
+                    <th>Tool Description</th>
+                    <th>Machine</th>
+                    <th>Operation</th>
+                    <th class="col-numeric">Frequency Limit</th>
+                    <th class="col-numeric">Cumulative</th>
+                    <th class="col-numeric">Balance</th>
+                    <th>Utilization</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardAttentionTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- RECENT TOOL SERVICE ACTIVITY -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                  <span>Recent Tool Service Activity</span>
+                </div>
+                <div class="card-subtitle">Live log of die maintenance, top tool replacements, and regrinds</div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Tool Number</th>
+                    <th>Tool Description</th>
+                    <th>Machine</th>
+                    <th>Operation</th>
+                    <th>Activity / Action</th>
+                    <th class="col-numeric">Quantity Produced</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardRecentActivityBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+           VIEW 2: TOOL MASTER
+           =================================================================== -->
+        <section class="view-section" id="view-tool-master">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Tool Master</h1>
+              <p class="page-subtitle">Create and manage machine and tool master information (Digital Master Card)</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary btn-sm" id="btnExportToolMasterCSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export CSV</span>
+              </button>
+              <button class="btn btn-primary" id="btnOpenNewToolModal">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>+ Add New Tool</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SEARCH & FILTER BAR -->
+          <div class="filter-card">
+            <div class="filter-grid">
+              <div class="form-group">
+                <label class="form-label" for="tmSearchInput">Search Tool or Machine</label>
+                <input type="text" class="form-input" id="tmSearchInput"
+                  placeholder="Search by Tool No., Description, Machine...">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="tmApplicationFilter">Application</label>
+                <input type="text" class="form-input" id="tmApplicationFilter" placeholder="Filter by application...">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="tmTypeFilter">Tool Type</label>
+                <select class="form-select" id="tmTypeFilter">
+                  <option value="">All Types</option>
+                  <option value="A">Type A</option>
+                  <option value="B">Type B</option>
+                  <option value="C">Type C</option>
+                  <option value="D">Type D</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="tmStatusFilter">Status</label>
+                <select class="form-select" id="tmStatusFilter">
+                  <option value="">All Statuses</option>
+                  <option value="Healthy">Healthy</option>
+                  <option value="Near Limit">Near Limit</option>
+                  <option value="Replacement Due">Replacement Due</option>
+                </select>
+              </div>
+              <div class="form-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" id="btnResetToolFilters" style="height: 38px;">Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOOL MASTER TABLE -->
+          <div class="card">
+            <div class="table-responsive">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Tool No.</th>
+                    <th>Tool Description</th>
+                    <th>Type</th>
+                    <th>Machine</th>
+                    <th>Operation</th>
+                    <th>Application</th>
+                    <th class="col-numeric">Replacement Freq</th>
+                    <th class="col-numeric">Current Cumulative</th>
+                    <th class="col-numeric">Balance</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="toolMasterTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+           VIEW 3: TOOL SERVICE HISTORY
+           =================================================================== -->
+        <section class="view-section" id="view-service-history">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Tool Service History</h1>
+              <p class="page-subtitle">Digital Tool Service History Card & Production Output Tracking</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary btn-sm" id="btnPrintServiceCard">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>Print Card</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PROMINENT SEARCH CARD -->
+          <div class="prominent-search-box">
+            <div class="prominent-search-header">
+              <div class="prominent-search-title">Search Tool Card</div>
+              <div class="prominent-search-desc">Enter any Tool Number to instantly retrieve Master Card specs, service
+                records, and production history</div>
+            </div>
+            <div class="prominent-search-bar">
+              <div class="search-input-combo">
+                <svg class="prominent-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" class="prominent-input" id="serviceSearchInput"
+                  placeholder="Enter Tool Number (e.g. TOOL-001, TOOL-002)...">
+              </div>
+              <button class="btn btn-primary" id="btnSearchServiceTool" style="padding: 0 24px;">Search Tool</button>
+            </div>
+            <div class="quick-tool-chips">
+              <span class="chip-label">Quick select:</span>
+              <button class="chip-btn" data-tool="TOOL-001">TOOL-001 (Yoke Pressing)</button>
+              <button class="chip-btn" data-tool="TOOL-002">TOOL-002 (Connecting Rod)</button>
+              <button class="chip-btn" data-tool="TOOL-004">TOOL-004 (Brake Caliper)</button>
+              <button class="chip-btn" data-tool="TOOL-005">TOOL-005 (Rotor Core)</button>
+              <button class="chip-btn" data-tool="TOOL-008">TOOL-008 (Cylinder Liner)</button>
+            </div>
+          </div>
+
+          <!-- SELECTED TOOL SUMMARY DIGITAL CARD -->
+          <div class="tool-summary-card" id="selectedToolSummaryCard">
+            <div class="tool-summary-top">
+              <div class="tool-summary-left">
+                <div class="tool-badge-large" id="shToolTypeBadge">B</div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: var(--slate-900);" id="shToolNumber">TOOL-001
+                    </h2>
+                    <span class="badge badge-warning" id="shToolStatusBadge">Near Limit</span>
+                  </div>
+                  <div style="font-size: 14px; color: var(--slate-600); margin-top: 2px;" id="shToolDescription">Yoke
+                    Pressing Tool</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" id="btnViewMasterFromService">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span>View Master Info</span>
+                </button>
+                <button class="btn btn-primary btn-sm" id="btnAddServiceRecordBtn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>+ Add Service Record</span>
+                </button>
+                <button class="btn btn-primary btn-sm" id="btnAddProductionRecordBtn"
+                  style="background-color: #059669;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>+ Add Monthly Production</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="tool-summary-meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">Machine Assigned</span>
+                <span class="meta-val" id="shMachineVal">MCH-01 (Hydraulic Press 100T)</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Operation</span>
+                <span class="meta-val" id="shOperationVal">Yoke Pressing</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Application</span>
+                <span class="meta-val" id="shApplicationVal">Automotive Steering Yoke</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Replacement Frequency</span>
+                <span class="meta-val col-numeric" id="shRepLimitVal"
+                  style="font-size: 15px; color: var(--accent-700);">200,000 pcs</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Current Cumulative</span>
+                <span class="meta-val col-numeric" id="shCumulativeVal" style="font-size: 15px;">185,245 pcs</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Remaining Balance</span>
+                <span class="meta-val col-numeric" id="shBalanceVal" style="font-size: 15px; color: #d97706;">14,755
+                  pcs</span>
+              </div>
+            </div>
+
+            <div class="tool-summary-progress">
+              <div class="progress-info-row">
+                <span>Tool Life Utilization</span>
+                <span id="shUtilizationPct">92.6% Used (Replacement threshold at 80% and 100%)</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-fill progress-warning" id="shProgressBarFill" style="width: 92.6%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TWO MAIN DIGITAL CARD SECTIONS -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- SECTION 1: SERVICE HISTORY -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path
+                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                      </path>
+                    </svg>
+                    <span>Service History Records</span>
+                  </div>
+                  <div class="card-subtitle">Maintenance events, tool changes, and approvals</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btnQuickAddServiceFromHeader">+ Add Service Record</button>
+              </div>
+              <div class="table-responsive">
+                <table class="enterprise-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Approval</th>
+                      <th>Approval Date</th>
+                      <th>Remarks</th>
+                      <th>Performed By</th>
+                      <th style="text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="toolServiceRecordsBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- SECTION 2: QUANTITY PRODUCED (PRODUCTION TRACKING) -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Quantity Produced (Production Tracking)</span>
+                  </div>
+                  <div class="card-subtitle">Automatic cumulative calculation: Cumulative = Previous Cumulative +
+                    Current Month Quantity</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btnQuickAddProdFromHeader">+ Add Monthly Quantity</button>
+              </div>
+              <div class="table-responsive">
+                <table class="enterprise-table">
+                  <thead>
+                    <tr>
+                      <th>Month / Year</th>
+                      <th class="col-numeric">Quantity Made</th>
+                      <th class="col-numeric">Cumulative Quantity</th>
+                      <th class="col-numeric">Replacement Limit</th>
+                      <th class="col-numeric">Remaining Balance</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="toolProductionRecordsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+           VIEW 4: PRODUCTION TRACKING (SHOP FLOOR BATCH VIEW)
+           =================================================================== -->
+        <section class="view-section" id="view-production-tracking">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Production Tracking</h1>
+              <p class="page-subtitle">Shop-floor batch output log and automated tooling wear calculations</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary btn-sm" id="btnExportProductionCSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export Production CSV</span>
+              </button>
+              <button class="btn btn-primary" id="btnOpenGlobalProdModal">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>+ Log Monthly Production</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">All Tool Production & Cumulative Life Matrix</div>
+                <div class="card-subtitle">Live status calculated from logged production batches</div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Tool No.</th>
+                    <th>Description</th>
+                    <th>Machine</th>
+                    <th class="col-numeric">Replacement Freq</th>
+                    <th class="col-numeric">Cumulative Made</th>
+                    <th class="col-numeric">Remaining Balance</th>
+                    <th>Life Consumption</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="allProductionOverviewBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+           VIEW 5: REPLACEMENT ALERTS
+           =================================================================== -->
+        <section class="view-section" id="view-replacement-alerts">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Replacement Alerts</h1>
+              <p class="page-subtitle">Preventive maintenance limits and tool replacement schedule</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary btn-sm" id="btnExportAlertsCSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export Alerts</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Alert Filter Tabs -->
+          <div class="filter-card">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-sm" id="filterAlertsAll">All Attention Tools (<span
+                  id="alertTotalBadge">0</span>)</button>
+              <button class="btn btn-secondary btn-sm" id="filterAlertsDue">Replacement Due (>= 100%) (<span
+                  id="alertDueBadge">0</span>)</button>
+              <button class="btn btn-secondary btn-sm" id="filterAlertsNear">Near Limit (80% - 99%) (<span
+                  id="alertNearBadge">0</span>)</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Tool No.</th>
+                    <th>Tool Description</th>
+                    <th>Machine</th>
+                    <th class="col-numeric">Replacement Freq</th>
+                    <th class="col-numeric">Cumulative Quantity</th>
+                    <th class="col-numeric">Balance</th>
+                    <th>Utilization %</th>
+                    <th>Last Service Date</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="replacementAlertsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+           VIEW 6: REPORTS
+           =================================================================== -->
+        <section class="view-section" id="view-reports">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Reports & Audits</h1>
+              <p class="page-subtitle">Standard engineering reports, tooling compliance, and printable audit summaries
+              </p>
+            </div>
+          </div>
+
+          <div class="reports-grid">
+            <!-- Report 1 -->
+            <div class="report-card">
+              <div class="report-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <div class="report-card-title">Tool Replacement Schedule Report</div>
+              <div class="report-card-desc">Comprehensive audit of all tools approaching or exceeding their rated cycle
+                life limits.</div>
+              <div class="report-card-actions">
+                <button class="btn btn-secondary btn-sm" data-report="replacement-schedule">Preview</button>
+                <button class="btn btn-primary btn-sm" data-export-report="replacement-schedule">Export CSV</button>
+              </div>
+            </div>
+
+            <!-- Report 2 -->
+            <div class="report-card">
+              <div class="report-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="report-card-title">Tool Service History Audit Report</div>
+              <div class="report-card-desc">Chronological log of all maintenance actions, regrinds, punch renewals, and
+                engineer sign-offs.</div>
+              <div class="report-card-actions">
+                <button class="btn btn-secondary btn-sm" data-report="service-audit">Preview</button>
+                <button class="btn btn-primary btn-sm" data-export-report="service-audit">Export CSV</button>
+              </div>
+            </div>
+
+            <!-- Report 3 -->
+            <div class="report-card">
+              <div class="report-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+              </div>
+              <div class="report-card-title">Monthly Production & Tool Wear Report</div>
+              <div class="report-card-desc">Aggregated production output per machine with calculated tool wear and
+                remaining life balances.</div>
+              <div class="report-card-actions">
+                <button class="btn btn-secondary btn-sm" data-report="monthly-wear">Preview</button>
+                <button class="btn btn-primary btn-sm" data-export-report="monthly-wear">Export CSV</button>
+              </div>
+            </div>
+
+            <!-- Report 4 -->
+            <div class="report-card">
+              <div class="report-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </div>
+              <div class="report-card-title">Machine-wise Tool Allocation Report</div>
+              <div class="report-card-desc">Detailed tooling assignment mapped across all presses, CNCs, and stamping
+                machinery in plant.</div>
+              <div class="report-card-actions">
+                <button class="btn btn-secondary btn-sm" data-report="machine-allocation">Preview</button>
+                <button class="btn btn-primary btn-sm" data-export-report="machine-allocation">Export CSV</button>
+              </div>
+            </div>
+
+            <!-- Report 5 -->
+            <div class="report-card">
+              <div class="report-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div class="report-card-title">Critical Tools Near Replacement Report</div>
+              <div class="report-card-desc">High-priority requisition report for tooling department procurement and
+                spares planning.</div>
+              <div class="report-card-actions">
+                <button class="btn btn-secondary btn-sm" data-report="critical-procurement">Preview</button>
+                <button class="btn btn-primary btn-sm" data-export-report="critical-procurement">Export CSV</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+     MODALS
+     ========================================================================= -->
+
+  <!-- MODAL 1: ADD / EDIT TOOL MASTER (Digital Tool Master Card) -->
+  <div class="modal-backdrop" id="modalAddTool">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalToolTitle">Tool Master Card - Add / Edit Tool</h3>
+        <button class="modal-close-btn" data-close-modal="modalAddTool">&times;</button>
+      </div>
+      <form id="formToolMaster">
+        <div class="modal-body">
+          <!-- Section 1: Tool Information -->
+          <div class="form-section">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span>Section 1: Tool & Machine Specifications</span>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label" for="inpToolNumber">Tool Number *</label>
+                <input type="text" class="form-input" id="inpToolNumber" placeholder="e.g. TOOL-016" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpToolDescription">Tool Description *</label>
+                <input type="text" class="form-input" id="inpToolDescription" placeholder="e.g. Yoke Pressing Tool"
+                  required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpToolType">Tool Type</label>
+                <input type="text" class="form-input" id="inpToolType" placeholder="e.g. B">
+              </div>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label" for="inpMachineSelect">Machine Number *</label>
+                <select class="form-select" id="inpMachineSelect" required></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpMachineName">Machine Name</label>
+                <input type="text" class="form-input" id="inpMachineName" placeholder="Machine Name" readonly
+                  style="background-color: var(--slate-100);">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpOperation">Operation</label>
+                <input type="text" class="form-input" id="inpOperation" placeholder="e.g. Yoke Pressing">
+              </div>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label" for="inpApplication">Application</label>
+                <input type="text" class="form-input" id="inpApplication" placeholder="e.g. Steering Yoke Assembly">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpIssuedDate">Tool Issued On</label>
+                <input type="date" class="form-input" id="inpIssuedDate">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpReplacementFrequency">Replacement Frequency *</label>
+                <input type="number" class="form-input" id="inpReplacementFrequency" placeholder="e.g. 200000"
+                  min="1000" required>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label" for="inpAmrQuantity">AMR / Approx Replacement Qty</label>
+                <input type="text" class="form-input" id="inpAmrQuantity" placeholder="e.g. 200,000">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Spare Details Table -->
+          <div class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="section-title" style="margin-bottom: 0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                  </path>
+                </svg>
+                <span>Section 2: Spare Details Matrix</span>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnAddSpareRow">+ Add Spare</button>
+            </div>
+
+            <div class="spares-table-wrapper">
+              <table class="spares-form-table">
+                <thead>
+                  <tr>
+                    <th style="width: 70px;">Detail No.</th>
+                    <th>Description</th>
+                    <th style="width: 90px;">Qty / Set</th>
+                    <th style="width: 90px;">Required</th>
+                    <th style="width: 90px;">Available</th>
+                    <th style="width: 140px;">Freq of Replacement</th>
+                    <th style="width: 50px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="sparesFormTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section 3: Additional Information & Sign-offs -->
+          <div class="form-section">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7.5" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
+              </svg>
+              <span>Section 3: Sign-Off & Additional Information</span>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label" for="inpPreparedBy">Prepared By</label>
+                <input type="text" class="form-input" id="inpPreparedBy" placeholder="e.g. R. Sharma (Tool Room)">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpCheckedBy">Checked By</label>
+                <input type="text" class="form-input" id="inpCheckedBy" placeholder="e.g. K. Patel (Lead)">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="inpApprovedBy">Approved By</label>
+                <input type="text" class="form-input" id="inpApprovedBy" placeholder="e.g. M. Verma (Plant Head)">
+              </div>
+            </div>
+
+            <div class="form-row-1">
+              <div class="form-group">
+                <label class="form-label" for="inpRemarks">Engineering Remarks</label>
+                <textarea class="form-textarea" id="inpRemarks"
+                  placeholder="Enter special die instructions, hardness notes, regrind criteria..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modalAddTool">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveTool">Save Tool</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ADD SERVICE RECORD -->
+  <div class="modal-backdrop" id="modalAddService">
+    <div class="modal-card modal-sm" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Service Record</h3>
+        <button class="modal-close-btn" data-close-modal="modalAddService">&times;</button>
+      </div>
+      <form id="formAddService">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="srvToolSelect">Tool Number *</label>
+            <select class="form-select" id="srvToolSelect" required></select>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srvDate">Service Date *</label>
+              <input type="date" class="form-input" id="srvDate" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srvPerformedBy">Performed By *</label>
+              <input type="text" class="form-input" id="srvPerformedBy" placeholder="e.g. S. Rao" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="srvDescription">Description *</label>
+            <input type="text" class="form-input" id="srvDescription" placeholder="e.g. Top Tool Changed / Die Polished"
+              required>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="srvApproval">Approval Status</label>
+              <select class="form-select" id="srvApproval">
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending Review</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="srvApprovalDate">Approval Date</label>
+              <input type="date" class="form-input" id="srvApprovalDate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="srvRemarks">Remarks / Findings</label>
+            <textarea class="form-textarea" id="srvRemarks"
+              placeholder="Condition observed, clearance adjustments, spare rack ID..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modalAddService">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Service Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ADD MONTHLY PRODUCTION RECORD -->
+  <div class="modal-backdrop" id="modalAddProduction">
+    <div class="modal-card modal-sm" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Log Monthly Production</h3>
+        <button class="modal-close-btn" data-close-modal="modalAddProduction">&times;</button>
+      </div>
+      <form id="formAddProduction">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" for="prdToolSelect">Tool Number *</label>
+            <select class="form-select" id="prdToolSelect" required></select>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="prdMonth">Production Month *</label>
+              <input type="month" class="form-input" id="prdMonth" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="prdQuantity">Quantity Made (pcs) *</label>
+              <input type="number" class="form-input" id="prdQuantity" placeholder="e.g. 18500" min="1" required>
+            </div>
+          </div>
+
+          <div id="prdLiveCalcPreview"
+            style="margin-top: 14px; padding: 14px; background-color: var(--slate-100); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: none;">
+            <div
+              style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 6px;">
+              Live Auto-Calculation Preview</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+              <span>Projected Cumulative:</span>
+              <strong id="prevProjCumulative">0 pcs</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+              <span>Projected Balance:</span>
+              <strong id="prevProjBalance" style="color: #2563eb;">0 pcs</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px;">
+              <span>Projected Status:</span>
+              <span id="prevProjStatus" class="badge badge-healthy">Healthy</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modalAddProduction">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Production Log</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: COMPLETE TOOL MASTER DOSSIER (Full Details View) -->
+  <div class="modal-backdrop" id="modalToolDossier">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="dossierToolTitle">TOOL-001 - Tool Master Dossier</h3>
+          <div style="font-size: 12px; color: var(--slate-500);" id="dossierToolSubtitle">Complete specifications,
+            spares, and lifecycle status</div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="modalToolDossier">&times;</button>
+      </div>
+      <div class="modal-body" id="dossierModalBody">
+        <!-- Injected by JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="modalToolDossier">Close</button>
+        <button type="button" class="btn btn-primary" id="btnDossierPrint">Print Dossier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: REPORT PREVIEW MODAL -->
+  <div class="modal-backdrop" id="modalReportPreview">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="reportPreviewTitle">Report Preview</h3>
+          <div style="font-size: 12px; color: var(--slate-500);" id="reportPreviewSubtitle">Tool Management System Audit
+            Report</div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="modalReportPreview">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive" id="reportPreviewTableWrap"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="modalReportPreview">Close</button>
+        <button type="button" class="btn btn-secondary" id="btnReportPrint">Print</button>
+        <button type="button" class="btn btn-primary" id="btnReportCsvDownload">Export CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: CONFIRMATION DIALOG -->
+  <div class="modal-backdrop" id="modalConfirm">
+    <div class="modal-card modal-sm" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmDialogTitle">Confirm Action</h3>
+        <button class="modal-close-btn" data-close-modal="modalConfirm">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmDialogMessage" style="font-size: 13.5px; color: var(--slate-700);">Are you sure you want to
+          proceed?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="modalConfirm">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDialogConfirmBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
