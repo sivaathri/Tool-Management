@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.inpPreparedBy.value = tool.preparedBy || '';
         DOM.inpCheckedBy.value = tool.checkedBy || '';
         DOM.inpApprovedBy.value = tool.approvedBy || '';
-        DOM.inpRemarks.value = tool.remarks || '';
+        if (DOM.inpRemarks) DOM.inpRemarks.value = tool.remarks || '';
 
         const initialApps = (tool.applications && tool.applications.length > 0)
           ? tool.applications
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const preparedBy = DOM.inpPreparedBy.value.trim();
     const checkedBy = DOM.inpCheckedBy.value.trim();
     const approvedBy = DOM.inpApprovedBy.value.trim();
-    const remarks = DOM.inpRemarks.value.trim();
+    const remarks = DOM.inpRemarks ? DOM.inpRemarks.value.trim() : (existingTool?.remarks || '');
 
     // Extract applications from sub-table
     const applications = [];
@@ -1140,9 +1140,9 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
 
     DOM.formAddService.reset();
-    DOM.srvDate.value = new Date().toISOString().slice(0, 10);
+    if (DOM.srvDate) DOM.srvDate.value = new Date().toISOString().slice(0, 10);
     DOM.srvApprovalDate.value = new Date().toISOString().slice(0, 10);
-    DOM.srvPerformedBy.value = 'S. Rao (Tool Room)';
+    if (DOM.srvPerformedBy) DOM.srvPerformedBy.value = 'S. Rao (Tool Room)';
     DOM.srvDescription.value = 'Top Tool Changed';
     openModal(DOM.modalAddService);
   }
@@ -1155,12 +1155,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolNumber = DOM.srvToolSelect.value;
     const record = {
       toolNumber,
-      date: DOM.srvDate.value,
+      date: DOM.srvDate ? DOM.srvDate.value : new Date().toISOString().slice(0, 10),
       description: DOM.srvDescription.value.trim(),
       approval: DOM.srvApproval.value,
       approvalDate: DOM.srvApprovalDate.value,
       remarks: DOM.srvRemarks.value.trim(),
-      performedBy: DOM.srvPerformedBy.value.trim()
+      performedBy: DOM.srvPerformedBy ? DOM.srvPerformedBy.value.trim() : 'Tool Room'
     };
 
     TMS.saveServiceRecord(record);
