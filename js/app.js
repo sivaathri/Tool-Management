@@ -110,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
     inpCheckedBy: document.getElementById('inpCheckedBy'),
     inpApprovedBy: document.getElementById('inpApprovedBy'),
     inpRemarks: document.getElementById('inpRemarks'),
+    appFormTableBody: document.getElementById('appFormTableBody'),
+    btnAddAppRow: document.getElementById('btnAddAppRow'),
     sparesFormTableBody: document.getElementById('sparesFormTableBody'),
     btnAddSpareRow: document.getElementById('btnAddSpareRow'),
 
@@ -727,6 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ADD / EDIT TOOL MASTER MODAL
   // =========================================================================
   function populateMachineDropdown(selectedMachineNumber = '') {
+    if (!DOM.inpMachineSelect) return;
     const machines = TMS.getMachines();
     DOM.inpMachineSelect.innerHTML = machines.map(m => `
       <option value="${m.machineNumber}" ${m.machineNumber === selectedMachineNumber ? 'selected' : ''}>
@@ -739,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function syncMachineNameFromSelect() {
+    if (!DOM.inpMachineSelect || !DOM.inpMachineName) return;
     const selectedMachId = DOM.inpMachineSelect.value;
     const mach = TMS.getMachine(selectedMachId);
     if (mach) {
@@ -746,7 +750,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  DOM.inpMachineSelect.addEventListener('change', syncMachineNameFromSelect);
+  if (DOM.inpMachineSelect) {
+    DOM.inpMachineSelect.addEventListener('change', syncMachineNameFromSelect);
+  }
 
   function openAddEditToolModal(toolNumber = null) {
     State.editingToolNumber = toolNumber;
@@ -761,18 +767,24 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.inpToolNumber.readOnly = true;
         DOM.inpToolDescription.value = tool.toolDescription;
         DOM.inpToolType.value = tool.toolType || '';
-        DOM.inpMachineSelect.value = tool.machineNumber;
-        syncMachineNameFromSelect();
+        if (DOM.inpMachineSelect) {
+          DOM.inpMachineSelect.value = tool.machineNumber;
+          syncMachineNameFromSelect();
+        }
         DOM.inpOperation.value = tool.operation || '';
-        DOM.inpApplication.value = tool.application || '';
+        if (DOM.inpApplication) DOM.inpApplication.value = tool.application || '';
         DOM.inpIssuedDate.value = tool.issuedDate || '';
-        DOM.inpReplacementFrequency.value = tool.replacementFrequency;
-        DOM.inpAmrQuantity.value = tool.amrQuantity || '';
+        if (DOM.inpReplacementFrequency) DOM.inpReplacementFrequency.value = tool.replacementFrequency;
+        if (DOM.inpAmrQuantity) DOM.inpAmrQuantity.value = tool.amrQuantity || '';
         DOM.inpPreparedBy.value = tool.preparedBy || '';
         DOM.inpCheckedBy.value = tool.checkedBy || '';
         DOM.inpApprovedBy.value = tool.approvedBy || '';
         DOM.inpRemarks.value = tool.remarks || '';
 
+        const initialApps = (tool.applications && tool.applications.length > 0)
+          ? tool.applications
+          : (tool.application ? [{ slNo: '01', application: tool.application, amr: tool.amrQuantity || '' }] : [{ slNo: '01', application: '', amr: '' }]);
+        renderAppFormRows(initialApps);
         renderSparesFormRows(tool.spares || []);
       }
     } else {
@@ -782,10 +794,15 @@ document.addEventListener('DOMContentLoaded', () => {
       DOM.inpToolNumber.readOnly = false;
       const nextCount = TMS.getTools().length + 1;
       DOM.inpToolNumber.value = `TOOL-${nextCount < 10 ? '00' : (nextCount < 100 ? '0' : '')}${nextCount}`;
-      DOM.inpReplacementFrequency.value = 200000;
-      DOM.inpAmrQuantity.value = '200,000';
+      if (DOM.inpReplacementFrequency) DOM.inpReplacementFrequency.value = 200000;
+      if (DOM.inpAmrQuantity) DOM.inpAmrQuantity.value = '200,000';
       DOM.inpIssuedDate.value = new Date().toISOString().slice(0, 10);
       syncMachineNameFromSelect();
+
+      // Seed default application row matching physical card
+      renderAppFormRows([
+        { slNo: '01', application: 'KOHLER - IU', amr: '75,000' }
+      ]);
 
       // Seed default spare row (Top Tool) inspired by client physical form
       renderSparesFormRows([
@@ -798,6 +815,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
   DOM.btnOpenNewToolModal.addEventListener('click', () => openAddEditToolModal(null));
   DOM.btnQuickAddTool.addEventListener('click', () => openAddEditToolModal(null));
+
+  function renderAppFormRows(apps) {
+    if (!DOM.appFormTableBody) return;
+    DOM.appFormTableBody.innerHTML = '';
+    if (!apps || apps.length === 0) {
+      addAppRow({ slNo: '01', application: '', amr: '' });
+    } else {
+      apps.forEach(a => addAppRow(a));
+    }
+  }
+
+  function addAppRow(app = null) {
+    if (!DOM.appFormTableBody) return;
+    const row = document.createElement('tr');
+    const curRows = DOM.appFormTableBody.querySelectorAll('tr').length + 1;
+    const slNo = app ? app.slNo : (curRows < 10 ? '0' + curRows : String(curRows));
+    const application = app ? (app.application || '') : '';
+    const amr = app ? (app.amr || '') : '';
+
+    row.innerHTML = `
+      <td><input type="text" class="form-input app-sl-no" value="${slNo}" style="font-family: var(--font-mono); text-align: center;"></td>
+      <td><input type="text" class="form-input app-name" value="${application}" placeholder="e.g. KOHLER - IU" required></td>
+      <td><input type="text" class="form-input app-amr" value="${amr}" placeholder="e.g. 75,000"></td>
+      <td style="text-align: center;">
+        <button type="button" class="btn btn-icon-only btn-sm" style="color: #ef4444;" title="Remove row">✕</button>
+      </td>
+    `;
+
+    row.querySelector('button').addEventListener('click', () => row.remove());
+    DOM.appFormTableBody.appendChild(row);
+  }
+
+  if (DOM.btnAddAppRow) {
+    DOM.btnAddAppRow.addEventListener('click', () => addAppRow());
+  }
 
   function renderSparesFormRows(spares) {
     DOM.sparesFormTableBody.innerHTML = '';
@@ -812,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const qty = spare ? spare.qtySet : 1;
     const req = spare ? spare.required : 1;
     const avail = spare ? spare.available : 1;
-    const freq = spare ? spare.freqReplacement : (DOM.inpReplacementFrequency.value || 200000);
+    const freq = spare ? spare.freqReplacement : (DOM.inpReplacementFrequency ? Number(DOM.inpReplacementFrequency.value) : 200000) || 200000;
 
     row.innerHTML = `
       <td><input type="text" class="form-input spare-detail-no" value="${detailNo}" style="font-family: var(--font-mono); text-align: center;"></td>
@@ -839,17 +891,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolNumber = DOM.inpToolNumber.value.trim().toUpperCase();
     const toolDescription = DOM.inpToolDescription.value.trim();
     const toolType = DOM.inpToolType.value.trim().toUpperCase();
-    const machineNumber = DOM.inpMachineSelect.value;
-    const machineName = DOM.inpMachineName.value;
+    const existingTool = State.editingToolNumber ? TMS.getTool(State.editingToolNumber) : null;
+    const machineNumber = DOM.inpMachineSelect ? DOM.inpMachineSelect.value : (existingTool?.machineNumber || 'MC-01');
+    const machineName = DOM.inpMachineName ? DOM.inpMachineName.value : (existingTool?.machineName || 'Yoke Milling MC-01');
     const operation = DOM.inpOperation.value.trim();
-    const application = DOM.inpApplication.value.trim();
     const issuedDate = DOM.inpIssuedDate.value;
-    const replacementFrequency = Number(DOM.inpReplacementFrequency.value);
-    const amrQuantity = DOM.inpAmrQuantity.value.trim();
+    const replacementFrequency = DOM.inpReplacementFrequency ? Number(DOM.inpReplacementFrequency.value) : (existingTool?.replacementFrequency || 200000);
     const preparedBy = DOM.inpPreparedBy.value.trim();
     const checkedBy = DOM.inpCheckedBy.value.trim();
     const approvedBy = DOM.inpApprovedBy.value.trim();
     const remarks = DOM.inpRemarks.value.trim();
+
+    // Extract applications from sub-table
+    const applications = [];
+    if (DOM.appFormTableBody) {
+      DOM.appFormTableBody.querySelectorAll('tr').forEach(tr => {
+        const slNo = tr.querySelector('.app-sl-no')?.value.trim() || '01';
+        const application = tr.querySelector('.app-name')?.value.trim() || '';
+        const amr = tr.querySelector('.app-amr')?.value.trim() || '';
+        if (application || amr) {
+          applications.push({ slNo, application, amr });
+        }
+      });
+    }
+
+    const application = applications.length > 0
+      ? applications.map(a => a.application).filter(Boolean).join(', ')
+      : (DOM.inpApplication ? DOM.inpApplication.value.trim() : (existingTool?.application || ''));
+    const amrQuantity = applications.length > 0 && applications[0].amr
+      ? applications[0].amr
+      : (DOM.inpAmrQuantity ? DOM.inpAmrQuantity.value.trim() : (existingTool?.amrQuantity || ''));
 
     // Extract spares from sub-table
     const spares = [];
@@ -874,6 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
       machineName,
       operation,
       application,
+      applications,
       issuedDate,
       replacementFrequency,
       amrQuantity,
@@ -1479,6 +1551,9 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.dossierToolTitle.textContent = `${tool.toolNumber} - ${tool.toolDescription}`;
     DOM.dossierToolSubtitle.textContent = `Assigned to ${tool.machineNumber} (${tool.machineName || 'Machine'}) | Operation: ${tool.operation || '-'}`;
 
+    const applications = (tool.applications && tool.applications.length > 0)
+      ? tool.applications
+      : (tool.application ? [{ slNo: '01', application: tool.application, amr: tool.amrQuantity || '-' }] : []);
     const spares = tool.spares || [];
     const services = TMS.getServiceHistory(tool.toolNumber);
     const prodHistory = TMS.calculateProductionHistory(tool.toolNumber);
@@ -1516,6 +1591,31 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div style="margin-top: 10px; font-size: 12.5px; color: var(--slate-600);">
           <span style="font-weight: 600;">Remarks:</span> ${tool.remarks || 'None'}
+        </div>
+      </div>
+
+      <!-- Application & AMR Matrix -->
+      <div style="margin-bottom: 22px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--slate-900); margin-bottom: 10px;">Application & AMR Matrix</h4>
+        <div class="table-responsive">
+          <table class="enterprise-table">
+            <thead>
+              <tr>
+                <th style="width: 80px; text-align: center;">SL.NO.</th>
+                <th>APPLICATION</th>
+                <th style="width: 240px;" class="col-numeric">AMR (APPROXIMATELY)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${applications.length === 0 ? '<tr><td colspan="3" style="text-align:center; color: var(--slate-500);">No application records specified</td></tr>' : applications.map(app => `
+                <tr>
+                  <td style="font-family: var(--font-mono); text-align: center;">${app.slNo || '01'}</td>
+                  <td style="font-weight: 600;">${app.application || '-'}</td>
+                  <td class="col-numeric">${app.amr || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </div>
       </div>
 
