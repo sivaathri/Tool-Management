@@ -1678,6 +1678,16 @@ document.addEventListener('DOMContentLoaded', () => {
           </table>
         </div>
       </div>
+
+      <!-- Tool Classification Criteria -->
+      <div style="margin-top: 20px; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.28); border-radius: var(--radius-md); padding: 14px 18px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--slate-800); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Tool Classification Criteria</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--slate-700);">
+          <div style="display: flex; align-items: baseline; gap: 10px;"><strong style="color: var(--accent-700); font-family: var(--font-mono); font-size: 14px; min-width: 22px;">A :</strong> <span>Critical Tools Require Spare set / Detailed Spares</span></div>
+          <div style="display: flex; align-items: baseline; gap: 10px;"><strong style="color: var(--accent-700); font-family: var(--font-mono); font-size: 14px; min-width: 22px;">B :</strong> <span>Tools Require only Detailed Spares</span></div>
+          <div style="display: flex; align-items: baseline; gap: 10px;"><strong style="color: var(--accent-700); font-family: var(--font-mono); font-size: 14px; min-width: 22px;">C :</strong> <span>Standard Tools like Drills, Cutters Etc.</span></div>
+        </div>
+      </div>
     `;
 
     openModal(DOM.modalToolDossier);
