@@ -356,54 +356,56 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // GLOBAL SEARCH AUTOCOMPLETE
   // =========================================================================
-  DOM.globalSearchInput.addEventListener('input', (e) => {
-    const query = e.target.value.trim().toLowerCase();
-    if (!query) {
-      DOM.globalSearchResults.classList.remove('show');
-      DOM.globalSearchResults.innerHTML = '';
-      return;
-    }
+  if (DOM.globalSearchInput && DOM.globalSearchResults) {
+    DOM.globalSearchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase();
+      if (!query) {
+        DOM.globalSearchResults.classList.remove('show');
+        DOM.globalSearchResults.innerHTML = '';
+        return;
+      }
 
-    const tools = TMS.getTools().filter(t => 
-      t.toolNumber.toLowerCase().includes(query) ||
-      t.toolDescription.toLowerCase().includes(query) ||
-      t.machineNumber.toLowerCase().includes(query) ||
-      t.operation.toLowerCase().includes(query)
-    );
+      const tools = TMS.getTools().filter(t => 
+        t.toolNumber.toLowerCase().includes(query) ||
+        t.toolDescription.toLowerCase().includes(query) ||
+        t.machineNumber.toLowerCase().includes(query) ||
+        t.operation.toLowerCase().includes(query)
+      );
 
-    if (tools.length === 0) {
-      DOM.globalSearchResults.innerHTML = `<div style="padding: 12px; color: var(--slate-500); font-size: 12.5px;">No matching tools found</div>`;
-      DOM.globalSearchResults.classList.add('show');
-      return;
-    }
+      if (tools.length === 0) {
+        DOM.globalSearchResults.innerHTML = `<div style="padding: 12px; color: var(--slate-500); font-size: 12.5px;">No matching tools found</div>`;
+        DOM.globalSearchResults.classList.add('show');
+        return;
+      }
 
-    DOM.globalSearchResults.innerHTML = tools.slice(0, 6).map(tool => `
-      <div class="search-result-item" data-tool="${tool.toolNumber}">
-        <div>
-          <div style="font-weight: 600; color: var(--slate-900); font-size: 13px;">${tool.toolNumber} - ${tool.toolDescription}</div>
-          <div style="font-size: 11.5px; color: var(--slate-500);">${tool.machineNumber} (${tool.operation})</div>
+      DOM.globalSearchResults.innerHTML = tools.slice(0, 6).map(tool => `
+        <div class="search-result-item" data-tool="${tool.toolNumber}">
+          <div>
+            <div style="font-weight: 600; color: var(--slate-900); font-size: 13px;">${tool.toolNumber} - ${tool.toolDescription}</div>
+            <div style="font-size: 11.5px; color: var(--slate-500);">${tool.machineNumber} (${tool.operation})</div>
+          </div>
+          <span class="badge ${tool.statusClass}">${tool.status}</span>
         </div>
-        <span class="badge ${tool.statusClass}">${tool.status}</span>
-      </div>
-    `).join('');
+      `).join('');
 
-    DOM.globalSearchResults.classList.add('show');
-  });
+      DOM.globalSearchResults.classList.add('show');
+    });
 
-  DOM.globalSearchResults.addEventListener('click', (e) => {
-    const item = e.target.closest('.search-result-item');
-    if (!item) return;
-    const toolNum = item.getAttribute('data-tool');
-    DOM.globalSearchInput.value = '';
-    DOM.globalSearchResults.classList.remove('show');
-    selectAndInspectTool(toolNum);
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!DOM.globalSearchInput.contains(e.target) && !DOM.globalSearchResults.contains(e.target)) {
+    DOM.globalSearchResults.addEventListener('click', (e) => {
+      const item = e.target.closest('.search-result-item');
+      if (!item) return;
+      const toolNum = item.getAttribute('data-tool');
+      DOM.globalSearchInput.value = '';
       DOM.globalSearchResults.classList.remove('show');
-    }
-  });
+      selectAndInspectTool(toolNum);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (DOM.globalSearchInput && DOM.globalSearchResults && !DOM.globalSearchInput.contains(e.target) && !DOM.globalSearchResults.contains(e.target)) {
+        DOM.globalSearchResults.classList.remove('show');
+      }
+    });
+  }
 
   function selectAndInspectTool(toolNumber) {
     State.selectedToolNumber = toolNumber;
@@ -1072,8 +1074,12 @@ document.addEventListener('DOMContentLoaded', () => {
     openModal(DOM.modalAddTool);
   }
 
-  DOM.btnOpenNewToolModal.addEventListener('click', () => openAddEditToolModal(null));
-  DOM.btnQuickAddTool.addEventListener('click', () => openAddEditToolModal(null));
+  if (DOM.btnOpenNewToolModal) {
+    DOM.btnOpenNewToolModal.addEventListener('click', () => openAddEditToolModal(null));
+  }
+  if (DOM.btnQuickAddTool) {
+    DOM.btnQuickAddTool.addEventListener('click', () => openAddEditToolModal(null));
+  }
 
   // Submit Tool Master Form (Only the 8 Master List Inputs)
   DOM.formToolMaster.addEventListener('submit', (e) => {
@@ -1877,19 +1883,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.removeChild(link);
   }
 
-  DOM.btnResetData.addEventListener('click', () => {
-    requestConfirmation(
-      'Restore Demo Data?',
-      'This will reset all Tool Master cards, service histories, and production logs back to their original factory defaults. Any custom tools created will be reset.',
-      () => {
-        TMS.resetToDefaults();
-        showToast('Sample demo data successfully restored!', 'success');
-        State.selectedToolNumber = 'TOOL-001';
-        renderActiveView(State.currentView);
-        updateBadgesAndCounters();
-      }
-    );
-  });
+  if (DOM.btnResetData) {
+    DOM.btnResetData.addEventListener('click', () => {
+      requestConfirmation(
+        'Restore Demo Data?',
+        'This will reset all Tool Master cards, service histories, and production logs back to their original factory defaults. Any custom tools created will be reset.',
+        () => {
+          TMS.resetToDefaults();
+          showToast('Sample demo data successfully restored!', 'success');
+          State.selectedToolNumber = 'TOOL-001';
+          renderActiveView(State.currentView);
+          updateBadgesAndCounters();
+        }
+      );
+    });
+  }
 
   // Global keyboard shortcuts (Esc to close open modals)
   document.addEventListener('keydown', (e) => {
