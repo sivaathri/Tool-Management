@@ -380,8 +380,11 @@ export default function UserManagementView({
               <div className="modal-title" style={{ color: '#dc2626' }}>
                 Delete User
               </div>
-              <button type="button" className="modal-close" onClick={() => setUserToDelete(null)}>
-                &times;
+              <button type="button" className="modal-close" onClick={() => setUserToDelete(null)} title="Close">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
             <div className="modal-body" style={{ padding: '20px' }}>

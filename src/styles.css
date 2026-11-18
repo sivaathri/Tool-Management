@@ -1398,22 +1398,39 @@ body {
   color: var(--slate-900);
 }
 
+/* ==========================================================================
+   Circular Modal Close Button (matches rounded X specification)
+   ========================================================================== */
+.modal-close,
 .modal-close-btn {
-  background: none;
-  border: none;
-  color: var(--slate-400);
+  width: 32px;
+  height: 32px;
+  border-radius: 50% !important;
+  background-color: #f1f5f9 !important;
+  border: none !important;
+  color: #1e293b !important;
   cursor: pointer;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  transition: all 0.18s ease-in-out !important;
+  outline: none;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+.modal-close:hover,
 .modal-close-btn:hover {
-  background-color: var(--slate-100);
-  color: var(--slate-800);
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  transform: scale(1.06);
+}
+
+.modal-close:active,
+.modal-close-btn:active {
+  transform: scale(0.96);
+  background-color: #cbd5e1 !important;
 }
 
 .modal-body {
