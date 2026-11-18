@@ -1305,6 +1305,37 @@ body {
   transform: translateY(0);
 }
 
+/* ==========================================================================
+   Vivid Blue Pill Export Report Button (Matches image design)
+   ========================================================================== */
+.btn-export-pill {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  padding: 8px 22px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+  transition: all 0.18s ease-in-out !important;
+  outline: none;
+}
+
+.btn-export-pill:hover {
+  background-color: #1d4ed8 !important;
+  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.btn-export-pill:active {
+  transform: translateY(0);
+  background-color: #1e40af !important;
+}
+
 .tool-summary-progress {
   padding: 14px 18px;
   background-color: var(--slate-50);
