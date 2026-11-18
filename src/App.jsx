@@ -38,13 +38,7 @@ export default function App() {
     }
   });
 
-  const [selectedServiceToolId, setSelectedServiceToolId] = useState(() => {
-    try {
-      return localStorage.getItem('tms_selected_pm_tool') || null;
-    } catch (e) {
-      return null;
-    }
-  });
+  const [selectedServiceToolId, setSelectedServiceToolId] = useState(null);
 
   const [tools, setTools] = useState([]);
   const [productionLogs, setProductionLogs] = useState([]);
@@ -72,16 +66,12 @@ export default function App() {
     } catch (e) {}
   }, [currentView]);
 
-  // Persist selected PM tool across browser refresh
+  // Clear any legacy saved PM tool so refreshing on Preventive Maintenance always starts with a blank/cleared number
   useEffect(() => {
     try {
-      if (selectedServiceToolId) {
-        localStorage.setItem('tms_selected_pm_tool', selectedServiceToolId);
-      } else {
-        localStorage.removeItem('tms_selected_pm_tool');
-      }
+      localStorage.removeItem('tms_selected_pm_tool');
     } catch (e) {}
-  }, [selectedServiceToolId]);
+  }, []);
 
   // Mobile sidebar
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
