@@ -13,6 +13,8 @@ export default function MasterList({
   const [searchTerm, setSearchTerm] = useState('');
   const [classificationFilter, setClassificationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
 
   // Filtered tools
   const filteredTools = useMemo(() => {
@@ -36,10 +38,61 @@ export default function MasterList({
     });
   }, [tools, searchTerm, classificationFilter, statusFilter]);
 
+  // Pagination calculation
+  const totalItems = filteredTools.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedTools = useMemo(() => {
+    return filteredTools.slice(startIndex, startIndex + pageSize);
+  }, [filteredTools, startIndex, pageSize]);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [];
+    if (safeCurrentPage <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i);
+      pages.push('...');
+      pages.push(totalPages);
+    } else if (safeCurrentPage >= totalPages - 3) {
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push('...');
+      pages.push(safeCurrentPage - 1);
+      pages.push(safeCurrentPage);
+      pages.push(safeCurrentPage + 1);
+      pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleClassificationChange = (e) => {
+    setClassificationFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
   const handleResetFilters = () => {
     setSearchTerm('');
     setClassificationFilter('');
     setStatusFilter('');
+    setCurrentPage(1);
   };
 
   const handleExportCSV = () => {
@@ -111,7 +164,7 @@ export default function MasterList({
               id="tmSearchInput"
               placeholder="Search Tool No., Product Name, App Part No., Description..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
 
@@ -121,7 +174,7 @@ export default function MasterList({
               className="form-select"
               id="tmClassificationFilter"
               value={classificationFilter}
-              onChange={(e) => setClassificationFilter(e.target.value)}
+              onChange={handleClassificationChange}
             >
               <option value="">All Classifications</option>
               <option value="Critical">Critical</option>
@@ -135,7 +188,7 @@ export default function MasterList({
               className="form-select"
               id="tmStatusFilter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={handleStatusChange}
             >
               <option value="">All Statuses</option>
               <option value="Healthy">Healthy</option>
@@ -180,14 +233,14 @@ export default function MasterList({
               </tr>
             </thead>
             <tbody id="toolMasterTableBody">
-              {filteredTools.length === 0 ? (
+              {paginatedTools.length === 0 ? (
                 <tr>
                   <td colSpan="12" style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--slate-500)' }}>
                     No tools found matching the current search criteria.
                   </td>
                 </tr>
               ) : (
-                filteredTools.map((tool) => (
+                paginatedTools.map((tool) => (
                   <tr key={tool.id}>
                     {/* App Part No (Parent) */}
                     <td>
@@ -312,6 +365,69 @@ export default function MasterList({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Pagination Footer (15 rows per page) */}
+        <div className="table-pagination-footer">
+          <div className="pagination-info">
+            <span>
+              Showing <strong>{totalItems === 0 ? 0 : startIndex + 1}</strong> to{' '}
+              <strong>{Math.min(startIndex + pageSize, totalItems)}</strong> of{' '}
+              <strong>{totalItems}</strong> tools
+            </span>
+            <span style={{ color: 'var(--slate-400)' }}>•</span>
+            <span style={{ fontSize: '12px', color: 'var(--slate-500)' }}>15 per page</span>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage === 1}
+                title="Previous Page"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '3px' }}>
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Prev</span>
+              </button>
+
+              {getPageNumbers().map((item, idx) => {
+                if (item === '...') {
+                  return (
+                    <span key={`dots-${idx}`} style={{ padding: '0 4px', color: 'var(--slate-400)', fontSize: '13px' }}>
+                      ...
+                    </span>
+                  );
+                }
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`pagination-btn ${item === safeCurrentPage ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(item)}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage === totalPages}
+                title="Next Page"
+              >
+                <span>Next</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '3px' }}>
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>
