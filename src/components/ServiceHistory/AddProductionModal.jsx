@@ -1,14 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { formatNumber } from '../../data/storage';
 
-export default function AddProductionModal({ tool, onClose, onSave }) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+function formatMonthName(monthStr) {
+  if (!monthStr) return '';
+  const parts = monthStr.split('-');
+  if (parts.length >= 2) {
+    const year = parts[0];
+    const monthNum = parseInt(parts[1], 10);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    if (monthNum >= 1 && monthNum <= 12) {
+      return `${months[monthNum - 1]} ${year}`;
+    }
+  }
+  return monthStr;
+}
+
+function getNextMonth(monthStr) {
+  if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+  const [yearStr, monthStrPart] = monthStr.split('-');
+  let year = parseInt(yearStr, 10);
+  let month = parseInt(monthStrPart, 10);
+  month += 1;
+  if (month > 12) {
+    month = 1;
+    year += 1;
+  }
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+export default function AddProductionModal({ tool, existingLogs = [], onClose, onSave }) {
+  // Collect existing months recorded for this tool
+  const existingMonths = useMemo(() => {
+    return (existingLogs || [])
+      .map(l => (l.month || l.date || '').slice(0, 7))
+      .filter(m => /^\d{4}-\d{2}$/.test(m));
+  }, [existingLogs]);
+
+  // Determine latest recorded month and default to the NEXT month
+  const initialMonth = useMemo(() => {
+    if (existingMonths.length > 0) {
+      const sorted = [...existingMonths].sort();
+      const latest = sorted[sorted.length - 1];
+      return getNextMonth(latest);
+    }
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, [existingMonths]);
+
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [quantity, setQuantity] = useState('');
   const [operator, setOperator] = useState('Machine Operator');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
 
   if (!tool) return null;
+
+  const isMonthDuplicate = existingMonths.includes(selectedMonth);
 
   const currentCum = tool.cumulative || 0;
   const numQty = parseInt(quantity, 10) || 0;
@@ -17,15 +69,21 @@ export default function AddProductionModal({ tool, onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isMonthDuplicate) {
+      setError(`An entry for ${formatMonthName(selectedMonth)} already exists for this tool. Only one entry per month is permitted.`);
+      return;
+    }
+
     if (!numQty || numQty <= 0) {
-      setError('Please enter a valid production quantity greater than 0.');
+      setError('Please enter a valid quantity made greater than 0.');
       return;
     }
 
     onSave({
       toolId: tool.id,
       toolNo: tool.toolNo,
-      date,
+      date: `${selectedMonth}-01`,
+      month: selectedMonth,
       quantity: numQty,
       operator: operator.trim() || 'Operator',
       notes: notes.trim()
@@ -57,26 +115,67 @@ export default function AddProductionModal({ tool, onClose, onSave }) {
               </div>
             </div>
 
-            {error && (
+            {isMonthDuplicate && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                background: '#fef2f2',
+                border: '1.5px solid #f87171',
+                borderRadius: 'var(--radius-md)',
+                color: '#991b1b',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px'
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: '2px' }}>
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div>
+                  <strong>{formatMonthName(selectedMonth)}</strong> is already recorded for <strong>{tool.toolNo}</strong>. Only <strong>one entry per month</strong> is allowed. Please select the next unrecorded month.
+                </div>
+              </div>
+            )}
+
+            {error && !isMonthDuplicate && (
               <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius-md)', color: '#dc2626', fontSize: '12.5px' }}>
                 {error}
               </div>
             )}
 
             <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label" htmlFor="inpProdDate">Production Month / Date *</label>
+              <label className="form-label" htmlFor="inpProdMonth">
+                Production Month *
+                <span style={{ fontSize: '11px', color: 'var(--slate-500)', fontWeight: 400, marginLeft: '6px' }}>
+                  (1 entry per month)
+                </span>
+              </label>
               <input
-                type="date"
+                type="month"
                 className="form-input"
-                id="inpProdDate"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                id="inpProdMonth"
+                value={selectedMonth}
+                onChange={(e) => {
+                  setSelectedMonth(e.target.value);
+                  setError('');
+                }}
+                style={{
+                  borderColor: isMonthDuplicate ? '#ef4444' : undefined,
+                  backgroundColor: isMonthDuplicate ? '#fff5f5' : undefined,
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-mono)'
+                }}
                 required
               />
+              <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                Target: <strong>{formatMonthName(selectedMonth)}</strong>
+              </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label" htmlFor="inpProdQty">Quantity Made *</label>
+              <label className="form-label" htmlFor="inpProdQty">Quantity Made (Strokes / Output) *</label>
               <input
                 type="number"
                 min="1"
@@ -138,7 +237,16 @@ export default function AddProductionModal({ tool, onClose, onSave }) {
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" style={{ backgroundColor: '#059669' }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isMonthDuplicate || !numQty || numQty <= 0}
+              style={{
+                backgroundColor: isMonthDuplicate ? '#94a3b8' : '#059669',
+                cursor: isMonthDuplicate ? 'not-allowed' : 'pointer',
+                opacity: isMonthDuplicate ? 0.7 : 1
+              }}
+            >
               Save Production Record
             </button>
           </div>

@@ -169,9 +169,15 @@ export default function ServiceHistoryView({
 
   const handleSaveLog = (newLog) => {
     if (!selectedTool) return;
+    const targetMonth = (newLog.month || newLog.date || '').slice(0, 7);
+    const alreadyExists = toolLogs.some(l => (l.month || l.date || '').slice(0, 7) === targetMonth);
+    if (alreadyExists) {
+      showToast(`An entry for ${formatMonthYear(targetMonth + '-01')} already exists for ${selectedTool.toolNo}. You cannot add the same month twice.`, 'warning');
+      return;
+    }
     onAddProductionLog(newLog);
     setIsAddLogOpen(false);
-    showToast(`Logged ${formatNumber(newLog.quantity)} output for ${selectedTool.toolNo}`, 'success');
+    showToast(`Logged ${formatNumber(newLog.quantity)} output for ${selectedTool.toolNo} (${formatMonthYear(newLog.date)})`, 'success');
   };
 
   const pct = selectedTool ? Math.min(100, Math.round((selectedTool.cumulative / (selectedTool.lifetime || 1)) * 100)) : 0;
@@ -413,22 +419,17 @@ export default function ServiceHistoryView({
       {/* PREVENTIVE MAINTENANCE CHECK LIST SHEET (ENTER DATA) */}
       <PMChecklistSheet tool={selectedTool} showToast={showToast} />
 
-      {/* QUANTITY PRODUCED TABLE - OFFICIAL YELLOW CARD FORMAT */}
-      <div className="card" style={{ marginTop: '24px', overflow: 'hidden' }}>
-        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+      {/* QUANTITY PRODUCED (PRODUCTION TRACKING) TABLE */}
+      <div className="card" style={{ marginTop: '24px' }}>
+        <div className="card-header">
           <div>
-            <div className="card-title" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--slate-900)' }}>
-              Quantity Produced (Production Tracking)
-            </div>
-            <div className="card-subtitle" style={{ fontSize: '12px', color: 'var(--slate-500)', marginTop: '2px' }}>
-              Official Tool Production Card tracking monthly quantity made and progressive cumulative count
-            </div>
+            <div className="card-title">Quantity Produced (Production Tracking)</div>
           </div>
           <button
             type="button"
             className="btn btn-primary btn-sm"
             onClick={() => setIsAddLogOpen(true)}
-            style={{ backgroundColor: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ backgroundColor: '#059669' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -438,194 +439,113 @@ export default function ServiceHistoryView({
           </button>
         </div>
 
-        {/* Physical Yellow Card Container */}
-        <div style={{ padding: '24px 20px', backgroundColor: '#f8fafc' }}>
-          <div style={{
-            maxWidth: '620px',
-            margin: '0 auto',
-            backgroundColor: '#fef08a',
-            border: '2px solid #000000',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)'
-          }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              color: '#000000',
-              fontFamily: 'var(--font-sans)'
-            }}>
-              <thead>
-                {/* Header Row 1 */}
-                <tr style={{ borderBottom: '2px solid #000000' }}>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      width: '32%',
-                      padding: '10px 14px',
-                      borderRight: '2px solid #000000',
-                      fontWeight: 800,
-                      fontSize: '13px',
-                      letterSpacing: '0.8px',
-                      textTransform: 'uppercase',
-                      textAlign: 'center',
-                      verticalAlign: 'middle',
-                      backgroundColor: '#fef08a'
-                    }}
-                  >
-                    MONTH
-                  </th>
-                  <th
-                    colSpan="2"
-                    style={{
-                      padding: '8px 14px',
-                      borderRight: '2px solid #000000',
-                      fontWeight: 800,
-                      fontSize: '13px',
-                      letterSpacing: '0.8px',
-                      textTransform: 'uppercase',
-                      textAlign: 'center',
-                      backgroundColor: '#fef08a',
-                      borderBottom: '2px solid #000000'
-                    }}
-                  >
-                    QUANTITY
-                  </th>
-                  <th
-                    rowSpan="2"
-                    style={{
-                      width: '12%',
-                      padding: '8px',
-                      fontWeight: 700,
-                      fontSize: '11px',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      textAlign: 'center',
-                      verticalAlign: 'middle',
-                      backgroundColor: '#fef08a',
-                      color: '#475569'
-                    }}
-                  >
-                    ACTION
-                  </th>
+        <div className="table-responsive">
+          <table className="enterprise-table">
+            <thead>
+              <tr>
+                <th
+                  rowSpan="2"
+                  style={{
+                    textAlign: 'center',
+                    verticalAlign: 'middle',
+                    width: '28%',
+                    borderRight: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  MONTH
+                </th>
+                <th
+                  colSpan="2"
+                  style={{
+                    textAlign: 'center',
+                    borderRight: '1px solid var(--border-subtle)',
+                    borderBottom: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  QUANTITY
+                </th>
+                <th
+                  rowSpan="2"
+                  style={{
+                    textAlign: 'center',
+                    verticalAlign: 'middle',
+                    width: '100px'
+                  }}
+                >
+                  ACTION
+                </th>
+              </tr>
+              <tr>
+                <th
+                  style={{
+                    textAlign: 'center',
+                    width: '32%',
+                    borderRight: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  MADE
+                </th>
+                <th
+                  style={{
+                    textAlign: 'center',
+                    width: '32%',
+                    borderRight: '1px solid var(--border-subtle)'
+                  }}
+                >
+                  CUMULATIVE
+                </th>
+              </tr>
+            </thead>
+            <tbody id="quantityProducedTableBody">
+              {toolLogs.length === 0 ? (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--slate-400)' }}>
+                    No production logs recorded yet for <strong>{selectedTool.toolNo}</strong>. Click "+ Add Quantity Record" to record output.
+                  </td>
                 </tr>
+              ) : (
+                toolLogs.map((log) => (
+                  <tr key={log.id}>
+                    {/* MONTH */}
+                    <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--slate-800)', fontSize: '13.5px' }}>
+                        {log.monthDisplay}
+                      </span>
+                    </td>
 
-                {/* Header Row 2 */}
-                <tr style={{ borderBottom: '2px solid #000000' }}>
-                  <th
-                    style={{
-                      width: '28%',
-                      padding: '8px 12px',
-                      borderRight: '2px solid #000000',
-                      fontWeight: 800,
-                      fontSize: '12.5px',
-                      letterSpacing: '0.6px',
-                      textTransform: 'uppercase',
-                      textAlign: 'center',
-                      backgroundColor: '#fef08a'
-                    }}
-                  >
-                    MADE
-                  </th>
-                  <th
-                    style={{
-                      width: '28%',
-                      padding: '8px 12px',
-                      borderRight: '2px solid #000000',
-                      fontWeight: 800,
-                      fontSize: '12.5px',
-                      letterSpacing: '0.6px',
-                      textTransform: 'uppercase',
-                      textAlign: 'center',
-                      backgroundColor: '#fef08a'
-                    }}
-                  >
-                    CUMULATIVE
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="quantityProducedTableBody">
-                {toolLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" style={{ padding: '36px 16px', textAlign: 'center', color: '#475569', fontSize: '13px', backgroundColor: '#fef9c3' }}>
-                      No production logs recorded yet for <strong>{selectedTool.toolNo}</strong>.<br />
-                      Click <strong>"+ Add Quantity Record"</strong> to add monthly output.
+                    {/* MADE */}
+                    <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-700)', fontSize: '14px' }}>
+                        {formatNumber(log.quantityMade)}
+                      </span>
+                    </td>
+
+                    {/* CUMULATIVE */}
+                    <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#1e40af', fontSize: '14px' }}>
+                        {formatNumber(log.cumulativeMade)}
+                      </span>
+                    </td>
+
+                    {/* ACTION */}
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn-action-icon btn-action-delete"
+                        onClick={() => onDeleteProductionLog(log.id)}
+                        title="Delete entry"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  toolLogs.map((log, idx) => (
-                    <tr
-                      key={log.id || idx}
-                      style={{
-                        borderBottom: idx === toolLogs.length - 1 ? 'none' : '1.5px solid #000000',
-                        backgroundColor: '#fef08a'
-                      }}
-                    >
-                      {/* MONTH */}
-                      <td style={{
-                        padding: '10px 14px',
-                        borderRight: '2px solid #000000',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
-                        fontSize: '15px',
-                        color: '#000000',
-                        textAlign: 'center'
-                      }}>
-                        {log.monthDisplay}
-                      </td>
-
-                      {/* MADE */}
-                      <td style={{
-                        padding: '10px 14px',
-                        borderRight: '2px solid #000000',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
-                        fontSize: '15px',
-                        color: '#000000',
-                        textAlign: 'center'
-                      }}>
-                        {formatNumber(log.quantityMade)}
-                      </td>
-
-                      {/* CUMULATIVE */}
-                      <td style={{
-                        padding: '10px 14px',
-                        borderRight: '2px solid #000000',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
-                        fontSize: '15px',
-                        color: '#000000',
-                        textAlign: 'center'
-                      }}>
-                        {formatNumber(log.cumulativeMade)}
-                      </td>
-
-                      {/* ACTION */}
-                      <td style={{ padding: '8px', textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn-action-icon btn-action-delete"
-                          onClick={() => onDeleteProductionLog(log.id)}
-                          title="Delete entry"
-                          style={{
-                            width: '26px',
-                            height: '26px',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            color: '#b91c1c',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -633,6 +553,7 @@ export default function ServiceHistoryView({
       {isAddLogOpen && selectedTool && (
         <AddProductionModal
           tool={selectedTool}
+          existingLogs={toolLogs}
           onClose={() => setIsAddLogOpen(false)}
           onSave={handleSaveLog}
         />

@@ -17,6 +17,7 @@ export function formatNumber(val) {
 // Export tool list to downloadable CSV
 export function exportToolsToCSV(toolsList, filename = 'tools_master_list.csv') {
   const headers = [
+    'Sl.No',
     'Tool No',
     'Application Part No',
     'Product Name',
@@ -30,7 +31,8 @@ export function exportToolsToCSV(toolsList, filename = 'tools_master_list.csv') 
     'Status'
   ];
 
-  const rows = toolsList.map(t => [
+  const rows = toolsList.map((t, idx) => [
+    idx + 1,
     `"${(t.toolNo || '').replace(/"/g, '""')}"`,
     `"${(t.applicationPartNo || '').replace(/"/g, '""')}"`,
     `"${(t.productName || '').replace(/"/g, '""')}"`,
@@ -134,8 +136,14 @@ function normalizeToolItem(raw, productionLogs = []) {
 // Convert raw initial production to standardized model
 function normalizeProductionItem(raw) {
   let dateVal = raw.date || raw.productionDate;
-  if (!dateVal && raw.month) {
+  if (raw.month && (!dateVal || dateVal.startsWith('2026-11'))) {
     dateVal = String(raw.month).length === 7 ? `${raw.month}-01` : String(raw.month);
+  }
+  if ((!dateVal || dateVal.startsWith('2026-11')) && raw.id) {
+    const initMatch = (INITIAL_PRODUCTION || []).find(p => p.id === raw.id);
+    if (initMatch && initMatch.month) {
+      dateVal = `${initMatch.month}-01`;
+    }
   }
   if (!dateVal) {
     dateVal = new Date().toISOString().slice(0, 10);
@@ -145,6 +153,7 @@ function normalizeProductionItem(raw) {
     toolId: raw.toolId || null,
     toolNo: formatToolNumber(raw.toolNo || raw.toolNumber),
     date: dateVal,
+    month: raw.month || dateVal.slice(0, 7),
     quantity: Number(raw.quantity || raw.quantityMade || 0),
     operator: raw.operator || 'Operator',
     notes: raw.notes || raw.remarks || ''

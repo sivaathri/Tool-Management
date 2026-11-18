@@ -73,7 +73,6 @@ export default function UserManagementView({
       <div className="page-header">
         <div>
           <h1 className="page-title">User Management</h1>
-          <p className="page-subtitle">Manage plant operators, tool room engineers, inspection leads, and administrative access</p>
         </div>
         <div className="header-actions">
           <button type="button" className="btn btn-primary" onClick={handleOpenAdd}>

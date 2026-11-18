@@ -215,6 +215,7 @@ export default function MasterList({
           <table className="enterprise-table">
             <thead>
               <tr>
+                <th style={{ textAlign: 'center', width: '60px' }}>Sl.No</th>
                 <th>App Part No</th>
                 <th>Tool No.</th>
                 <th>Product Name</th>
@@ -237,8 +238,13 @@ export default function MasterList({
                   </td>
                 </tr>
               ) : (
-                paginatedTools.map((tool) => (
+                paginatedTools.map((tool, index) => (
                   <tr key={tool.id}>
+                    {/* Sl No */}
+                    <td style={{ textAlign: 'center', color: 'var(--slate-500)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+                      {(safeCurrentPage - 1) * pageSize + index + 1}
+                    </td>
+
                     {/* App Part No (Parent) */}
                     <td>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--slate-900)' }}>
