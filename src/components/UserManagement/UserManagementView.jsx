@@ -333,9 +333,15 @@ export default function UserManagementView({
                           title="Edit User Details"
                           onClick={() => handleOpenEdit(user)}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12.5 3.5H6A3.5 3.5 0 0 0 2.5 7v10A3.5 3.5 0 0 0 6 20.5h10a3.5 3.5 0 0 0 3.5-3.5v-6.5" />
+                            <path d="M16.5 6.5L18.3 4.7C19.1 3.9 20.4 3.9 21.2 4.7C22.0 5.5 22.0 6.8 21.2 7.6L19.4 9.4" />
+                            <line x1="16.5" y1="6.5" x2="9.8" y2="13.2" />
+                            <line x1="19.4" y1="9.4" x2="12.7" y2="16.1" />
+                            <line x1="16.5" y1="6.5" x2="19.4" y2="9.4" />
+                            <line x1="9.8" y1="13.2" x2="12.7" y2="16.1" />
+                            <path d="M9.8 13.2L7.8 18.1L12.7 16.1" />
+                            <polygon points="7.8,18.1 8.8,15.6 10.3,17.1" fill="currentColor" stroke="none" />
                           </svg>
                         </button>
                         <button

@@ -1275,6 +1275,51 @@ body {
 }
 
 /* ==========================================================================
+   Action Icon Buttons (View, Edit, Delete)
+   ========================================================================== */
+.btn-action-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+  padding: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-action-icon:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #334155;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-action-view:hover {
+  background-color: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.22);
+}
+
+.btn-action-edit:hover {
+  background-color: #f0fdf4 !important;
+  border-color: #16a34a !important;
+  color: #15803d !important;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.22);
+}
+
+.btn-action-icon:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
    Modern Rounded Outline Delete / Trash Button (matches UI specification)
    ========================================================================== */
 .btn-trash-outline {

@@ -343,7 +343,7 @@ export default function MasterList({
 
                     {/* Actions */}
                     <td style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                         <button
                           type="button"
                           className="btn-action-icon btn-action-view"
@@ -356,11 +356,31 @@ export default function MasterList({
                             }
                           }}
                         >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 12C3.6 7.5 7.4 4.5 12 4.5C16.6 4.5 20.4 7.5 22 12C20.4 16.5 16.6 19.5 12 19.5C7.4 19.5 3.6 16.5 2 12Z" />
+                            <circle cx="12" cy="12" r="3.6" strokeWidth="2.3" />
                           </svg>
                         </button>
+
+                        {onEditTool && (
+                          <button
+                            type="button"
+                            className="btn-action-icon btn-action-edit"
+                            title="Edit Tool Details"
+                            onClick={() => onEditTool(tool)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12.5 3.5H6A3.5 3.5 0 0 0 2.5 7v10A3.5 3.5 0 0 0 6 20.5h10a3.5 3.5 0 0 0 3.5-3.5v-6.5" />
+                              <path d="M16.5 6.5L18.3 4.7C19.1 3.9 20.4 3.9 21.2 4.7C22.0 5.5 22.0 6.8 21.2 7.6L19.4 9.4" />
+                              <line x1="16.5" y1="6.5" x2="9.8" y2="13.2" />
+                              <line x1="19.4" y1="9.4" x2="12.7" y2="16.1" />
+                              <line x1="16.5" y1="6.5" x2="19.4" y2="9.4" />
+                              <line x1="9.8" y1="13.2" x2="12.7" y2="16.1" />
+                              <path d="M9.8 13.2L7.8 18.1L12.7 16.1" />
+                              <polygon points="7.8,18.1 8.8,15.6 10.3,17.1" fill="currentColor" stroke="none" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
