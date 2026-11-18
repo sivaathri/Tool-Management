@@ -47,7 +47,6 @@ export default function DashboardView({
       <div className="page-header">
         <div>
           <h1 className="page-title">Tooling Performance Dashboard</h1>
-          <p className="page-subtitle">Real-time lifecycle monitoring, replacement limits, and shop-floor activity</p>
         </div>
         <div className="header-actions">
           <button type="button" className="btn btn-secondary btn-sm" id="btnRefreshDashboard" onClick={onRefresh}>

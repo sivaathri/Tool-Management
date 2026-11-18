@@ -413,80 +413,219 @@ export default function ServiceHistoryView({
       {/* PREVENTIVE MAINTENANCE CHECK LIST SHEET (ENTER DATA) */}
       <PMChecklistSheet tool={selectedTool} showToast={showToast} />
 
-      {/* QUANTITY PRODUCED TABLE */}
-      <div className="card">
-        <div className="card-header">
+      {/* QUANTITY PRODUCED TABLE - OFFICIAL YELLOW CARD FORMAT */}
+      <div className="card" style={{ marginTop: '24px', overflow: 'hidden' }}>
+        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div>
-            <div className="card-title">Quantity Produced (Production Tracking)</div>
-            <div className="card-subtitle">Production output logs tracking cumulative parts made and remaining tool balance</div>
+            <div className="card-title" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--slate-900)' }}>
+              Quantity Produced (Production Tracking)
+            </div>
+            <div className="card-subtitle" style={{ fontSize: '12px', color: 'var(--slate-500)', marginTop: '2px' }}>
+              Official Tool Production Card tracking monthly quantity made and progressive cumulative count
+            </div>
           </div>
           <button
             type="button"
             className="btn btn-primary btn-sm"
             onClick={() => setIsAddLogOpen(true)}
-            style={{ backgroundColor: '#059669' }}
+            style={{ backgroundColor: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>Add Entry</span>
+            <span>+ Add Quantity Record</span>
           </button>
         </div>
 
-        <div className="table-responsive">
-          <table className="enterprise-table">
-            <thead>
-              <tr>
-                <th>Production Date</th>
-                <th className="col-numeric">Quantity Produced</th>
-                <th>Recorded By</th>
-                <th>Remarks / Shift</th>
-                <th style={{ textAlign: 'right' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody id="quantityProducedTableBody">
-              {toolLogs.length === 0 ? (
-                <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--slate-400)' }}>
-                    No production logs recorded yet for {selectedTool.toolNo}. Click "+ Add Entry" to record output.
-                  </td>
+        {/* Physical Yellow Card Container */}
+        <div style={{ padding: '24px 20px', backgroundColor: '#f8fafc' }}>
+          <div style={{
+            maxWidth: '620px',
+            margin: '0 auto',
+            backgroundColor: '#fef08a',
+            border: '2px solid #000000',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)'
+          }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              color: '#000000',
+              fontFamily: 'var(--font-sans)'
+            }}>
+              <thead>
+                {/* Header Row 1 */}
+                <tr style={{ borderBottom: '2px solid #000000' }}>
+                  <th
+                    rowSpan="2"
+                    style={{
+                      width: '32%',
+                      padding: '10px 14px',
+                      borderRight: '2px solid #000000',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      letterSpacing: '0.8px',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      backgroundColor: '#fef08a'
+                    }}
+                  >
+                    MONTH
+                  </th>
+                  <th
+                    colSpan="2"
+                    style={{
+                      padding: '8px 14px',
+                      borderRight: '2px solid #000000',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      letterSpacing: '0.8px',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      backgroundColor: '#fef08a',
+                      borderBottom: '2px solid #000000'
+                    }}
+                  >
+                    QUANTITY
+                  </th>
+                  <th
+                    rowSpan="2"
+                    style={{
+                      width: '12%',
+                      padding: '8px',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      backgroundColor: '#fef08a',
+                      color: '#475569'
+                    }}
+                  >
+                    ACTION
+                  </th>
                 </tr>
-              ) : (
-                toolLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--slate-800)' }}>
-                        {log.date}
-                      </span>
-                    </td>
-                    <td className="col-numeric">
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-700)' }}>
-                        +{formatNumber(log.quantity)}
-                      </span>
-                    </td>
-                    <td>{log.operator || 'Operator'}</td>
-                    <td>
-                      <span style={{ color: 'var(--slate-600)' }}>{log.notes || '—'}</span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        className="btn-action-icon btn-action-delete"
-                        onClick={() => onDeleteProductionLog(log.id)}
-                        title="Delete entry"
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                      </button>
+
+                {/* Header Row 2 */}
+                <tr style={{ borderBottom: '2px solid #000000' }}>
+                  <th
+                    style={{
+                      width: '28%',
+                      padding: '8px 12px',
+                      borderRight: '2px solid #000000',
+                      fontWeight: 800,
+                      fontSize: '12.5px',
+                      letterSpacing: '0.6px',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      backgroundColor: '#fef08a'
+                    }}
+                  >
+                    MADE
+                  </th>
+                  <th
+                    style={{
+                      width: '28%',
+                      padding: '8px 12px',
+                      borderRight: '2px solid #000000',
+                      fontWeight: 800,
+                      fontSize: '12.5px',
+                      letterSpacing: '0.6px',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      backgroundColor: '#fef08a'
+                    }}
+                  >
+                    CUMULATIVE
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="quantityProducedTableBody">
+                {toolLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '36px 16px', textAlign: 'center', color: '#475569', fontSize: '13px', backgroundColor: '#fef9c3' }}>
+                      No production logs recorded yet for <strong>{selectedTool.toolNo}</strong>.<br />
+                      Click <strong>"+ Add Quantity Record"</strong> to add monthly output.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  toolLogs.map((log, idx) => (
+                    <tr
+                      key={log.id || idx}
+                      style={{
+                        borderBottom: idx === toolLogs.length - 1 ? 'none' : '1.5px solid #000000',
+                        backgroundColor: '#fef08a'
+                      }}
+                    >
+                      {/* MONTH */}
+                      <td style={{
+                        padding: '10px 14px',
+                        borderRight: '2px solid #000000',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        fontSize: '15px',
+                        color: '#000000',
+                        textAlign: 'center'
+                      }}>
+                        {log.monthDisplay}
+                      </td>
+
+                      {/* MADE */}
+                      <td style={{
+                        padding: '10px 14px',
+                        borderRight: '2px solid #000000',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        fontSize: '15px',
+                        color: '#000000',
+                        textAlign: 'center'
+                      }}>
+                        {formatNumber(log.quantityMade)}
+                      </td>
+
+                      {/* CUMULATIVE */}
+                      <td style={{
+                        padding: '10px 14px',
+                        borderRight: '2px solid #000000',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        fontSize: '15px',
+                        color: '#000000',
+                        textAlign: 'center'
+                      }}>
+                        {formatNumber(log.cumulativeMade)}
+                      </td>
+
+                      {/* ACTION */}
+                      <td style={{ padding: '8px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn-action-icon btn-action-delete"
+                          onClick={() => onDeleteProductionLog(log.id)}
+                          title="Delete entry"
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            color: '#b91c1c',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
