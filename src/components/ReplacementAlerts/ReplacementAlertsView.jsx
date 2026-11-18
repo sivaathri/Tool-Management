@@ -107,7 +107,7 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
                           type="button"
                           className="tool-no-btn"
                           onClick={() => onViewServiceHistory ? onViewServiceHistory(tool) : onViewDossier(tool)}
-                          title={`Click to view Tool Service History Card for ${tool.toolNo}`}
+                          title={`Click to view Preventive Maintenance Card for ${tool.toolNo}`}
                         >
                           {tool.toolNo}
                         </button>

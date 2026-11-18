@@ -76,8 +76,8 @@ export default function ServiceHistoryView({
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
          
           <div>
-            <h1 className="page-title">Tool Service History</h1>
-            <p className="page-subtitle">Digital Tool Service History Card & Production Output Tracking</p>
+            <h1 className="page-title">Preventive Maintenance</h1>
+            <p className="page-subtitle">Digital PM Inspection Card, Check Points & Production Output Tracking</p>
           </div>
         </div>
         <div className="header-actions">
@@ -87,7 +87,7 @@ export default function ServiceHistoryView({
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
               <rect x="6" y="14" width="12" height="8"></rect>
             </svg>
-            <span>Print Card</span>
+            <span>Print PM Card</span>
           </button>
         </div>
       </div>
@@ -95,9 +95,9 @@ export default function ServiceHistoryView({
       {/* PROMINENT SEARCH CARD */}
       <div className="prominent-search-box">
         <div className="prominent-search-header">
-          <div className="prominent-search-title">Search Tool Card</div>
+          <div className="prominent-search-title">Search Tool PM Card</div>
           <div className="prominent-search-desc">
-            Enter any Tool Number to instantly retrieve Master Card specs, inspection check points, and production history
+            Enter any Tool Number to instantly retrieve Master Card specs, inspection check points, and preventive maintenance history
           </div>
         </div>
         <form className="prominent-search-bar" onSubmit={handleSearchSubmit}>
@@ -408,10 +408,10 @@ export default function ServiceHistoryView({
             </svg>
           </div>
           <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--slate-800)', marginBottom: '8px' }}>
-            Search for a Tool to View Service History
+            Search for a Tool to View Preventive Maintenance
           </h3>
           <p style={{ fontSize: '13.5px', color: 'var(--slate-500)', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
-            Please enter a Tool Number in the search box above (e.g. <strong style={{ color: 'var(--accent-600)', fontFamily: 'var(--font-mono)' }}>INE T 1122</strong>) or select a tool from the Master List to display its full service history card, specifications, inspection check points, and production records.
+            Please enter a Tool Number in the search box above (e.g. <strong style={{ color: 'var(--accent-600)', fontFamily: 'var(--font-mono)' }}>INE T 1122</strong>) or select a tool from the Master List to display its full preventive maintenance card, specifications, inspection check points, and production records.
           </p>
         </div>
       )}

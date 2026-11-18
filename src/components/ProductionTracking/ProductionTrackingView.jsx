@@ -125,9 +125,7 @@ export default function ProductionTrackingView({ tools, showToast }) {
             <div className="card-title">All Tool Production & Cumulative Life Matrix</div>
             <div className="card-subtitle">Live status calculated from logged production batches across plant</div>
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-700)' }}>
-            Total Strokes: {formatNumber(totalCumulative)}
-          </div>
+            
         </div>
         <div className="table-responsive">
           <table className="enterprise-table">

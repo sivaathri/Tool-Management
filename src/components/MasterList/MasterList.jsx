@@ -261,7 +261,7 @@ export default function MasterList({
                             onViewDossier(tool);
                           }
                         }}
-                        title={`Click to view Tool Service History Card for ${tool.toolNo}`}
+                        title={`Click to view Preventive Maintenance Card for ${tool.toolNo}`}
                       >
                         {tool.toolNo}
                       </button>
@@ -344,7 +344,7 @@ export default function MasterList({
                         <button
                           type="button"
                           className="btn-action-icon btn-action-view"
-                          title="View Tool Service History Card"
+                          title="View Preventive Maintenance Card"
                           onClick={() => {
                             if (onViewServiceHistory) {
                               onViewServiceHistory(tool);
