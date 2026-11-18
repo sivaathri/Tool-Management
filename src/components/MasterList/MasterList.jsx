@@ -149,10 +149,7 @@ export default function MasterList({
 
       {/* SEARCH & FILTER BAR */}
       <div className="filter-card">
-        <div
-          className="filter-grid"
-          style={{ gridTemplateColumns: '2.2fr 1.3fr 1.3fr auto', gap: '14px', alignItems: 'flex-end' }}
-        >
+        <div className="filter-grid filter-grid-master">
           <div className="form-group">
             <label className="form-label" htmlFor="tmSearchInput">Search Master List</label>
             <input

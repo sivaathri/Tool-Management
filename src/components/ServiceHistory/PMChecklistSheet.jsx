@@ -242,7 +242,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
       {/* ============================================================== */}
       {/* THE OFFICIAL PREVENTIVE MAINTENANCE CHECK LIST SHEET           */}
       {/* ============================================================== */}
-      <div className="pm-official-sheet-wrapper" style={{ padding: '24px', backgroundColor: '#ffffff' }}>
+      <div className="pm-official-sheet-wrapper">
         
         {/* Outer Form Container with Clean Industrial Border */}
         <div className="pm-form-sheet" style={{

@@ -79,7 +79,7 @@ export default function ProductionTrackingView({ tools, showToast }) {
 
       {/* Filter Card */}
       <div className="filter-card">
-        <div className="filter-grid" style={{ gridTemplateColumns: '2fr 1fr auto', gap: '14px', alignItems: 'flex-end' }}>
+        <div className="filter-grid filter-grid-production">
           <div className="form-group">
             <label className="form-label">Search Tools</label>
             <input

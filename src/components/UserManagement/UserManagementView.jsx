@@ -146,7 +146,7 @@ export default function UserManagementView({
 
       {/* Filter Card */}
       <div className="filter-card" style={{ marginBottom: '20px' }}>
-        <div className="filter-grid" style={{ gridTemplateColumns: '2fr 1.3fr 1.3fr auto', gap: '14px', alignItems: 'flex-end' }}>
+        <div className="filter-grid filter-grid-users">
           <div className="form-group">
             <label className="form-label" htmlFor="userSearchInput">Search Users</label>
             <input

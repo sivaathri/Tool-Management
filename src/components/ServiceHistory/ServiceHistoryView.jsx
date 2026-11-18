@@ -566,7 +566,7 @@ export default function ServiceHistoryView({
           </div>
         </div>
 
-        <div className="tool-summary-meta-grid" style={{ gridTemplateColumns: 'repeat(8, minmax(0, 1fr))' }}>
+        <div className="tool-summary-meta-grid">
           <div className="meta-item">
             <span className="meta-label">App Part No (Parent)</span>
             <span className="meta-val" id="shAppPartVal" style={{ fontWeight: 700, color: '#1e40af', fontFamily: 'var(--font-mono)', textAlign: 'left' }}>
