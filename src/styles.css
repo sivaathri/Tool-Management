@@ -2006,3 +2006,34 @@ body {
   background-color: #dc2626 !important;
   transform: translateY(0);
 }
+
+/* ==========================================================================
+   Preventive Maintenance Check List Sheet
+   ========================================================================== */
+.pm-sheet-input {
+  outline: none;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.pm-sheet-input:focus {
+  background-color: #f1f5f9 !important;
+}
+
+@media print {
+  .prominent-search-box,
+  .pm-action-toolbar,
+  .tool-summary-card {
+    display: none !important;
+  }
+  .pm-sheet-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .pm-official-sheet-wrapper {
+    padding: 0 !important;
+  }
+  .pm-form-sheet {
+    border: 2px solid #000 !important;
+  }
+}

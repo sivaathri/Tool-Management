@@ -248,7 +248,54 @@ export function calculateMetrics(tools = [], logs = []) {
 export function resetToInitialData() {
   localStorage.removeItem(STORAGE_KEYS.TOOLS);
   localStorage.removeItem(STORAGE_KEYS.PRODUCTION);
+  localStorage.removeItem('tms_pm_records');
   initStorage();
+}
+
+// Preventive Maintenance Inspection Checklist Records
+export function getPMRecords() {
+  try {
+    const raw = localStorage.getItem('tms_pm_records');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export function savePMRecord(record) {
+  try {
+    const existing = getPMRecords();
+    const idx = existing.findIndex(r => r.id === record.id);
+    let updated;
+    if (idx >= 0) {
+      updated = [...existing];
+      updated[idx] = { ...record, updatedAt: new Date().toISOString() };
+    } else {
+      const newRec = {
+        ...record,
+        id: record.id || 'pm_' + Date.now(),
+        createdAt: new Date().toISOString()
+      };
+      updated = [newRec, ...existing];
+    }
+    localStorage.setItem('tms_pm_records', JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    console.error('Error saving PM record', e);
+    return [];
+  }
+}
+
+export function deletePMRecord(id) {
+  try {
+    const existing = getPMRecords();
+    const updated = existing.filter(r => r.id !== id);
+    localStorage.setItem('tms_pm_records', JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    console.error('Error deleting PM record', e);
+    return [];
+  }
 }
 
 export const TMSStorage = {
@@ -258,6 +305,9 @@ export const TMSStorage = {
   getProductionLogs,
   addProductionLog,
   deleteProductionLog,
+  getPMRecords,
+  savePMRecord,
+  deletePMRecord,
   calculateMetrics,
   resetToInitialData,
   formatNumber,

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { formatNumber } from '../../data/storage';
 import AddProductionModal from './AddProductionModal';
+import PMChecklistSheet from './PMChecklistSheet';
 
 export default function ServiceHistoryView({ 
   tools, 
@@ -244,51 +245,8 @@ export default function ServiceHistoryView({
         </div>
       </div>
 
-      {/* CHECK POINTS LIST */}
-      <div className="card" style={{ marginBottom: '24px' }}>
-        <div className="card-header">
-          <div>
-            <div className="card-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 11 12 14 22 4"></polyline>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-              </svg>
-              <span>Configured Inspection Check Points ({selectedTool.checkPoints?.length || 0})</span>
-            </div>
-            <div className="card-subtitle">Mandatory quality check points registered for tool maintenance inspection</div>
-          </div>
-        </div>
-        <div className="table-responsive">
-          <table className="enterprise-table">
-            <thead>
-              <tr style={{ background: 'var(--slate-100)' }}>
-                <th style={{ width: '70px', textAlign: 'center' }}>S.no</th>
-                <th>Check point Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(!selectedTool.checkPoints || selectedTool.checkPoints.length === 0) ? (
-                <tr>
-                  <td colSpan="2" style={{ textAlign: 'center', padding: '24px', color: 'var(--slate-400)' }}>
-                    No check points configured for this tool.
-                  </td>
-                </tr>
-              ) : (
-                selectedTool.checkPoints.map((cp, idx) => (
-                  <tr key={idx}>
-                    <td style={{ width: '70px', textAlign: 'center', fontWeight: 700, color: 'var(--slate-600)' }}>
-                      {idx + 1}
-                    </td>
-                    <td style={{ fontWeight: 500, color: 'var(--slate-800)', whiteSpace: 'pre-wrap' }}>
-                      {cp}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* PREVENTIVE MAINTENANCE CHECK LIST SHEET (ENTER DATA) */}
+      <PMChecklistSheet tool={selectedTool} showToast={showToast} />
 
       {/* QUANTITY PRODUCED TABLE */}
       <div className="card">
