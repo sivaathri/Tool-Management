@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import SearchablePartInput from './SearchablePartInput';
-import SearchableProductInput from './SearchableProductInput';
 import CheckPointsTable from './CheckPointsTable';
 
 export default function AddEditToolModal({
@@ -64,24 +63,6 @@ export default function AddEditToolModal({
   }, [currentTool, isOpen]);
 
   if (!isOpen) return null;
-
-  const handlePartSelected = (partNo) => {
-    const match = allTools.find(
-      t => t.applicationPartNo && String(t.applicationPartNo).toLowerCase() === String(partNo).toLowerCase()
-    );
-    if (match && match.productName && !formData.productName) {
-      setFormData(prev => ({ ...prev, productName: match.productName }));
-    }
-  };
-
-  const handleProductSelected = (prodName) => {
-    const match = allTools.find(
-      t => t.productName && t.productName.toLowerCase() === String(prodName).toLowerCase()
-    );
-    if (match && match.applicationPartNo && !formData.applicationPartNo) {
-      setFormData(prev => ({ ...prev, applicationPartNo: match.applicationPartNo }));
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -165,16 +146,19 @@ export default function AddEditToolModal({
                   <SearchablePartInput
                     value={formData.applicationPartNo}
                     onChange={(val) => setFormData(prev => ({ ...prev, applicationPartNo: val }))}
-                    onSelectPart={handlePartSelected}
                     existingTools={allTools}
                   />
                 </div>
                 <div className="form-group">
-                  <SearchableProductInput
+                  <label className="form-label" htmlFor="inpProductName">Product Name *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    id="inpProductName"
+                    placeholder="e.g. Steering Yoke Assembly / Brake Caliper"
                     value={formData.productName}
-                    onChange={(val) => setFormData(prev => ({ ...prev, productName: val }))}
-                    onSelectProduct={handleProductSelected}
-                    existingTools={allTools}
+                    onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
+                    required
                   />
                 </div>
               </div>
