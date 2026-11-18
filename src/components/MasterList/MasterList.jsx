@@ -201,7 +201,7 @@ export default function MasterList({
             <label className="form-label" style={{ visibility: 'hidden' }}>&nbsp;</label>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-reset-filter"
               id="btnResetToolFilters"
               onClick={handleResetFilters}
               style={{ height: '38px', minWidth: '90px' }}

@@ -108,7 +108,7 @@ export default function ProductionTrackingView({ tools, showToast }) {
           <div className="form-group">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-reset-filter"
               onClick={() => { setSearchTerm(''); setFilterPart(''); }}
               style={{ height: '38px', minWidth: '90px' }}
             >
