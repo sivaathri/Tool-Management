@@ -2723,6 +2723,7 @@ body {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
+  image-rendering: -webkit-optimize-contrast;
   display: flex;
   align-items: center;
   justify-content: flex-end; /* Card floating on the right */
@@ -2744,22 +2745,20 @@ body {
 }
 
 .inel-brand-symbol {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  padding: 5px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 .inel-brand-img {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
+  display: block;
 }
 
 .inel-brand-name {
