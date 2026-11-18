@@ -187,7 +187,7 @@ export default function MasterList({
                 <th className="col-numeric">Cumulative</th>
                 <th className="col-numeric">Balance</th>
                 <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody id="toolMasterTableBody">
