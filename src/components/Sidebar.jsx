@@ -5,7 +5,7 @@ export default function Sidebar({
   onNavigate,
   toolCount = 0,
   urgentAlertCount = 0,
-  onResetData,
+  onLogout,
   isMobileOpen = false,
   onCloseMobile
 }) {
@@ -128,19 +128,25 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="sidebar-footer">
+          <div className="user-card" style={{ marginBottom: '12px' }}>
+            <div className="user-avatar">AD</div>
+            <div className="user-info">
+              <div className="user-name">Admin User</div>
+              <div className="user-role">Plant Tool Room Lead</div>
+            </div>
+          </div>
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onResetData}
-            style={{ width: '100%', justifyContent: 'center', gap: '6px' }}
-            title="Restore original factory demo tools & production data"
+            className="btn-sidebar-logout"
+            onClick={onLogout}
+            title="Log out of Tool Management System"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="1 4 1 10 7 10"></polyline>
-              <polyline points="23 20 23 14 17 14"></polyline>
-              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
             </svg>
-            <span>Reset Demo Data</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>

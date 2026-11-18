@@ -42,7 +42,7 @@ export default function App() {
   const [editingTool, setEditingTool] = useState(null);
   const [dossierTool, setDossierTool] = useState(null);
   const [toolToDelete, setToolToDelete] = useState(null);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   // Mobile sidebar
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -122,12 +122,10 @@ export default function App() {
     addToast('Production entry deleted', 'info');
   };
 
-  // Reset Demo Data
-  const handleConfirmResetData = () => {
-    resetToInitialData();
-    reloadData();
-    setIsResetConfirmOpen(false);
-    addToast('All demo tools & production data reloaded to factory defaults', 'success');
+  // Logout
+  const handleConfirmLogout = () => {
+    setIsLogoutConfirmOpen(false);
+    addToast('You have been logged out successfully.', 'info');
   };
 
   return (
@@ -141,7 +139,7 @@ export default function App() {
         }}
         toolCount={tools.length}
         urgentAlertCount={metrics.criticalAlertsCount}
-        onResetData={() => setIsResetConfirmOpen(true)}
+        onLogout={() => setIsLogoutConfirmOpen(true)}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
@@ -247,15 +245,15 @@ export default function App() {
         />
       )}
 
-      {isResetConfirmOpen && (
+      {isLogoutConfirmOpen && (
         <ConfirmModal
           isOpen={true}
-          title="Reset to Factory Demo Data?"
-          message="This will reset all tools, application part numbers, and production logs back to the default factory state. Any custom modifications will be cleared."
-          confirmLabel="Reset Data"
+          title="Log Out"
+          message="Are you sure you want to log out of the Tool Management System?"
+          confirmLabel="Log Out"
           confirmVariant="danger"
-          onConfirm={handleConfirmResetData}
-          onCancel={() => setIsResetConfirmOpen(false)}
+          onConfirm={handleConfirmLogout}
+          onCancel={() => setIsLogoutConfirmOpen(false)}
         />
       )}
 
