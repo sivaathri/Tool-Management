@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { formatNumber } from '../../data/storage';
 import AddProductionModal from './AddProductionModal';
 import PMChecklistSheet from './PMChecklistSheet';
@@ -15,11 +15,25 @@ export default function ServiceHistoryView({
 }) {
   const [selectedToolId, setSelectedToolId] = useState(propSelectedToolId || null);
   const [searchInput, setSearchInput] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
+  const searchComboRef = useRef(null);
 
   useEffect(() => {
     setSelectedToolId(propSelectedToolId || null);
   }, [propSelectedToolId]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchComboRef.current && !searchComboRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSelectTool = (id) => {
     setSelectedToolId(id);
@@ -31,6 +45,62 @@ export default function ServiceHistoryView({
     return tools.find(t => t.id === selectedToolId) || null;
   }, [tools, selectedToolId]);
 
+  // Filter tools for autocomplete dropdown as user types
+  const matchingTools = useMemo(() => {
+    const q = searchInput.trim().toLowerCase();
+    if (!q) {
+      return tools.slice(0, 8);
+    }
+    return tools.filter(t => 
+      t.toolNo.toLowerCase().includes(q) || 
+      (t.applicationPartNo && String(t.applicationPartNo).toLowerCase().includes(q)) ||
+      (t.productName && t.productName.toLowerCase().includes(q)) ||
+      (t.description && t.description.toLowerCase().includes(q))
+    );
+  }, [tools, searchInput]);
+
+  const handleSelectDropdownTool = (tool) => {
+    handleSelectTool(tool.id);
+    setSearchInput(tool.toolNo);
+    setIsDropdownOpen(false);
+    setHighlightedIndex(-1);
+    showToast?.(`Selected tool ${tool.toolNo}`, 'info');
+  };
+
+  const handleInputChange = (e) => {
+    setSearchInput(e.target.value);
+    setIsDropdownOpen(true);
+    setHighlightedIndex(-1);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (!isDropdownOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        setIsDropdownOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev + 1 < matchingTools.length ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev - 1 >= 0 ? prev - 1 : matchingTools.length - 1));
+    } else if (e.key === 'Enter') {
+      if (highlightedIndex >= 0 && highlightedIndex < matchingTools.length) {
+        e.preventDefault();
+        handleSelectDropdownTool(matchingTools[highlightedIndex]);
+      } else if (matchingTools.length === 1) {
+        e.preventDefault();
+        handleSelectDropdownTool(matchingTools[0]);
+      }
+    } else if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
+    }
+  };
+
   const toolLogs = useMemo(() => {
     if (!selectedTool) return [];
     return productionLogs
@@ -40,22 +110,18 @@ export default function ServiceHistoryView({
 
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
+    if (matchingTools.length > 0) {
+      const best = (highlightedIndex >= 0 && highlightedIndex < matchingTools.length)
+        ? matchingTools[highlightedIndex]
+        : matchingTools[0];
+      handleSelectDropdownTool(best);
+      return;
+    }
     if (!searchInput.trim()) {
       showToast('Please enter a tool number to search', 'warning');
       return;
     }
-    const q = searchInput.trim().toLowerCase();
-    const match = tools.find(t => 
-      t.toolNo.toLowerCase().includes(q) || 
-      (t.applicationPartNo && t.applicationPartNo.toLowerCase().includes(q)) ||
-      (t.productName && t.productName.toLowerCase().includes(q))
-    );
-    if (match) {
-      handleSelectTool(match.id);
-      showToast(`Selected tool ${match.toolNo}`, 'info');
-    } else {
-      showToast(`No tool found matching "${searchInput}"`, 'warning');
-    }
+    showToast(`No tool found matching "${searchInput}"`, 'warning');
   };
 
   const handleSaveLog = (newLog) => {
@@ -102,7 +168,7 @@ export default function ServiceHistoryView({
           </div>
         </div>
         <form className="prominent-search-bar" onSubmit={handleSearchSubmit}>
-          <div className="search-input-combo">
+          <div className="search-input-combo" ref={searchComboRef}>
             <svg className="prominent-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -111,10 +177,69 @@ export default function ServiceHistoryView({
               type="text"
               className="prominent-input"
               id="serviceSearchInput"
-              placeholder="Enter Tool Number (e.g. INE T 1122, INE T 1133, INE T 0652)..."
+              placeholder="Enter Tool Number (e.g. INE T 1122, INE T 0652)..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={handleInputChange}
+              onFocus={() => setIsDropdownOpen(true)}
+              onKeyDown={handleInputKeyDown}
+              autoComplete="off"
             />
+
+            {/* RELATED TOOLS DROPDOWN */}
+            {isDropdownOpen && (
+              <div className="pm-search-dropdown">
+                <div className="pm-search-header-hint">
+                  {matchingTools.length === 0
+                    ? `No matching tools found for "${searchInput}"`
+                    : `Matching Tools (${matchingTools.length}) — Click to Select`}
+                </div>
+
+                {matchingTools.length === 0 ? (
+                  <div style={{ padding: '12px', textAlign: 'center', fontSize: '12px', color: 'var(--slate-500)' }}>
+                    No tool found matching "{searchInput}". Please enter a valid tool number.
+                  </div>
+                ) : (
+                  matchingTools.map((t, idx) => {
+                    const isSelected = selectedTool?.id === t.id;
+                    const isHighlighted = idx === highlightedIndex;
+                    return (
+                      <div
+                        key={t.id}
+                        className={`pm-search-item ${isHighlighted ? 'highlighted' : ''}`}
+                        onClick={() => handleSelectDropdownTool(t)}
+                        style={{
+                          backgroundColor: isSelected ? 'var(--accent-50)' : isHighlighted ? 'var(--slate-100)' : 'transparent'
+                        }}
+                      >
+                        <div className="pm-search-item-left">
+                          <span className="pm-search-tool-no">{t.toolNo}</span>
+                          <span className="pm-search-item-meta">
+                            Part #{t.applicationPartNo} • {t.productName || 'Tool'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontWeight: 700,
+                              backgroundColor: t.status === 'Active' || t.status === 'Healthy' ? '#dcfce7' : t.status === 'Near Limit' ? '#fef3c7' : '#fee2e2',
+                              color: t.status === 'Active' || t.status === 'Healthy' ? '#15803d' : t.status === 'Near Limit' ? '#b45309' : '#b91c1c'
+                            }}
+                          >
+                            {t.status || 'Active'}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--accent-600)', fontWeight: 600 }}>
+                            Select ↵
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
           <button type="submit" className="btn btn-primary" id="btnSearchServiceTool" style={{ padding: '0 24px' }}>
             Search Tool
