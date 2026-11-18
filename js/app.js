@@ -1169,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeAppPartDropdown();
       DOM.inpToolNumber.readOnly = false;
       DOM.inpIssuedDate.value = new Date().toISOString().slice(0, 10);
-      if (DOM.inpLifeTime) DOM.inpLifeTime.value = 200000;
+      if (DOM.inpLifeTime) DOM.inpLifeTime.value = '';
       if (DOM.inpClassification) DOM.inpClassification.value = 'Critical';
       if (DOM.inpToolCount) DOM.inpToolCount.value = 0;
 
@@ -1199,13 +1199,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolNumber = DOM.inpToolNumber.value.trim();
     const toolDescription = DOM.inpToolDescription.value.trim();
     const issuedDate = DOM.inpIssuedDate.value || new Date().toISOString().slice(0, 10);
-    const lifeTime = Number(DOM.inpLifeTime ? DOM.inpLifeTime.value : 200000) || 200000;
+    const lifeTime = Number(DOM.inpLifeTime ? DOM.inpLifeTime.value : 0) || 0;
     const classification = DOM.inpClassification ? DOM.inpClassification.value : 'Critical';
     const toolCount = Number(DOM.inpToolCount ? DOM.inpToolCount.value : 0) || 0;
     const checkPoints = getCheckPointsFromForm();
 
     if (!applicationPartNo || !productName || !toolNumber || !toolDescription) {
       showToast('Please fill in Application Part No, Product Name, Tool No, and Description', 'danger');
+      return;
+    }
+
+    if (!lifeTime || lifeTime <= 0) {
+      showToast('Please enter the Life Time limit for the tool', 'danger');
+      if (DOM.inpLifeTime) DOM.inpLifeTime.focus();
       return;
     }
 
