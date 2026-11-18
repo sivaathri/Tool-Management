@@ -1476,6 +1476,13 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.btn-delete-cp:hover {
+  background-color: #fee2e2 !important;
+  border-color: #f87171 !important;
+  color: #dc2626 !important;
+  transform: scale(1.06);
+}
+
 /* ==========================================================================
    Reports View Cards
    ========================================================================== */

@@ -1064,8 +1064,13 @@ document.addEventListener('DOMContentLoaded', () => {
       <td style="padding: 8px 10px;">
         <textarea class="form-textarea cp-input" rows="2" placeholder="Enter check point description..." required style="width: 100%; min-height: 52px; resize: vertical; font-size: 13px; line-height: 1.5; padding: 8px 12px; margin: 0; box-sizing: border-box; font-family: inherit;">${escapeHtmlAttr(text)}</textarea>
       </td>
-      <td style="text-align: center; width: 60px; vertical-align: middle; padding: 8px 6px;">
-        <button type="button" class="btn btn-secondary btn-sm btn-delete-cp" style="color: #ef4444; padding: 6px 10px; height: 34px;" title="Remove check point">✕</button>
+      <td style="text-align: center; width: 70px; vertical-align: middle; padding: 8px 6px;">
+        <button type="button" class="btn-delete-cp" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; transition: all 0.15s ease;" title="Remove check point">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </td>
     `;
     const textarea = tr.querySelector('.cp-input');
