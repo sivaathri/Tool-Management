@@ -59,6 +59,11 @@ export default function App() {
   const addToast = (message, type = 'info') => {
     const id = Date.now() + Math.random().toString(36).substr(2, 4);
     setToasts(prev => [...prev, { id, message, type }]);
+
+    // Automatically close toast after 3 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
   };
 
   const removeToast = (id) => {
