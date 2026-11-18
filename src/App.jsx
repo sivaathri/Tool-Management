@@ -12,6 +12,7 @@ import ServiceHistoryView from './components/ServiceHistory/ServiceHistoryView';
 import ProductionTrackingView from './components/ProductionTracking/ProductionTrackingView';
 import ReplacementAlertsView from './components/ReplacementAlerts/ReplacementAlertsView';
 import ReportsView from './components/Reports/ReportsView';
+import UserManagementView from './components/UserManagement/UserManagementView';
 
 import {
   getTools,
@@ -20,6 +21,9 @@ import {
   getProductionLogs,
   addProductionLog,
   deleteProductionLog,
+  getUsers,
+  saveUser,
+  deleteUser,
   calculateMetrics,
   resetToInitialData
 } from './data/storage';
@@ -28,6 +32,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState('master-list');
   const [tools, setTools] = useState([]);
   const [productionLogs, setProductionLogs] = useState([]);
+  const [users, setUsers] = useState([]);
   const [metrics, setMetrics] = useState({
     totalTools: 0,
     uniquePartsCount: 0,
@@ -64,9 +69,11 @@ export default function App() {
   const reloadData = () => {
     const t = getTools();
     const l = getProductionLogs();
+    const u = getUsers();
     const m = calculateMetrics(t, l);
     setTools(t);
     setProductionLogs(l);
+    setUsers(u);
     setMetrics(m);
   };
 
@@ -123,6 +130,17 @@ export default function App() {
     addToast('Production entry deleted', 'info');
   };
 
+  // User Handlers
+  const handleSaveUser = (userData) => {
+    saveUser(userData);
+    reloadData();
+  };
+
+  const handleDeleteUser = (userId) => {
+    deleteUser(userId);
+    reloadData();
+  };
+
   // Logout
   const handleConfirmLogout = () => {
     setIsLogoutConfirmOpen(false);
@@ -150,6 +168,7 @@ export default function App() {
           setIsMobileSidebarOpen(false);
         }}
         toolCount={tools.length}
+        userCount={users.length}
         urgentAlertCount={metrics.criticalAlertsCount}
         onLogout={() => setIsLogoutConfirmOpen(true)}
         isMobileOpen={isMobileSidebarOpen}
@@ -224,6 +243,15 @@ export default function App() {
             <ReportsView
               tools={tools}
               metrics={metrics}
+              showToast={addToast}
+            />
+          )}
+
+          {currentView === 'user-management' && (
+            <UserManagementView
+              users={users}
+              onSaveUser={handleSaveUser}
+              onDeleteUser={handleDeleteUser}
               showToast={addToast}
             />
           )}

@@ -1,8 +1,9 @@
-import { INITIAL_TOOLS, INITIAL_MACHINES, INITIAL_PRODUCTION } from './initialData';
+import { INITIAL_TOOLS, INITIAL_MACHINES, INITIAL_PRODUCTION, INITIAL_USERS } from './initialData';
 
 const STORAGE_KEYS = {
   TOOLS: 'tms_tools_v4',
   PRODUCTION: 'tms_production_v4',
+  USERS: 'tms_users_v1'
 };
 
 // Format numbers with commas (e.g. 200,000)
@@ -298,6 +299,67 @@ export function deletePMRecord(id) {
   }
 }
 
+// User Management Storage
+export function getUsers() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+      return INITIAL_USERS;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    return INITIAL_USERS;
+  }
+}
+
+export function saveUser(userData) {
+  try {
+    const users = getUsers();
+    const cleanId = userData.id || `USR-${String(Date.now()).slice(-4)}`;
+    const initials = (userData.name || 'User')
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+
+    const userObj = {
+      ...userData,
+      id: cleanId,
+      avatar: userData.avatar || initials,
+      createdDate: userData.createdDate || new Date().toISOString().slice(0, 10),
+      status: userData.status || 'Active'
+    };
+
+    const existingIndex = users.findIndex(u => u.id === cleanId || (userData.empId && u.empId === userData.empId));
+    let updated;
+    if (existingIndex >= 0) {
+      updated = [...users];
+      updated[existingIndex] = { ...updated[existingIndex], ...userObj };
+    } else {
+      updated = [userObj, ...users];
+    }
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    console.error('Error saving user', e);
+    return [];
+  }
+}
+
+export function deleteUser(userId) {
+  try {
+    const users = getUsers();
+    const updated = users.filter(u => u.id !== userId);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    console.error('Error deleting user', e);
+    return [];
+  }
+}
+
 export const TMSStorage = {
   getTools,
   saveTool,
@@ -308,6 +370,9 @@ export const TMSStorage = {
   getPMRecords,
   savePMRecord,
   deletePMRecord,
+  getUsers,
+  saveUser,
+  deleteUser,
   calculateMetrics,
   resetToInitialData,
   formatNumber,

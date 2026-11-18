@@ -227,3 +227,66 @@ export const INITIAL_PRODUCTION = [
   { id: 'PRD-0502', toolNumber: 'INE T 0005', month: '2022-01', quantityMade: 105000 },
   { id: 'PRD-0503', toolNumber: 'INE T 0005', month: '2022-06', quantityMade: 101400 }
 ];
+
+export const INITIAL_USERS = [
+  {
+    id: 'USR-001',
+    name: 'Admin User',
+    empId: 'EMP-001',
+    email: 'admin@inel.com',
+    role: 'Administrator',
+    department: 'Plant Operations',
+    phone: '+91 98401 23456',
+    status: 'Active',
+    createdDate: '2023-01-01',
+    avatar: 'AD'
+  },
+  {
+    id: 'USR-002',
+    name: 'R. Sharma',
+    empId: 'EMP-014',
+    email: 'r.sharma@inel.com',
+    role: 'Tool Room Engineer',
+    department: 'Tool Room',
+    phone: '+91 98401 23457',
+    status: 'Active',
+    createdDate: '2023-01-10',
+    avatar: 'RS'
+  },
+  {
+    id: 'USR-003',
+    name: 'K. Patel',
+    empId: 'EMP-022',
+    email: 'k.patel@inel.com',
+    role: 'Quality Inspector',
+    department: 'Quality Assurance',
+    phone: '+91 98401 23458',
+    status: 'Active',
+    createdDate: '2023-02-15',
+    avatar: 'KP'
+  },
+  {
+    id: 'USR-004',
+    name: 'M. Verma',
+    empId: 'EMP-005',
+    email: 'm.verma@inel.com',
+    role: 'Plant Head',
+    department: 'Management',
+    phone: '+91 98401 23459',
+    status: 'Active',
+    createdDate: '2022-11-01',
+    avatar: 'MV'
+  },
+  {
+    id: 'USR-005',
+    name: 'A. Rao',
+    empId: 'EMP-018',
+    email: 'a.rao@inel.com',
+    role: 'Tool Design Engineer',
+    department: 'Tool Design',
+    phone: '+91 98401 23460',
+    status: 'Active',
+    createdDate: '2023-03-20',
+    avatar: 'AR'
+  }
+];
