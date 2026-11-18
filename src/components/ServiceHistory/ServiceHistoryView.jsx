@@ -384,7 +384,7 @@ export default function ServiceHistoryView({
           </div>
         </div>
 
-        <div className="tool-summary-meta-grid" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+        <div className="tool-summary-meta-grid" style={{ gridTemplateColumns: 'repeat(8, minmax(0, 1fr))' }}>
           <div className="meta-item">
             <span className="meta-label">App Part No (Parent)</span>
             <span className="meta-val" id="shAppPartVal" style={{ fontWeight: 700, color: '#1e40af', fontFamily: 'var(--font-mono)', textAlign: 'left' }}>
@@ -400,6 +400,13 @@ export default function ServiceHistoryView({
           <div className="meta-item">
             <span className="meta-label">Classification</span>
             <span className="meta-val" id="shClassificationVal" style={{ textAlign: 'left' }}>{selectedTool.classification || 'Non-Critical'}</span>
+          </div>
+
+          <div className="meta-item">
+            <span className="meta-label">Tool Issued On</span>
+            <span className="meta-val" id="shToolIssuedOnVal" style={{ fontSize: '13.5px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--slate-700)', textAlign: 'left' }}>
+              {selectedTool.toolIssuedOn || '—'}
+            </span>
           </div>
 
           <div className="meta-item">

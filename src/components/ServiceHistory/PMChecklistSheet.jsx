@@ -354,17 +354,17 @@ export default function PMChecklistSheet({ tool, showToast }) {
               </div>
             </div>
 
-            {/* Row 3: Application */}
+            {/* Row 3: Application & Tool Issued On */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '130px 1fr',
+              gridTemplateColumns: '130px 1fr 120px 200px',
               minHeight: '38px',
               alignItems: 'center'
             }}>
               <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc' }}>
                 Application
               </div>
-              <div style={{ padding: '4px 10px' }}>
+              <div style={{ padding: '4px 10px', borderRight: '1px solid #334155' }}>
                 <input
                   type="text"
                   className="pm-sheet-input"
@@ -373,6 +373,12 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   placeholder="e.g. N251C IG COIL / Steering Yoke Assembly"
                   style={{ width: '100%', border: 'none', background: 'transparent', fontWeight: 600, color: '#0f172a' }}
                 />
+              </div>
+              <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc' }}>
+                Tool Issued On:
+              </div>
+              <div style={{ padding: '6px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0f172a' }}>
+                {tool.toolIssuedOn || '—'}
               </div>
             </div>
 
