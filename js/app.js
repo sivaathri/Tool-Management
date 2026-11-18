@@ -1062,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tr.innerHTML = `
       <td style="text-align: center; font-weight: 700; color: var(--slate-700); font-family: var(--font-mono); width: 60px; vertical-align: middle; padding: 8px 6px;" class="cp-sno">${sno}</td>
       <td style="padding: 8px 10px;">
-        <textarea class="form-textarea cp-input" rows="2" placeholder="e.g. CHECK COIL LOCATOR FOR ANY DAMAGES" required style="width: 100%; min-height: 52px; resize: vertical; font-size: 13px; line-height: 1.5; padding: 8px 12px; margin: 0; box-sizing: border-box; font-family: inherit;">${escapeHtmlAttr(text)}</textarea>
+        <textarea class="form-textarea cp-input" rows="2" placeholder="Enter check point description..." required style="width: 100%; min-height: 52px; resize: vertical; font-size: 13px; line-height: 1.5; padding: 8px 12px; margin: 0; box-sizing: border-box; font-family: inherit;">${escapeHtmlAttr(text)}</textarea>
       </td>
       <td style="text-align: center; width: 60px; vertical-align: middle; padding: 8px 6px;">
         <button type="button" class="btn btn-secondary btn-sm btn-delete-cp" style="color: #ef4444; padding: 6px 10px; height: 34px;" title="Remove check point">✕</button>
@@ -1087,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadCheckPointsIntoForm(points = []) {
     if (!DOM.checkPointsTableBody) return;
     DOM.checkPointsTableBody.innerHTML = '';
-    const list = (points && points.length > 0) ? points : DEFAULT_CHECK_POINTS;
+    const list = (points && points.length > 0) ? points : [''];
     list.forEach((pt, idx) => {
       const text = typeof pt === 'string' ? pt : (pt.point || pt.text || '');
       const row = renderCheckPointRow(idx + 1, text);
@@ -1177,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.inpProductName) DOM.inpProductName.value = '';
       if (DOM.inpToolNumber) DOM.inpToolNumber.value = '';
       if (DOM.inpToolDescription) DOM.inpToolDescription.value = '';
-      loadCheckPointsIntoForm(DEFAULT_CHECK_POINTS);
+      loadCheckPointsIntoForm(['']);
     }
 
     openModal(DOM.modalAddTool);
@@ -1897,7 +1897,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? tool.checkPoints.map((cp, idx) => `
                     <tr>
                       <td style="text-align: center; font-weight: 700; font-family: var(--font-mono); color: var(--slate-700);">${cp.sno || (idx + 1)}</td>
-                      <td style="font-weight: 600; color: var(--slate-900);">${cp.point || cp}</td>
+                      <td style="font-weight: 600; color: var(--slate-900); white-space: normal; line-height: 1.5; padding: 10px 14px;">${cp.point || cp}</td>
                     </tr>
                   `).join('')
                 : '<tr><td colspan="2" style="text-align:center; color: var(--slate-500);">No check points specified</td></tr>'}
