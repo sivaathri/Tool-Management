@@ -102,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modalAddTool: document.getElementById('modalAddTool'),
     formToolMaster: document.getElementById('formToolMaster'),
     modalToolTitle: document.getElementById('modalToolTitle'),
+    selAppPartDropdown: document.getElementById('selAppPartDropdown'),
     inpAppPartNo: document.getElementById('inpAppPartNo'),
     inpProductName: document.getElementById('inpProductName'),
     inpToolNumber: document.getElementById('inpToolNumber'),
