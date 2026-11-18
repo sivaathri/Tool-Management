@@ -167,17 +167,40 @@ export default function AddEditToolModal({
               <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label" htmlFor="inpToolNumber">Tool No. *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    id="inpToolNumber"
-                    placeholder="e.g. INE T 1122"
-                    value={formData.toolNo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, toolNo: e.target.value }))}
-                    required
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      id="inpToolNumber"
+                      placeholder="e.g. INE T 1122"
+                      value={formData.toolNo}
+                      onChange={(e) => setFormData(prev => ({ ...prev, toolNo: e.target.value }))}
+                      style={{ paddingRight: formData.toolNo ? '30px' : '12px' }}
+                      required
+                    />
+                    {formData.toolNo && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, toolNo: '' }))}
+                        title="Clear Tool No"
+                        style={{
+                          position: 'absolute',
+                          right: '8px',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--slate-400)',
+                          cursor: 'pointer',
+                          fontSize: '17px',
+                          lineHeight: '1',
+                          padding: '4px'
+                        }}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
                   <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
-                    Tool No. format: <strong>INE T [Number]</strong>
+                    Format: <strong>INE T [Number]</strong> (e.g. INE T 1122 or enter 1122)
                   </div>
                 </div>
                 <div className="form-group">
