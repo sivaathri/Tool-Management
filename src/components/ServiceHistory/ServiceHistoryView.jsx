@@ -304,41 +304,41 @@ export default function ServiceHistoryView({
           </div>
         </div>
 
-        <div className="tool-summary-meta-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+        <div className="tool-summary-meta-grid" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
           <div className="meta-item">
             <span className="meta-label">App Part No (Parent)</span>
-            <span className="meta-val" id="shAppPartVal" style={{ fontWeight: 700, color: '#1e40af', fontFamily: 'var(--font-mono)' }}>
+            <span className="meta-val" id="shAppPartVal" style={{ fontWeight: 700, color: '#1e40af', fontFamily: 'var(--font-mono)', textAlign: 'left' }}>
               {selectedTool.applicationPartNo}
             </span>
           </div>
 
           <div className="meta-item">
             <span className="meta-label">Product Name</span>
-            <span className="meta-val" id="shProductVal">{selectedTool.productName || '—'}</span>
+            <span className="meta-val" id="shProductVal" style={{ textAlign: 'left' }}>{selectedTool.productName || '—'}</span>
           </div>
 
           <div className="meta-item">
             <span className="meta-label">Classification</span>
-            <span className="meta-val" id="shClassificationVal">{selectedTool.classification || 'Non-Critical'}</span>
+            <span className="meta-val" id="shClassificationVal" style={{ textAlign: 'left' }}>{selectedTool.classification || 'Non-Critical'}</span>
           </div>
 
           <div className="meta-item">
             <span className="meta-label">Tool Count</span>
-            <span className="meta-val col-numeric" id="shToolCountVal" style={{ fontSize: '14px', fontWeight: 600 }}>
+            <span className="meta-val" id="shToolCountVal" style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-mono)', textAlign: 'left' }}>
               {selectedTool.toolCount ?? 0}
             </span>
           </div>
 
           <div className="meta-item">
             <span className="meta-label">Life Time Limit</span>
-            <span className="meta-val col-numeric" id="shRepLimitVal" style={{ fontSize: '15px', color: 'var(--accent-700)' }}>
+            <span className="meta-val" id="shRepLimitVal" style={{ fontSize: '15px', color: 'var(--accent-700)', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'left' }}>
               {formatNumber(selectedTool.lifetime)}
             </span>
           </div>
 
           <div className="meta-item">
             <span className="meta-label">Current Cumulative</span>
-            <span className="meta-val col-numeric" id="shCumulativeVal" style={{ fontSize: '15px' }}>
+            <span className="meta-val" id="shCumulativeVal" style={{ fontSize: '15px', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'left' }}>
               {formatNumber(selectedTool.cumulative)}
             </span>
           </div>
@@ -346,9 +346,9 @@ export default function ServiceHistoryView({
           <div className="meta-item">
             <span className="meta-label">Remaining Balance</span>
             <span
-              className="meta-val col-numeric"
+              className="meta-val"
               id="shBalanceVal"
-              style={{ fontSize: '15px', color: selectedTool.balance <= 0 ? '#dc2626' : '#d97706' }}
+              style={{ fontSize: '15px', color: selectedTool.balance <= 0 ? '#dc2626' : '#d97706', fontFamily: 'var(--font-mono)', fontWeight: 600, textAlign: 'left' }}
             >
               {formatNumber(selectedTool.balance)}
             </span>

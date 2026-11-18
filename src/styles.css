@@ -1244,7 +1244,7 @@ body {
 
 .tool-summary-meta-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -1252,7 +1252,8 @@ body {
 .meta-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  text-align: left;
 }
 
 .meta-label {
@@ -1260,12 +1261,18 @@ body {
   color: var(--slate-500);
   text-transform: uppercase;
   font-weight: 600;
+  text-align: left;
 }
 
 .meta-val {
   font-size: 14px;
   font-weight: 600;
   color: var(--slate-900);
+  text-align: left;
+}
+
+.tool-summary-meta-grid .meta-val {
+  text-align: left !important;
 }
 
 .tool-summary-progress {
