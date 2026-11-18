@@ -126,8 +126,12 @@ export default function App() {
 
   useEffect(() => {
     reloadData();
+  }, []);
 
-    // Check for immediate alert notifications on startup
+  // Check for immediate alert notifications only after user is logged in (never on login screen)
+  useEffect(() => {
+    if (!currentUser) return;
+
     const timer = setTimeout(() => {
       const allTools = getTools();
       const criticalTools = allTools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun');
@@ -147,7 +151,7 @@ export default function App() {
     }, 700);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [currentUser]);
 
   // Handlers for Tools
   const handleOpenAddTool = () => {
@@ -256,10 +260,7 @@ export default function App() {
 
   if (!currentUser) {
     return (
-      <>
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
-        <LoginScreen onLogin={handleLogin} users={users} showToast={addToast} />
-      </>
+      <LoginScreen onLogin={handleLogin} users={users} showToast={addToast} />
     );
   }
 
