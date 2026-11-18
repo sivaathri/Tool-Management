@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPMRecords, savePMRecord, deletePMRecord } from '../../data/storage';
+import { savePMRecord } from '../../data/storage';
 
 export default function PMChecklistSheet({ tool, showToast }) {
   if (!tool) return null;
@@ -70,7 +70,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
     tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || 'N251C IG COIL')
   );
   const [rows, setRows] = useState([]);
-  const [pastRecords, setPastRecords] = useState([]);
   const [activeRecordId, setActiveRecordId] = useState(null);
 
   // Sync rows whenever tool changes
@@ -82,14 +81,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
     setApplication(tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || 'N251C IG COIL'));
     setRows(createDefaultRows());
     setActiveRecordId(null);
-    loadPastRecords();
   }, [tool.id, tool.toolNo]);
-
-  const loadPastRecords = () => {
-    const all = getPMRecords();
-    const toolRecs = all.filter(r => r.toolId === tool.id || r.toolNo === tool.toolNo);
-    setPastRecords(toolRecs);
-  };
 
   const handleRowChange = (index, field, value) => {
     setRows(prev => {
@@ -116,42 +108,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
     savePMRecord(record);
     setActiveRecordId(record.id);
-    loadPastRecords();
     showToast?.(`Preventive Maintenance check saved for ${tool.toolNo}`, 'success');
-  };
-
-  // Load a past record
-  const handleLoadRecord = (rec) => {
-    setActiveRecordId(rec.id);
-    setRefNo(rec.refNo || 'MFG/FR/075');
-    setCheckDate(rec.checkDate || getTodayDate());
-    setNextDueDate(rec.nextDueDate || getNextDueDate());
-    setToolDescription(rec.toolDescription || tool.description || '');
-    setApplication(rec.application || tool.productName || '');
-    if (Array.isArray(rec.items) && rec.items.length > 0) {
-      setRows(rec.items);
-    }
-    showToast?.(`Loaded PM record from ${rec.checkDate}`, 'info');
-  };
-
-  // New Inspection
-  const handleNewChecklist = () => {
-    setActiveRecordId(null);
-    setCheckDate(getTodayDate());
-    setNextDueDate(getNextDueDate());
-    setRows(createDefaultRows());
-    showToast?.('Started a new inspection checklist', 'info');
-  };
-
-  // Delete past record
-  const handleDeleteRecord = (id, e) => {
-    e.stopPropagation();
-    if (window.confirm('Delete this PM inspection record?')) {
-      deletePMRecord(id);
-      if (activeRecordId === id) setActiveRecordId(null);
-      loadPastRecords();
-      showToast?.('Inspection record deleted', 'info');
-    }
   };
 
   const isCritical = tool.classification === 'Critical';
@@ -558,58 +515,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
         </div>
 
       </div>
-
-      {/* Past PM History Accordion */}
-      {pastRecords.length > 0 && (
-        <div style={{
-          padding: '16px 24px',
-          borderTop: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--slate-50)'
-        }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--slate-800)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <span>Previously Recorded Preventive Maintenance Checklists ({pastRecords.length})</span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
-            {pastRecords.map((rec) => (
-              <div
-                key={rec.id}
-                onClick={() => handleLoadRecord(rec)}
-                style={{
-                  padding: '10px 14px',
-                  backgroundColor: activeRecordId === rec.id ? '#eff6ff' : '#ffffff',
-                  border: activeRecordId === rec.id ? '1.5px solid var(--accent-600)' : '1px solid var(--border-subtle)',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <strong style={{ fontSize: '12.5px', color: 'var(--slate-900)' }}>{rec.checkDate}</strong>
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteRecord(rec.id, e)}
-                    style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}
-                    title="Delete record"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div style={{ fontSize: '11.5px', color: 'var(--slate-600)' }}>
-                  Ref: {rec.refNo || 'MFG/FR/075'}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--accent-700)', marginTop: '4px', fontWeight: 600 }}>
-                  {rec.items?.length || 0} Points Inspected → Click to view
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
     </div>
   );
