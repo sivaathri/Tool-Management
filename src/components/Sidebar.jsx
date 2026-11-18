@@ -132,7 +132,7 @@ export default function Sidebar({
             <div className="user-avatar">AD</div>
             <div className="user-info">
               <div className="user-name">Admin User</div>
-              <div className="user-role">Plant Tool Room Lead</div>
+           
             </div>
           </div>
           <button
