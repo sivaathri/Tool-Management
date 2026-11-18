@@ -29,8 +29,22 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Replacement Alerts</h1>
-          <p className="page-subtitle">Preventive maintenance limits and tool replacement schedule</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 className="page-title">Notifications & Tool Alerts</h1>
+            {allAttention.length > 0 && (
+              <span style={{
+                padding: '3px 10px',
+                fontSize: '12px',
+                fontWeight: 800,
+                borderRadius: '12px',
+                backgroundColor: dueTools.length > 0 ? '#fee2e2' : '#fef3c7',
+                color: dueTools.length > 0 ? '#dc2626' : '#b45309'
+              }}>
+                {dueTools.length > 0 ? `🚨 ${dueTools.length} Urgent` : `⚠️ ${nearTools.length} Warnings`}
+              </span>
+            )}
+          </div>
+          <p className="page-subtitle">Real-time preventive maintenance notifications, replacement due alerts, and stroke limit warnings</p>
         </div>
         <div className="header-actions">
           <button type="button" className="btn btn-secondary btn-sm" id="btnExportAlertsCSV" onClick={handleExportCSV}>
@@ -44,6 +58,148 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
         </div>
       </div>
 
+      {/* KPI Overview Summary */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '14px',
+        marginBottom: '18px'
+      }}>
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '10px',
+          border: '1.5px solid #fecaca',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          boxShadow: '0 2px 6px rgba(220, 38, 38, 0.06)'
+        }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: '#fee2e2',
+            color: '#dc2626',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px'
+          }}>
+            🚨
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              Replacement Due (≥ 100%)
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: '#991b1b', marginTop: '2px' }}>
+              {dueTools.length}
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '10px',
+          border: '1.5px solid #fde68a',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          boxShadow: '0 2px 6px rgba(217, 119, 6, 0.06)'
+        }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: '#fef3c7',
+            color: '#d97706',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px'
+          }}>
+            ⚠️
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              Near Limit Warning (80% - 99%)
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
+              {nearTools.length}
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '10px',
+          border: '1.5px solid #e2e8f0',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px'
+        }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: '#f1f5f9',
+            color: '#475569',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px'
+          }}>
+            🔔
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              Total Alerts Requiring Action
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--slate-800)', marginTop: '2px' }}>
+              {allAttention.length}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Immediate Alert Banner if replacement due */}
+      {dueTools.length > 0 && (
+        <div style={{
+          backgroundColor: '#fef2f2',
+          border: '1.5px solid #fecaca',
+          borderRadius: '10px',
+          padding: '14px 18px',
+          marginBottom: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '22px' }}>🚨</span>
+            <div>
+              <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#991b1b' }}>
+                IMMEDIATE ACTION REQUIRED: {dueTools.length} tool(s) reached 100% rated life limit
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#b91c1c', marginTop: '2px' }}>
+                Tools ({dueTools.map(t => t.toolNo).join(', ')}) have exceeded their rated life stroke limit. Replace tools to start a fresh cycle and reset cumulative output to 0.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            onClick={() => setReplacingTool(dueTools[0])}
+            style={{ fontWeight: 700, padding: '7px 16px', whiteSpace: 'nowrap' }}
+          >
+            Replace {dueTools[0].toolNo} Now
+          </button>
+        </div>
+      )}
+
       {/* Alert Filter Tabs */}
       <div className="filter-card">
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -51,24 +207,35 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
             type="button"
             className={`btn btn-sm ${filterType === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilterType('ALL')}
+            style={{ fontWeight: 700, padding: '6px 14px' }}
           >
-            All Attention Tools ({allAttention.length})
+            🔔 All Notifications ({allAttention.length})
           </button>
           <button
             type="button"
             className={`btn btn-sm ${filterType === 'DUE' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilterType('DUE')}
-            style={filterType === 'DUE' ? { backgroundColor: '#dc2626', borderColor: '#dc2626' } : {}}
+            style={{
+              fontWeight: 700,
+              padding: '6px 14px',
+              backgroundColor: filterType === 'DUE' ? '#dc2626' : '',
+              borderColor: filterType === 'DUE' ? '#dc2626' : ''
+            }}
           >
-            Replacement Due (&ge; 100%) ({dueTools.length})
+            🚨 Critical: Replacement Due ({dueTools.length})
           </button>
           <button
             type="button"
             className={`btn btn-sm ${filterType === 'NEAR' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilterType('NEAR')}
-            style={filterType === 'NEAR' ? { backgroundColor: '#d97706', borderColor: '#d97706' } : {}}
+            style={{
+              fontWeight: 700,
+              padding: '6px 14px',
+              backgroundColor: filterType === 'NEAR' ? '#d97706' : '',
+              borderColor: filterType === 'NEAR' ? '#d97706' : ''
+            }}
           >
-            Near Limit (80% - 99%) ({nearTools.length})
+            ⚠️ Warning: Near Limit ({nearTools.length})
           </button>
         </div>
       </div>

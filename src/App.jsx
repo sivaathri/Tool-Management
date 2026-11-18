@@ -85,6 +85,27 @@ export default function App() {
 
   useEffect(() => {
     reloadData();
+
+    // Check for immediate alert notifications on startup
+    const timer = setTimeout(() => {
+      const allTools = getTools();
+      const criticalTools = allTools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun');
+      const warningTools = allTools.filter(t => t.status === 'Near Limit');
+
+      if (criticalTools.length > 0) {
+        addToast(
+          `🚨 IMMEDIATE ALERT: ${criticalTools.length} tool(s) reached 100% stroke life limit (${criticalTools.map(c => c.toolNo).join(', ')}). Replacement due!`,
+          'danger'
+        );
+      } else if (warningTools.length > 0) {
+        addToast(
+          `⚠️ ALERT: ${warningTools.length} tool(s) near stroke limit (${warningTools.map(w => w.toolNo).join(', ')}). Check Notifications menu.`,
+          'warning'
+        );
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Handlers for Tools
@@ -135,6 +156,26 @@ export default function App() {
   const handleAddProductionLog = (logData) => {
     addProductionLog(logData);
     reloadData();
+
+    // Immediate Alert Notification if tool reaches Replacement Due or Near Limit
+    setTimeout(() => {
+      const allTools = getTools();
+      const tool = allTools.find(t => t.id === logData.toolId || (t.toolNo && t.toolNo.toLowerCase() === (logData.toolNo || '').toLowerCase()));
+      if (tool) {
+        const pct = Math.min(100, Math.round(((tool.cumulative || 0) / (tool.lifetime || 1)) * 100));
+        if (tool.status === 'Replacement Due' || tool.cumulative >= tool.lifetime) {
+          addToast(
+            `🚨 CRITICAL ALERT: Tool ${tool.toolNo} reached 100% stroke life limit (${tool.cumulative.toLocaleString()} / ${tool.lifetime.toLocaleString()}). Replacement Due immediately!`,
+            'danger'
+          );
+        } else if (tool.status === 'Near Limit' || pct >= 80) {
+          addToast(
+            `⚠️ WARNING ALERT: Tool ${tool.toolNo} is near limit (${pct}% used, ${tool.cumulative.toLocaleString()} strokes). Prepare replacement die set soon.`,
+            'warning'
+          );
+        }
+      }
+    }, 150);
   };
 
   const handleDeleteProductionLog = (logId) => {
@@ -183,6 +224,7 @@ export default function App() {
         toolCount={tools.length}
         userCount={users.length}
         urgentAlertCount={metrics.criticalAlertsCount}
+        warningAlertCount={metrics.warningAlertsCount}
         onLogout={() => setIsLogoutConfirmOpen(true)}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
@@ -193,8 +235,8 @@ export default function App() {
         {/* Top Header */}
         <Header
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          onOpenAlerts={() => setCurrentView('replacement-alerts')}
-          alertCount={metrics.criticalAlertsCount}
+          onOpenAlerts={() => setCurrentView('notifications')}
+          alertCount={metrics.criticalAlertsCount + metrics.warningAlertsCount}
         />
 
         {/* Content Views */}
@@ -244,7 +286,7 @@ export default function App() {
             />
           )}
 
-          {currentView === 'replacement-alerts' && (
+          {(currentView === 'notifications' || currentView === 'replacement-alerts') && (
             <ReplacementAlertsView
               tools={tools}
               onViewDossier={setDossierTool}
