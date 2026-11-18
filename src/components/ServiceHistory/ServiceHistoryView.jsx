@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { formatNumber } from '../../data/storage';
+import { formatNumber, exportToolsToCSV, exportPMReportToCSV } from '../../data/storage';
 import AddProductionModal from './AddProductionModal';
 import PMChecklistSheet from './PMChecklistSheet';
 import ToolReplacementModal from './ToolReplacementModal';
+import ExportReportModal from './ExportReportModal';
 
 // Format date string to "MMM-YY" (e.g. "Oct-18", "Nov-18", "Feb-23")
 function formatMonthYear(dateStr) {
@@ -54,6 +55,7 @@ export default function ServiceHistoryView({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedCycleTab, setSelectedCycleTab] = useState('current');
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const searchComboRef = useRef(null);
@@ -281,6 +283,23 @@ export default function ServiceHistoryView({
     setSelectedCycleTab('current');
   };
 
+  const handleExportExcel = () => {
+    if (selectedTool) {
+      exportPMReportToCSV(selectedTool, displayedLogs);
+      showToast?.(`Preventive Maintenance report for ${selectedTool.toolNo} exported to Excel (.csv)`, 'success');
+    } else {
+      exportToolsToCSV(tools, 'pm_tools_summary.csv');
+      showToast?.('Tools summary exported to Excel (.csv)', 'success');
+    }
+  };
+
+  const handleExportPDF = () => {
+    showToast?.('Opening Print view to save as PDF...', 'info');
+    setTimeout(() => {
+      window.print();
+    }, 250);
+  };
+
   const pct = selectedTool ? Math.min(100, Math.round((selectedTool.cumulative / (selectedTool.lifetime || 1)) * 100)) : 0;
   const isHealthy = selectedTool ? (selectedTool.status === 'Active' || selectedTool.status === 'Healthy') : false;
   const isNear = selectedTool ? selectedTool.status === 'Near Limit' : false;
@@ -297,19 +316,21 @@ export default function ServiceHistoryView({
           </div>
         </div>
         <div className="header-actions">
-          <button
-            type="button"
-            className="btn-export-pill"
-            onClick={() => window.print()}
-            title="Export Report"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            <span>Export Report</span>
-          </button>
+          {selectedTool && (
+            <button
+              type="button"
+              className="btn-export-pill"
+              onClick={() => setIsExportModalOpen(true)}
+              title="Export Report"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Export Report</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -470,37 +491,6 @@ export default function ServiceHistoryView({
                 <span>{selectedCycleTab === 'current' ? '📜 View Old Data' : '✨ View Fresh Cycle'}</span>
               </button>
             )}
-
-            <button
-              type="button"
-              className={`btn ${selectedTool.status === 'Replacement Due' ? 'btn-danger' : 'btn-secondary'}`}
-              id="btnReplaceTool"
-              onClick={() => setIsReplaceModalOpen(true)}
-              style={{
-                padding: '9px 16px',
-                fontSize: '13.5px',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '7px',
-                ...(selectedTool.status === 'Replacement Due' ? {
-                  backgroundColor: '#dc2626',
-                  color: '#ffffff',
-                  borderColor: '#dc2626',
-                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.35)'
-                } : {
-                  backgroundColor: '#ffffff',
-                  color: 'var(--slate-700)',
-                  borderColor: '#cbd5e1'
-                })
-              }}
-              title="Replace tool to start a fresh cycle upon reaching life limit"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-              </svg>
-              <span>{selectedTool.status === 'Replacement Due' ? 'Replace Tool (Life Limit Reached)' : 'Replace Tool'}</span>
-            </button>
 
             <button
               type="button"
@@ -1292,6 +1282,15 @@ export default function ServiceHistoryView({
           </p>
         </div>
       )}
+
+      {/* Export Report Choice Modal (Excel vs PDF) */}
+      <ExportReportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExportExcel={handleExportExcel}
+        onExportPDF={handleExportPDF}
+        tool={selectedTool}
+      />
     </section>
   );
 }

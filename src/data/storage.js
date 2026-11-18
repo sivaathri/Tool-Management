@@ -56,6 +56,64 @@ export function exportToolsToCSV(toolsList, filename = 'tools_master_list.csv') 
   document.body.removeChild(link);
 }
 
+// Export complete Preventive Maintenance Card & Production History for a Tool to CSV (Excel format)
+export function exportPMReportToCSV(tool, logs = []) {
+  if (!tool) return;
+  const lines = [];
+  lines.push('PREVENTIVE MAINTENANCE & TOOL RECORD SHEET');
+  lines.push(`Generated On,"${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}"`);
+  lines.push('');
+  lines.push('1. TOOL SPECIFICATION & METADATA');
+  lines.push(`Tool No,"${tool.toolNo || ''}"`);
+  lines.push(`Application Part No,"${tool.applicationPartNo || ''}"`);
+  lines.push(`Product Name,"${(tool.productName || '').replace(/"/g, '""')}"`);
+  lines.push(`Description,"${(tool.description || '').replace(/"/g, '""')}"`);
+  lines.push(`Classification,"${tool.classification || 'Non-Critical'}"`);
+  lines.push(`Tool Issued On,"${tool.toolIssuedOn || ''}"`);
+  lines.push(`Tool Count (Current Cycle),${tool.toolCount ?? 0}`);
+  lines.push(`Life Time Limit (Stroke / Cycle Limit),${tool.lifetime || 0}`);
+  lines.push(`Current Cumulative Produced,${tool.cumulative || 0}`);
+  lines.push(`Remaining Balance,${tool.balance || 0}`);
+  lines.push(`Status,"${tool.status || 'Active'}"`);
+  lines.push('');
+
+  lines.push('2. PREVENTIVE MAINTENANCE CHECK POINTS & SPECIFICATIONS');
+  lines.push('S.No,Check Points,Checking Method,Specification');
+  (tool.checkPoints || []).forEach((cp, idx) => {
+    lines.push(`${idx + 1},"${(cp.point || '').replace(/"/g, '""')}","${(cp.method || 'Visual').replace(/"/g, '""')}","${(cp.spec || '').replace(/"/g, '""')}"`);
+  });
+  lines.push('');
+
+  lines.push('3. QUANTITY PRODUCED (PRODUCTION TRACKING)');
+  lines.push('Month,Quantity Made,Cumulative Made,Cycle');
+  if (logs.length === 0) {
+    lines.push('No production logs recorded yet,,,');
+  } else {
+    logs.forEach(l => {
+      lines.push(`"${l.monthDisplay || l.date || ''}",${l.quantityMade || l.quantity || 0},${l.cumulativeMade || 0},Cycle ${l.cycle ?? 0}`);
+    });
+  }
+  lines.push('');
+
+  if (tool.replacements && tool.replacements.length > 0) {
+    lines.push('4. TOOL REPLACEMENT & OVERHAUL HISTORY');
+    lines.push('Date,Cycle Transition,Strokes at Retirement,Authorized By,Remarks');
+    tool.replacements.forEach(r => {
+      lines.push(`"${r.replacementDate || ''}","Cycle ${r.cycle} -> Cycle ${r.newCycle}",${r.finalCumulative || 0},"${(r.replacedBy || '').replace(/"/g, '""')}","${(r.remarks || '').replace(/"/g, '""')}"`);
+    });
+  }
+
+  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + lines.join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  const cleanToolNo = (tool.toolNo || 'TOOL').replace(/\s+/g, '_');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `PM_Report_${cleanToolNo}_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 // Helper to strictly enforce "INE T " prefix on all tool numbers
 export function formatToolNumber(val) {
   if (!val) return 'INE T 0000';
@@ -466,5 +524,6 @@ export const TMSStorage = {
   resetToInitialData,
   formatNumber,
   formatToolNumber,
-  exportToolsToCSV
+  exportToolsToCSV,
+  exportPMReportToCSV
 };
