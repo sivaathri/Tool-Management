@@ -51,7 +51,7 @@ export default function AddEditToolModal({
       setFormData({
         applicationPartNo: '',
         productName: '',
-        toolNo: '',
+        toolNo: 'INE T ',
         description: '',
         toolIssuedOn: new Date().toISOString().slice(0, 10),
         lifetime: '',
@@ -96,12 +96,20 @@ export default function AddEditToolModal({
       return;
     }
 
+    let cleanToolNo = formData.toolNo.trim();
+    if (!cleanToolNo.toUpperCase().startsWith('INE T')) {
+      const digits = cleanToolNo.replace(/[^0-9]/g, '');
+      cleanToolNo = `INE T ${digits || cleanToolNo}`;
+    } else {
+      cleanToolNo = cleanToolNo.replace(/^INE\s*T\s*/i, 'INE T ');
+    }
+
     onSave({
       id: formData.id || currentTool?.id,
       applicationPartNo: formData.applicationPartNo.trim(),
       productName: formData.productName.trim(),
-      toolNo: formData.toolNo.trim(),
-      toolNumber: formData.toolNo.trim(),
+      toolNo: cleanToolNo,
+      toolNumber: cleanToolNo,
       description: formData.description.trim(),
       toolDescription: formData.description.trim(),
       toolIssuedOn: formData.toolIssuedOn,
@@ -178,6 +186,9 @@ export default function AddEditToolModal({
                     onChange={(e) => setFormData(prev => ({ ...prev, toolNo: e.target.value }))}
                     required
                   />
+                  <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                    Tool No. format: <strong>INE T [Number]</strong>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="inpToolDescription">Description *</label>
