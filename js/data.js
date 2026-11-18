@@ -27,40 +27,102 @@ const INITIAL_MACHINES = [
 
 // Initial Seed Data: 15 Tools with detailed specifications & spares
 const INITIAL_TOOLS = [
+  // Client Requirement Example 1: Part 001 -> Tool INE T 1122 (Critical)
   {
-    toolNumber: 'TOOL-001',
-    toolDescription: 'Yoke Pressing Tool',
-    toolType: 'B',
+    applicationPartNo: '001',
+    productName: 'Steering Yoke Assembly',
+    toolNumber: 'INE T 1122',
+    toolDescription: 'Yoke Pressing Upper Die',
+    issuedDate: '2023-01-10',
+    lifeTime: 200000,
+    replacementFrequency: 200000,
+    classification: 'Critical',
+    toolType: 'Critical',
+    toolCount: 1,
     machineId: 'MCH-01',
     machineNumber: 'MCH-01',
     machineName: 'Hydraulic Press 100T',
     operation: 'Yoke Pressing',
-    application: 'Automotive Steering Yoke Assembly Line',
-    issuedDate: '2018-05-10',
+    application: 'Steering Yoke Assembly',
     amrQuantity: '200,000',
-    replacementFrequency: 200000,
     preparedBy: 'R. Sharma (Tool Room)',
     checkedBy: 'K. Patel (Tool Lead)',
     approvedBy: 'M. Verma (Plant Head)',
     remarks: 'High precision die for steering yoke forging. Regrind top tool if burr exceeds 0.05mm.',
     spares: [
-      { detailNo: '01', description: 'Top Tool', qtySet: 1, required: 1, available: 1, freqReplacement: 200000 },
-      { detailNo: '02', description: 'Bottom Die Insert', qtySet: 1, required: 1, available: 2, freqReplacement: 200000 },
-      { detailNo: '03', description: 'Guide Bushing Set', qtySet: 4, required: 4, available: 4, freqReplacement: 100000 }
+      { detailNo: '01', description: 'Top Punch Insert', qtySet: 1, required: 1, available: 1, freqReplacement: 200000 },
+      { detailNo: '02', description: 'Bottom Die Bushing', qtySet: 2, required: 2, available: 2, freqReplacement: 100000 }
+    ]
+  },
+  // Client Requirement Example 2: Part 001 -> Tool INE T 1133 (Non-Critical, same parent Part 001!)
+  {
+    applicationPartNo: '001',
+    productName: 'Steering Yoke Assembly',
+    toolNumber: 'INE T 1133',
+    toolDescription: 'Yoke Broaching Punch',
+    issuedDate: '2023-02-15',
+    lifeTime: 150000,
+    replacementFrequency: 150000,
+    classification: 'Non-Critical',
+    toolType: 'Non-Critical',
+    toolCount: 1,
+    machineId: 'MCH-01',
+    machineNumber: 'MCH-01',
+    machineName: 'Hydraulic Press 100T',
+    operation: 'Yoke Broaching',
+    application: 'Steering Yoke Assembly',
+    amrQuantity: '150,000',
+    preparedBy: 'R. Sharma (Tool Room)',
+    checkedBy: 'K. Patel (Tool Lead)',
+    approvedBy: 'M. Verma (Plant Head)',
+    remarks: 'Broaching punch for yoke spline broach.',
+    spares: [
+      { detailNo: '01', description: 'Punch Guide Pin', qtySet: 2, required: 2, available: 4, freqReplacement: 150000 }
+    ]
+  },
+  // Client Requirement Example 3: Part 002 -> Tool INE T 0652 (Critical, parent Part 002)
+  {
+    applicationPartNo: '002',
+    productName: 'Brake Caliper Assembly',
+    toolNumber: 'INE T 0652',
+    toolDescription: 'Caliper Forming Lower Die',
+    issuedDate: '2023-03-20',
+    lifeTime: 180000,
+    replacementFrequency: 180000,
+    classification: 'Critical',
+    toolType: 'Critical',
+    toolCount: 2,
+    machineId: 'MCH-07',
+    machineNumber: 'MCH-07',
+    machineName: 'Hydraulic Deep Draw Press 120T',
+    operation: 'Cold Forming',
+    application: 'Brake Caliper Assembly',
+    amrQuantity: '180,000',
+    preparedBy: 'A. Rao (Tool Design)',
+    checkedBy: 'K. Patel (Tool Lead)',
+    approvedBy: 'M. Verma (Plant Head)',
+    remarks: 'Near limit replacement punch. High priority inspection schedule.',
+    spares: [
+      { detailNo: '01', description: 'Forming Nose Insert', qtySet: 1, required: 1, available: 1, freqReplacement: 180000 }
     ]
   },
   {
+    applicationPartNo: '003',
+    productName: 'Engine Connecting Rod Line 2',
     toolNumber: 'TOOL-002',
     toolDescription: 'Connecting Rod Trimming Die',
-    toolType: 'A',
+    issuedDate: '2019-01-15',
+    lifeTime: 150000,
+    replacementFrequency: 150000,
+    classification: 'Critical',
+    toolType: 'Critical',
+    toolCount: 1,
     machineId: 'MCH-04',
     machineNumber: 'MCH-04',
     machineName: 'Heavy Duty Forging Press 250T',
     operation: 'Flash Trimming',
     application: 'Engine Connecting Rod Line 2',
-    issuedDate: '2019-01-15',
     amrQuantity: '150,000',
-    replacementFrequency: 150000,
     preparedBy: 'A. Rao (Tool Design)',
     checkedBy: 'K. Patel (Tool Lead)',
     approvedBy: 'M. Verma (Plant Head)',
@@ -71,17 +133,22 @@ const INITIAL_TOOLS = [
     ]
   },
   {
+    applicationPartNo: '004',
+    productName: 'Chassis Mounting Flange Assembly',
     toolNumber: 'TOOL-003',
     toolDescription: 'Flange Piercing & Blanking Tool',
-    toolType: 'C',
+    issuedDate: '2020-03-20',
+    lifeTime: 250000,
+    replacementFrequency: 250000,
+    classification: 'Non-Critical',
+    toolType: 'Non-Critical',
+    toolCount: 1,
     machineId: 'MCH-02',
     machineNumber: 'MCH-02',
     machineName: 'Mechanical Stamping Press 150T',
     operation: 'Piercing & Blanking',
     application: 'Chassis Mounting Flange Assembly',
-    issuedDate: '2020-03-20',
     amrQuantity: '250,000',
-    replacementFrequency: 250000,
     preparedBy: 'V. Nair',
     checkedBy: 'S. Kulkarni',
     approvedBy: 'M. Verma (Plant Head)',
@@ -92,38 +159,22 @@ const INITIAL_TOOLS = [
     ]
   },
   {
-    toolNumber: 'TOOL-004',
-    toolDescription: 'Brake Caliper Forming Punch',
-    toolType: 'B',
-    machineId: 'MCH-01',
-    machineNumber: 'MCH-01',
-    machineName: 'Hydraulic Press 100T',
-    operation: 'Cold Forming',
-    application: 'Disc Brake Actuator Housing',
-    issuedDate: '2019-08-11',
-    amrQuantity: '180,000',
-    replacementFrequency: 180000,
-    preparedBy: 'R. Sharma',
-    checkedBy: 'K. Patel',
-    approvedBy: 'M. Verma',
-    remarks: 'Near replacement threshold (96%). Procure replacement punch immediately.',
-    spares: [
-      { detailNo: '01', description: 'Forming Nose Insert', qtySet: 1, required: 1, available: 1, freqReplacement: 180000 },
-      { detailNo: '02', description: 'Hardened Anvil Base', qtySet: 1, required: 1, available: 2, freqReplacement: 360000 }
-    ]
-  },
-  {
+    applicationPartNo: '005',
+    productName: 'EV Traction Motor Lamination',
     toolNumber: 'TOOL-005',
     toolDescription: 'Rotor Core Progressive Stamping Die',
-    toolType: 'D',
+    issuedDate: '2021-02-05',
+    lifeTime: 300000,
+    replacementFrequency: 300000,
+    classification: 'Critical',
+    toolType: 'Critical',
+    toolCount: 1,
     machineId: 'MCH-10',
     machineNumber: 'MCH-10',
     machineName: 'High Speed Progressive Press HP-80',
     operation: 'Lamination Stamping',
     application: 'EV Traction Motor Stator/Rotor Lamination',
-    issuedDate: '2021-02-05',
     amrQuantity: '300,000',
-    replacementFrequency: 300000,
     preparedBy: 'A. Rao',
     checkedBy: 'S. Kulkarni',
     approvedBy: 'M. Verma',
@@ -342,6 +393,17 @@ const INITIAL_TOOLS = [
 
 // Initial Service History Records (realistic maintenance timeline)
 const INITIAL_SERVICE_HISTORY = [
+  // Client Tool INE T 1122 (Parent Part 001, Steering Yoke Assembly)
+  { id: 'SRV-INE-1', toolNumber: 'INE T 1122', date: '2023-04-15', description: 'Top Punch Reground & Polished', approval: 'Approved', approvalDate: '2023-04-15', remarks: 'Die clearance checked to 0.04mm. Reground spare kept in rack A1.', performedBy: 'S. Rao' },
+  { id: 'SRV-INE-2', toolNumber: 'INE T 1122', date: '2023-08-20', description: 'Guide Bushing Set Replaced', approval: 'Approved', approvalDate: '2023-08-21', remarks: 'New guide bushings installed. Near replacement threshold.', performedBy: 'A. Kumar' },
+
+  // Client Tool INE T 1133 (Parent Part 001, Steering Yoke Assembly)
+  { id: 'SRV-INE-3', toolNumber: 'INE T 1133', date: '2023-05-10', description: 'Punch Guide Pin Lubrication & Inspection', approval: 'Approved', approvalDate: '2023-05-10', remarks: 'Routine inspection completed. No abnormal wear.', performedBy: 'S. Rao' },
+
+  // Client Tool INE T 0652 (Parent Part 002, Brake Caliper Assembly)
+  { id: 'SRV-INE-4', toolNumber: 'INE T 0652', date: '2023-06-18', description: 'Forming Nose Reground', approval: 'Approved', approvalDate: '2023-06-19', remarks: 'Clearance re-shimmed. Life limit reached.', performedBy: 'D. Singh' },
+  { id: 'SRV-INE-5', toolNumber: 'INE T 0652', date: '2023-09-02', description: 'Critical Replacement Requisition Raised', approval: 'Approved', approvalDate: '2023-09-03', remarks: 'Cumulative output exceeded 180k. Replacement due.', performedBy: 'A. Kumar' },
+
   // TOOL-001: Yoke Pressing Tool (Matches the client's physical card workflow)
   { id: 'SRV-001', toolNumber: 'TOOL-001', date: '2018-11-30', description: 'Top Tool Changed', approval: 'Approved', approvalDate: '2018-11-30', remarks: 'Routine change after 1st major production run. Reground spare kept in rack B4.', performedBy: 'S. Rao' },
   { id: 'SRV-002', toolNumber: 'TOOL-001', date: '2019-04-15', description: 'Top Tool Changed', approval: 'Approved', approvalDate: '2019-04-16', remarks: 'Die clearance adjusted to 0.04mm. Punch face polished.', performedBy: 'S. Rao' },
@@ -376,6 +438,29 @@ const INITIAL_SERVICE_HISTORY = [
 // Initial Monthly Production Records
 // Note: Cumulative quantities are dynamically recalculated by TMS.calculateProductionHistory(toolNumber)
 const INITIAL_PRODUCTION = [
+  // Client Tool INE T 1122 (Parent Part 001 - Life Time: 200,000)
+  { id: 'PRD-INE-1', toolNumber: 'INE T 1122', month: '2023-01', quantityMade: 28000 },
+  { id: 'PRD-INE-2', toolNumber: 'INE T 1122', month: '2023-02', quantityMade: 31000 },
+  { id: 'PRD-INE-3', toolNumber: 'INE T 1122', month: '2023-03', quantityMade: 29500 },
+  { id: 'PRD-INE-4', toolNumber: 'INE T 1122', month: '2023-04', quantityMade: 32500 },
+  { id: 'PRD-INE-5', toolNumber: 'INE T 1122', month: '2023-05', quantityMade: 27000 },
+  { id: 'PRD-INE-6', toolNumber: 'INE T 1122', month: '2023-06', quantityMade: 27245 },
+  // Cumulative: ~175,245 (87.6% -> Near Limit)
+
+  // Client Tool INE T 1133 (Parent Part 001 - Life Time: 150,000)
+  { id: 'PRD-INE-7', toolNumber: 'INE T 1133', month: '2023-02', quantityMade: 15000 },
+  { id: 'PRD-INE-8', toolNumber: 'INE T 1133', month: '2023-03', quantityMade: 18000 },
+  { id: 'PRD-INE-9', toolNumber: 'INE T 1133', month: '2023-04', quantityMade: 16000 },
+  { id: 'PRD-INE-10', toolNumber: 'INE T 1133', month: '2023-05', quantityMade: 14000 },
+  // Cumulative: 63,000 (42.0% -> Healthy)
+
+  // Client Tool INE T 0652 (Parent Part 002 - Life Time: 180,000)
+  { id: 'PRD-INE-11', toolNumber: 'INE T 0652', month: '2023-03', quantityMade: 45000 },
+  { id: 'PRD-INE-12', toolNumber: 'INE T 0652', month: '2023-04', quantityMade: 50000 },
+  { id: 'PRD-INE-13', toolNumber: 'INE T 0652', month: '2023-05', quantityMade: 48000 },
+  { id: 'PRD-INE-14', toolNumber: 'INE T 0652', month: '2023-06', quantityMade: 42000 },
+  // Cumulative: 185,000 (102.7% -> Replacement Due)
+
   // TOOL-001 (Yoke Pressing Tool - 200,000 Replacement Frequency)
   { id: 'PRD-101', toolNumber: 'TOOL-001', month: '2018-10', quantityMade: 15995 },
   { id: 'PRD-102', toolNumber: 'TOOL-001', month: '2018-11', quantityMade: 18250 },
@@ -477,19 +562,98 @@ const INITIAL_PRODUCTION = [
 
 // Data Repository & Business Logic Controller
 const TMS = {
+  // Normalize tool structure with required master list fields
+  normalizeTool(tool) {
+    if (!tool) return tool;
+    const applicationPartNo = tool.applicationPartNo ? String(tool.applicationPartNo).trim() : '001';
+    const productName = tool.productName ? String(tool.productName).trim() : (tool.application || 'Component Assembly');
+    const toolNumber = tool.toolNumber ? String(tool.toolNumber).trim() : 'INE T 0000';
+    const toolDescription = tool.toolDescription ? String(tool.toolDescription).trim() : (tool.description || 'Tool Die');
+    const issuedDate = tool.issuedDate || tool.toolIssuedOn || new Date().toISOString().slice(0, 10);
+    const lifeTime = Number(tool.lifeTime || tool.replacementFrequency || 200000);
+    const classification = tool.classification || (tool.toolType === 'A' ? 'Critical' : (tool.toolType === 'C' ? 'Non-Critical' : 'Critical'));
+    const toolCount = Number(tool.toolCount || 1);
+
+    return {
+      ...tool,
+      applicationPartNo,
+      productName,
+      toolNumber,
+      toolDescription,
+      issuedDate,
+      lifeTime,
+      replacementFrequency: lifeTime,
+      classification,
+      toolType: classification,
+      toolCount
+    };
+  },
+
   // Initialize and ensure data exists in localStorage
   init() {
     if (!localStorage.getItem(STORAGE_KEYS.MACHINES)) {
       localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(INITIAL_MACHINES));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.TOOLS)) {
+
+    const storedTools = localStorage.getItem(STORAGE_KEYS.TOOLS);
+    if (!storedTools) {
       localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(INITIAL_TOOLS));
+    } else {
+      try {
+        let tools = JSON.parse(storedTools);
+        const hasClientExample = tools.some(t => t.toolNumber && t.toolNumber.toLowerCase().includes('ine t 1122'));
+        const hasAppPartNo = tools.some(t => t.applicationPartNo);
+
+        if (!hasClientExample || !hasAppPartNo) {
+          // Upgrade existing storage to include client requirements
+          const clientTools = INITIAL_TOOLS.slice(0, 3);
+          clientTools.reverse().forEach(ct => {
+            if (!tools.some(t => t.toolNumber && t.toolNumber.toLowerCase().trim() === ct.toolNumber.toLowerCase().trim())) {
+              tools.unshift(ct);
+            }
+          });
+          tools = tools.map(t => this.normalizeTool(t));
+          localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
+        }
+      } catch (e) {
+        localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(INITIAL_TOOLS));
+      }
     }
-    if (!localStorage.getItem(STORAGE_KEYS.SERVICE_HISTORY)) {
+
+    // Merge or init service history for new client tools
+    const storedServices = localStorage.getItem(STORAGE_KEYS.SERVICE_HISTORY);
+    if (!storedServices) {
       localStorage.setItem(STORAGE_KEYS.SERVICE_HISTORY, JSON.stringify(INITIAL_SERVICE_HISTORY));
+    } else {
+      try {
+        let services = JSON.parse(storedServices);
+        const hasIneService = services.some(s => s.toolNumber && s.toolNumber.includes('INE T'));
+        if (!hasIneService) {
+          const ineServices = INITIAL_SERVICE_HISTORY.filter(s => s.toolNumber && s.toolNumber.includes('INE T'));
+          services = [...ineServices, ...services];
+          localStorage.setItem(STORAGE_KEYS.SERVICE_HISTORY, JSON.stringify(services));
+        }
+      } catch (e) {
+        localStorage.setItem(STORAGE_KEYS.SERVICE_HISTORY, JSON.stringify(INITIAL_SERVICE_HISTORY));
+      }
     }
-    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTION)) {
+
+    // Merge or init production records for new client tools
+    const storedProduction = localStorage.getItem(STORAGE_KEYS.PRODUCTION);
+    if (!storedProduction) {
       localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify(INITIAL_PRODUCTION));
+    } else {
+      try {
+        let productions = JSON.parse(storedProduction);
+        const hasIneProduction = productions.some(p => p.toolNumber && p.toolNumber.includes('INE T'));
+        if (!hasIneProduction) {
+          const ineProductions = INITIAL_PRODUCTION.filter(p => p.toolNumber && p.toolNumber.includes('INE T'));
+          productions = [...ineProductions, ...productions];
+          localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify(productions));
+        }
+      } catch (e) {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify(INITIAL_PRODUCTION));
+      }
     }
   },
 
@@ -530,11 +694,12 @@ const TMS = {
   // --- TOOLS ---
   getTools() {
     try {
-      const tools = JSON.parse(localStorage.getItem(STORAGE_KEYS.TOOLS)) || INITIAL_TOOLS;
-      // Enrich each tool with live computed values
-      return tools.map(tool => this.enrichToolMetrics(tool));
+      const raw = localStorage.getItem(STORAGE_KEYS.TOOLS);
+      const tools = raw ? JSON.parse(raw) : INITIAL_TOOLS;
+      // Normalize and enrich each tool with live computed values
+      return tools.map(tool => this.enrichToolMetrics(this.normalizeTool(tool)));
     } catch (e) {
-      return INITIAL_TOOLS.map(tool => this.enrichToolMetrics(tool));
+      return INITIAL_TOOLS.map(tool => this.enrichToolMetrics(this.normalizeTool(tool)));
     }
   },
 
@@ -544,19 +709,32 @@ const TMS = {
     return tools.find(t => t.toolNumber.toLowerCase() === toolNumber.toLowerCase().trim()) || null;
   },
 
-  saveTool(toolData) {
-    const tools = JSON.parse(localStorage.getItem(STORAGE_KEYS.TOOLS)) || INITIAL_TOOLS;
-    const index = tools.findIndex(t => t.toolNumber.toLowerCase() === toolData.toolNumber.toLowerCase().trim());
+  /**
+   * Save a tool to Master List.
+   * Requirement:
+   * Application Part No is the parent identifier. Multiple tools can belong to the same Application Part No.
+   * E.g.
+   * Part No: 001, Tool No: INE T 1122 -> saved
+   * Part No: 001, Tool No: INE T 1133 -> saved (both tools preserved under parent 001)
+   * Part No: 002, Tool No: INE T 0652 -> saved under parent 002
+   *
+   * @param {Object} toolData Tool payload
+   * @param {string|null} originalToolNumber Tool number prior to edit (null for add)
+   */
+  saveTool(toolData, originalToolNumber = null) {
+    const raw = localStorage.getItem(STORAGE_KEYS.TOOLS);
+    let tools = raw ? JSON.parse(raw) : INITIAL_TOOLS;
+    const normalized = this.normalizeTool(toolData);
     
     // Ensure machine exists in machine list as well
-    if (toolData.machineNumber) {
+    if (normalized.machineNumber) {
       const machines = this.getMachines();
-      const existingMach = machines.find(m => m.machineNumber.toLowerCase() === toolData.machineNumber.toLowerCase());
+      const existingMach = machines.find(m => m.machineNumber.toLowerCase() === normalized.machineNumber.toLowerCase());
       if (!existingMach) {
         machines.push({
-          machineId: toolData.machineNumber,
-          machineNumber: toolData.machineNumber,
-          machineName: toolData.machineName || ('Machine ' + toolData.machineNumber),
+          machineId: normalized.machineNumber,
+          machineNumber: normalized.machineNumber,
+          machineName: normalized.machineName || ('Machine ' + normalized.machineNumber),
           department: 'Shop Floor',
           location: 'Main Plant',
           status: 'Operational'
@@ -565,13 +743,23 @@ const TMS = {
       }
     }
 
-    if (index >= 0) {
-      tools[index] = { ...tools[index], ...toolData };
+    let index = -1;
+    if (originalToolNumber) {
+      index = tools.findIndex(t => t.toolNumber && t.toolNumber.toLowerCase().trim() === originalToolNumber.toLowerCase().trim());
     } else {
-      tools.unshift(toolData);
+      // Adding new tool: only update if the specific toolNumber already exists
+      index = tools.findIndex(t => t.toolNumber && t.toolNumber.toLowerCase().trim() === normalized.toolNumber.toLowerCase().trim());
     }
+
+    if (index >= 0) {
+      tools[index] = { ...tools[index], ...normalized };
+    } else {
+      // Unshift new tool (creates a new entry under its applicationPartNo)
+      tools.unshift(normalized);
+    }
+
     localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
-    return this.enrichToolMetrics(toolData);
+    return this.enrichToolMetrics(normalized);
   },
 
   deleteTool(toolNumber) {
@@ -718,7 +906,7 @@ const TMS = {
   enrichToolMetrics(tool) {
     const productions = this.getRawProductions().filter(p => p.toolNumber.toLowerCase() === tool.toolNumber.toLowerCase().trim());
     const cumulative = productions.reduce((acc, curr) => acc + (Number(curr.quantityMade) || 0), 0);
-    const repFreq = Number(tool.replacementFrequency) || 0;
+    const repFreq = Number(tool.lifeTime || tool.replacementFrequency) || 0;
     
     const rawBalance = repFreq - cumulative;
     const balance = rawBalance < 0 ? 0 : rawBalance;

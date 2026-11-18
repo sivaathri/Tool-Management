@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Global application state
   const State = {
     currentView: 'dashboard',
-    selectedToolNumber: 'TOOL-001',
+    selectedToolNumber: 'INE T 1122',
     editingToolNumber: null,
     alertFilter: 'all',
     confirmCallback: null
@@ -47,6 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnOpenNewToolModal: document.getElementById('btnOpenNewToolModal'),
     btnExportToolMasterCSV: document.getElementById('btnExportToolMasterCSV'),
     tmSearchInput: document.getElementById('tmSearchInput'),
+    tmAppPartFilter: document.getElementById('tmAppPartFilter'),
+    tmClassificationFilter: document.getElementById('tmClassificationFilter'),
     tmApplicationFilter: document.getElementById('tmApplicationFilter'),
     tmTypeFilter: document.getElementById('tmTypeFilter'),
     tmStatusFilter: document.getElementById('tmStatusFilter'),
@@ -61,6 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
     shToolDescription: document.getElementById('shToolDescription'),
     shToolTypeBadge: document.getElementById('shToolTypeBadge'),
     shToolStatusBadge: document.getElementById('shToolStatusBadge'),
+    shAppPartVal: document.getElementById('shAppPartVal'),
+    shProductVal: document.getElementById('shProductVal'),
+    shClassificationVal: document.getElementById('shClassificationVal'),
+    shToolCountVal: document.getElementById('shToolCountVal'),
     shMachineVal: document.getElementById('shMachineVal'),
     shOperationVal: document.getElementById('shOperationVal'),
     shApplicationVal: document.getElementById('shApplicationVal'),
@@ -96,14 +102,21 @@ document.addEventListener('DOMContentLoaded', () => {
     modalAddTool: document.getElementById('modalAddTool'),
     formToolMaster: document.getElementById('formToolMaster'),
     modalToolTitle: document.getElementById('modalToolTitle'),
+    inpAppPartNo: document.getElementById('inpAppPartNo'),
+    inpProductName: document.getElementById('inpProductName'),
     inpToolNumber: document.getElementById('inpToolNumber'),
     inpToolDescription: document.getElementById('inpToolDescription'),
+    inpIssuedDate: document.getElementById('inpIssuedDate'),
+    inpLifeTime: document.getElementById('inpLifeTime'),
+    inpClassification: document.getElementById('inpClassification'),
+    inpToolCount: document.getElementById('inpToolCount'),
+    listAppPartNos: document.getElementById('listAppPartNos'),
+    inpMachineNumber: document.getElementById('inpMachineNumber'),
     inpToolType: document.getElementById('inpToolType'),
     inpMachineSelect: document.getElementById('inpMachineSelect'),
     inpMachineName: document.getElementById('inpMachineName'),
     inpOperation: document.getElementById('inpOperation'),
     inpApplication: document.getElementById('inpApplication'),
-    inpIssuedDate: document.getElementById('inpIssuedDate'),
     inpReplacementFrequency: document.getElementById('inpReplacementFrequency'),
     inpAmrQuantity: document.getElementById('inpAmrQuantity'),
     inpPreparedBy: document.getElementById('inpPreparedBy'),
@@ -600,37 +613,63 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // VIEW 2: TOOL MASTER LOGIC & RENDERING
   // =========================================================================
-  function renderToolMaster() {
-    const qSearch = DOM.tmSearchInput.value.trim().toLowerCase();
-    const qApp = DOM.tmApplicationFilter.value.trim().toLowerCase();
-    const qType = DOM.tmTypeFilter.value;
-    const qStatus = DOM.tmStatusFilter.value;
+  function updateAppPartFilterOptions(allTools) {
+    if (!DOM.tmAppPartFilter) return;
+    const currentVal = DOM.tmAppPartFilter.value;
+    const distinctParts = [...new Set(allTools.map(t => t.applicationPartNo).filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, { numeric: true })
+    );
 
-    let tools = TMS.getTools();
+    let html = '<option value="">All Part Nos (Parent)</option>';
+    distinctParts.forEach(p => {
+      html += `<option value="${p}" ${p === currentVal ? 'selected' : ''}>Part ${p}</option>`;
+    });
+    DOM.tmAppPartFilter.innerHTML = html;
+  }
+
+  function renderToolMaster() {
+    const qSearch = DOM.tmSearchInput ? DOM.tmSearchInput.value.trim().toLowerCase() : '';
+    const qAppPart = DOM.tmAppPartFilter ? DOM.tmAppPartFilter.value.trim().toLowerCase() : '';
+    const qClass = DOM.tmClassificationFilter ? DOM.tmClassificationFilter.value.trim().toLowerCase() : '';
+    const qStatus = DOM.tmStatusFilter ? DOM.tmStatusFilter.value : '';
+
+    let allTools = TMS.getTools();
+    updateAppPartFilterOptions(allTools);
+
+    let tools = allTools;
 
     // Filters
     if (qSearch) {
       tools = tools.filter(t => 
-        t.toolNumber.toLowerCase().includes(qSearch) ||
-        t.toolDescription.toLowerCase().includes(qSearch) ||
-        t.machineNumber.toLowerCase().includes(qSearch) ||
-        (t.machineName && t.machineName.toLowerCase().includes(qSearch))
+        (t.toolNumber && t.toolNumber.toLowerCase().includes(qSearch)) ||
+        (t.applicationPartNo && t.applicationPartNo.toLowerCase().includes(qSearch)) ||
+        (t.productName && t.productName.toLowerCase().includes(qSearch)) ||
+        (t.toolDescription && t.toolDescription.toLowerCase().includes(qSearch)) ||
+        (t.machineNumber && t.machineNumber.toLowerCase().includes(qSearch))
       );
     }
-    if (qApp) {
-      tools = tools.filter(t => t.application && t.application.toLowerCase().includes(qApp));
+    if (qAppPart) {
+      tools = tools.filter(t => t.applicationPartNo && t.applicationPartNo.toLowerCase() === qAppPart);
     }
-    if (qType) {
-      tools = tools.filter(t => (t.toolType || '').toUpperCase() === qType.toUpperCase());
+    if (qClass) {
+      tools = tools.filter(t => (t.classification || '').toLowerCase() === qClass);
     }
     if (qStatus) {
       tools = tools.filter(t => t.status === qStatus);
     }
 
+    // Sort by Application Part No (Parent), then Tool Number
+    tools.sort((a, b) => {
+      const pA = String(a.applicationPartNo || '');
+      const pB = String(b.applicationPartNo || '');
+      if (pA !== pB) return pA.localeCompare(pB, undefined, { numeric: true });
+      return String(a.toolNumber || '').localeCompare(String(b.toolNumber || ''));
+    });
+
     if (tools.length === 0) {
       DOM.toolMasterTableBody.innerHTML = `
         <tr>
-          <td colspan="11" style="text-align: center; padding: 32px; color: var(--slate-500);">
+          <td colspan="12" style="text-align: center; padding: 36px; color: var(--slate-500);">
             No tools match the selected search criteria.
           </td>
         </tr>
@@ -638,30 +677,42 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    DOM.toolMasterTableBody.innerHTML = tools.map(tool => `
-      <tr class="${tool.status === 'Replacement Due' ? 'row-danger' : (tool.status === 'Near Limit' ? 'row-warning' : '')}">
-        <td><a href="#" class="tool-code" data-inspect-tool="${tool.toolNumber}">${tool.toolNumber}</a></td>
-        <td style="font-weight: 600; color: var(--slate-900);">${tool.toolDescription}</td>
-        <td><span class="badge-type">${tool.toolType || 'STD'}</span></td>
-        <td><span class="machine-code">${tool.machineNumber}</span></td>
-        <td>${tool.operation || '-'}</td>
-        <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis;" title="${tool.application || ''}">${tool.application || '-'}</td>
-        <td class="col-numeric">${formatNum(tool.replacementFrequency)}</td>
-        <td class="col-numeric" style="font-weight: 600;">${formatNum(tool.cumulativeQuantity)}</td>
-        <td class="col-numeric" style="font-weight: 700; color: ${tool.balance === 0 ? '#dc2626' : (tool.balance < (tool.replacementFrequency*0.2) ? '#d97706' : 'var(--slate-800)')};">
-          ${formatNum(tool.balance)}
-        </td>
-        <td><span class="badge ${tool.statusClass}"><span class="badge-dot"></span>${tool.status}</span></td>
-        <td style="text-align: right;">
-          <div style="display: inline-flex; gap: 4px;">
-            <button class="btn btn-secondary btn-sm" data-dossier-tool="${tool.toolNumber}" title="View Digital Master Card Dossier">View</button>
-            <button class="btn btn-secondary btn-sm" data-edit-tool="${tool.toolNumber}" title="Edit Tool Master">Edit</button>
-            <button class="btn btn-secondary btn-sm" data-inspect-tool="${tool.toolNumber}" title="View Service History">Service</button>
-            <button class="btn btn-secondary btn-sm" style="color: #ef4444;" data-delete-tool="${tool.toolNumber}" title="Delete Tool">✕</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    DOM.toolMasterTableBody.innerHTML = tools.map(tool => {
+      const isCritical = (tool.classification || '').toLowerCase() === 'critical';
+      return `
+        <tr class="${tool.status === 'Replacement Due' ? 'row-danger' : (tool.status === 'Near Limit' ? 'row-warning' : '')}">
+          <td>
+            <span class="badge-parent" title="Parent Application Part No.">${tool.applicationPartNo || '-'}</span>
+          </td>
+          <td>
+            <a href="#" class="tool-code" data-inspect-tool="${tool.toolNumber}">${tool.toolNumber}</a>
+          </td>
+          <td style="font-weight: 600; color: var(--slate-900);">${tool.productName || '-'}</td>
+          <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${tool.toolDescription}">${tool.toolDescription}</td>
+          <td>
+            <span class="${isCritical ? 'badge-critical' : 'badge-non-critical'}">
+              ${tool.classification || 'Critical'}
+            </span>
+          </td>
+          <td class="col-numeric" style="font-weight: 600;">${tool.toolCount || 1}</td>
+          <td style="font-size: 12.5px; color: var(--slate-600);">${tool.issuedDate || '-'}</td>
+          <td class="col-numeric">${formatNum(tool.lifeTime || tool.replacementFrequency)}</td>
+          <td class="col-numeric" style="font-weight: 600;">${formatNum(tool.cumulativeQuantity)}</td>
+          <td class="col-numeric" style="font-weight: 700; color: ${tool.balance === 0 ? '#dc2626' : (tool.balance < ((tool.lifeTime || tool.replacementFrequency) * 0.2) ? '#d97706' : 'var(--slate-800)')};">
+            ${formatNum(tool.balance)}
+          </td>
+          <td><span class="badge ${tool.statusClass}"><span class="badge-dot"></span>${tool.status}</span></td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 4px;">
+              <button class="btn btn-secondary btn-sm" data-dossier-tool="${tool.toolNumber}" title="View Digital Master Card Dossier">View</button>
+              <button class="btn btn-secondary btn-sm" data-edit-tool="${tool.toolNumber}" title="Edit Tool Master">Edit</button>
+              <button class="btn btn-secondary btn-sm" data-inspect-tool="${tool.toolNumber}" title="View Service History">Service</button>
+              <button class="btn btn-secondary btn-sm" style="color: #ef4444;" data-delete-tool="${tool.toolNumber}" title="Delete Tool">✕</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
     // Attach row events
     DOM.toolMasterTableBody.querySelectorAll('[data-inspect-tool]').forEach(el => {
@@ -701,28 +752,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Tool Master Filter Event Listeners
-  [DOM.tmSearchInput, DOM.tmApplicationFilter, DOM.tmTypeFilter, DOM.tmStatusFilter].forEach(elem => {
+  const filterInputs = [DOM.tmSearchInput, DOM.tmAppPartFilter, DOM.tmClassificationFilter, DOM.tmApplicationFilter, DOM.tmTypeFilter, DOM.tmStatusFilter].filter(Boolean);
+  filterInputs.forEach(elem => {
     elem.addEventListener('input', () => renderToolMaster());
     elem.addEventListener('change', () => renderToolMaster());
   });
 
   DOM.btnResetToolFilters.addEventListener('click', () => {
-    DOM.tmSearchInput.value = '';
-    DOM.tmApplicationFilter.value = '';
-    DOM.tmTypeFilter.value = '';
-    DOM.tmStatusFilter.value = '';
+    if (DOM.tmSearchInput) DOM.tmSearchInput.value = '';
+    if (DOM.tmAppPartFilter) DOM.tmAppPartFilter.value = '';
+    if (DOM.tmClassificationFilter) DOM.tmClassificationFilter.value = '';
+    if (DOM.tmApplicationFilter) DOM.tmApplicationFilter.value = '';
+    if (DOM.tmTypeFilter) DOM.tmTypeFilter.value = '';
+    if (DOM.tmStatusFilter) DOM.tmStatusFilter.value = '';
     renderToolMaster();
   });
 
   // CSV Export for Tool Master
   DOM.btnExportToolMasterCSV.addEventListener('click', () => {
     const tools = TMS.getTools();
-    let csv = 'Tool Number,Description,Type,Machine Number,Machine Name,Operation,Application,Replacement Frequency,Cumulative Quantity,Remaining Balance,Status\n';
+    let csv = 'Application Part No,Product Name,Tool Number,Description,Classification,Tool Count,Issued On,Life Time,Cumulative Quantity,Remaining Balance,Status\n';
     tools.forEach(t => {
-      csv += `"${t.toolNumber}","${t.toolDescription}","${t.toolType || ''}","${t.machineNumber}","${t.machineName || ''}","${t.operation || ''}","${t.application || ''}",${t.replacementFrequency},${t.cumulativeQuantity},${t.balance},"${t.status}"\n`;
+      csv += `"${t.applicationPartNo || ''}","${t.productName || ''}","${t.toolNumber}","${t.toolDescription}","${t.classification || ''}",${t.toolCount || 1},"${t.issuedDate || ''}",${t.lifeTime || t.replacementFrequency},${t.cumulativeQuantity},${t.balance},"${t.status}"\n`;
     });
-    downloadCSV(csv, 'tool_master_export.csv');
-    showToast('Tool Master CSV exported successfully', 'success');
+    downloadCSV(csv, 'tool_master_register.csv');
+    showToast('Tool Master List exported to CSV', 'success');
   });
 
   // =========================================================================
@@ -754,59 +808,72 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.inpMachineSelect.addEventListener('change', syncMachineNameFromSelect);
   }
 
+  function populateAppPartDatalist() {
+    if (!DOM.listAppPartNos) return;
+    const tools = TMS.getTools();
+    const distinct = [...new Set(tools.map(t => t.applicationPartNo).filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, { numeric: true })
+    );
+    DOM.listAppPartNos.innerHTML = distinct.map(p => `<option value="${p}">`).join('');
+  }
+
+  if (DOM.inpAppPartNo) {
+    DOM.inpAppPartNo.addEventListener('input', () => {
+      const typed = DOM.inpAppPartNo.value.trim().toLowerCase();
+      if (!typed) return;
+      const match = TMS.getTools().find(t => t.applicationPartNo && t.applicationPartNo.toLowerCase() === typed);
+      if (match && match.productName && !DOM.inpProductName.value) {
+        DOM.inpProductName.value = match.productName;
+      }
+    });
+  }
+
   function openAddEditToolModal(toolNumber = null) {
     State.editingToolNumber = toolNumber;
-    populateMachineDropdown();
+    populateAppPartDatalist();
 
     if (toolNumber) {
       // Edit Mode
-      DOM.modalToolTitle.textContent = `Edit Tool Master Card - ${toolNumber}`;
       const tool = TMS.getTool(toolNumber);
       if (tool) {
+        DOM.modalToolTitle.textContent = `Edit Tool - ${tool.toolNumber} (Part: ${tool.applicationPartNo || '-'})`;
+        if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = tool.applicationPartNo || '';
+        if (DOM.inpProductName) DOM.inpProductName.value = tool.productName || '';
         DOM.inpToolNumber.value = tool.toolNumber;
-        DOM.inpToolNumber.readOnly = true;
-        DOM.inpToolDescription.value = tool.toolDescription;
-        DOM.inpToolType.value = tool.toolType || '';
-        if (DOM.inpMachineSelect) {
-          DOM.inpMachineSelect.value = tool.machineNumber;
-          syncMachineNameFromSelect();
-        }
-        DOM.inpOperation.value = tool.operation || '';
-        if (DOM.inpApplication) DOM.inpApplication.value = tool.application || '';
+        DOM.inpToolNumber.readOnly = false;
+        DOM.inpToolDescription.value = tool.toolDescription || '';
         DOM.inpIssuedDate.value = tool.issuedDate || '';
-        if (DOM.inpReplacementFrequency) DOM.inpReplacementFrequency.value = tool.replacementFrequency;
-        if (DOM.inpAmrQuantity) DOM.inpAmrQuantity.value = tool.amrQuantity || '';
-        DOM.inpPreparedBy.value = tool.preparedBy || '';
-        DOM.inpCheckedBy.value = tool.checkedBy || '';
-        DOM.inpApprovedBy.value = tool.approvedBy || '';
-        if (DOM.inpRemarks) DOM.inpRemarks.value = tool.remarks || '';
+        if (DOM.inpLifeTime) DOM.inpLifeTime.value = tool.lifeTime || tool.replacementFrequency || 200000;
+        if (DOM.inpClassification) DOM.inpClassification.value = tool.classification || 'Critical';
+        if (DOM.inpToolCount) DOM.inpToolCount.value = tool.toolCount || 1;
 
-        const initialApps = (tool.applications && tool.applications.length > 0)
-          ? tool.applications
-          : (tool.application ? [{ slNo: '01', application: tool.application, amr: tool.amrQuantity || '' }] : [{ slNo: '01', application: '', amr: '' }]);
-        renderAppFormRows(initialApps);
+        // Optional collapsible fields
+        if (DOM.inpOperation) DOM.inpOperation.value = tool.operation || '';
+        if (DOM.inpMachineNumber) DOM.inpMachineNumber.value = tool.machineNumber || '';
+        if (DOM.inpPreparedBy) DOM.inpPreparedBy.value = tool.preparedBy || '';
+        if (DOM.inpCheckedBy) DOM.inpCheckedBy.value = tool.checkedBy || '';
+        if (DOM.inpApprovedBy) DOM.inpApprovedBy.value = tool.approvedBy || '';
+
         renderSparesFormRows(tool.spares || []);
       }
     } else {
       // Add Mode
-      DOM.modalToolTitle.textContent = 'Tool Master Card - Add New Tool';
+      DOM.modalToolTitle.textContent = 'Add Tool to Master List';
       DOM.formToolMaster.reset();
       DOM.inpToolNumber.readOnly = false;
-      const nextCount = TMS.getTools().length + 1;
-      DOM.inpToolNumber.value = `TOOL-${nextCount < 10 ? '00' : (nextCount < 100 ? '0' : '')}${nextCount}`;
-      if (DOM.inpReplacementFrequency) DOM.inpReplacementFrequency.value = 200000;
-      if (DOM.inpAmrQuantity) DOM.inpAmrQuantity.value = '200,000';
       DOM.inpIssuedDate.value = new Date().toISOString().slice(0, 10);
-      syncMachineNameFromSelect();
+      if (DOM.inpLifeTime) DOM.inpLifeTime.value = 200000;
+      if (DOM.inpClassification) DOM.inpClassification.value = 'Critical';
+      if (DOM.inpToolCount) DOM.inpToolCount.value = 1;
 
-      // Seed default application row matching physical card
-      renderAppFormRows([
-        { slNo: '01', application: 'KOHLER - IU', amr: '75,000' }
-      ]);
+      // Default suggested inputs to guide user
+      if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = '001';
+      if (DOM.inpProductName) DOM.inpProductName.value = 'Steering Yoke Assembly';
+      if (DOM.inpToolNumber) DOM.inpToolNumber.value = '';
+      if (DOM.inpToolDescription) DOM.inpToolDescription.value = '';
 
-      // Seed default spare row (Top Tool) inspired by client physical form
       renderSparesFormRows([
-        { detailNo: '01', description: 'Top Tool', qtySet: 1, required: 1, available: 1, freqReplacement: 200000 }
+        { detailNo: '01', description: 'Top Punch Insert', qtySet: 1, required: 1, available: 1, freqReplacement: 200000 }
       ]);
     }
 
@@ -816,47 +883,14 @@ document.addEventListener('DOMContentLoaded', () => {
   DOM.btnOpenNewToolModal.addEventListener('click', () => openAddEditToolModal(null));
   DOM.btnQuickAddTool.addEventListener('click', () => openAddEditToolModal(null));
 
-  function renderAppFormRows(apps) {
-    if (!DOM.appFormTableBody) return;
-    DOM.appFormTableBody.innerHTML = '';
-    if (!apps || apps.length === 0) {
-      addAppRow({ slNo: '01', application: '', amr: '' });
-    } else {
-      apps.forEach(a => addAppRow(a));
-    }
-  }
-
-  function addAppRow(app = null) {
-    if (!DOM.appFormTableBody) return;
-    const row = document.createElement('tr');
-    const curRows = DOM.appFormTableBody.querySelectorAll('tr').length + 1;
-    const slNo = app ? app.slNo : (curRows < 10 ? '0' + curRows : String(curRows));
-    const application = app ? (app.application || '') : '';
-    const amr = app ? (app.amr || '') : '';
-
-    row.innerHTML = `
-      <td><input type="text" class="form-input app-sl-no" value="${slNo}" style="font-family: var(--font-mono); text-align: center;"></td>
-      <td><input type="text" class="form-input app-name" value="${application}" placeholder="e.g. KOHLER - IU" required></td>
-      <td><input type="text" class="form-input app-amr" value="${amr}" placeholder="e.g. 75,000"></td>
-      <td style="text-align: center;">
-        <button type="button" class="btn btn-icon-only btn-sm" style="color: #ef4444;" title="Remove row">✕</button>
-      </td>
-    `;
-
-    row.querySelector('button').addEventListener('click', () => row.remove());
-    DOM.appFormTableBody.appendChild(row);
-  }
-
-  if (DOM.btnAddAppRow) {
-    DOM.btnAddAppRow.addEventListener('click', () => addAppRow());
-  }
-
   function renderSparesFormRows(spares) {
+    if (!DOM.sparesFormTableBody) return;
     DOM.sparesFormTableBody.innerHTML = '';
     spares.forEach(s => addSpareRow(s));
   }
 
   function addSpareRow(spare = null) {
+    if (!DOM.sparesFormTableBody) return;
     const row = document.createElement('tr');
     const curRows = DOM.sparesFormTableBody.querySelectorAll('tr').length + 1;
     const detailNo = spare ? spare.detailNo : (curRows < 10 ? '0' + curRows : curRows);
@@ -864,11 +898,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const qty = spare ? spare.qtySet : 1;
     const req = spare ? spare.required : 1;
     const avail = spare ? spare.available : 1;
-    const freq = spare ? spare.freqReplacement : (DOM.inpReplacementFrequency ? Number(DOM.inpReplacementFrequency.value) : 200000) || 200000;
+    const freq = spare ? spare.freqReplacement : (DOM.inpLifeTime ? Number(DOM.inpLifeTime.value) : 200000) || 200000;
 
     row.innerHTML = `
       <td><input type="text" class="form-input spare-detail-no" value="${detailNo}" style="font-family: var(--font-mono); text-align: center;"></td>
-      <td><input type="text" class="form-input spare-desc" value="${desc}" placeholder="Spare item name" required></td>
+      <td><input type="text" class="form-input spare-desc" value="${desc}" placeholder="Spare item name"></td>
       <td><input type="number" class="form-input spare-qty" value="${qty}" min="1"></td>
       <td><input type="number" class="form-input spare-req" value="${req}" min="0"></td>
       <td><input type="number" class="form-input spare-avail" value="${avail}" min="0"></td>
@@ -882,83 +916,75 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.sparesFormTableBody.appendChild(row);
   }
 
-  DOM.btnAddSpareRow.addEventListener('click', () => addSpareRow());
+  if (DOM.btnAddSpareRow) {
+    DOM.btnAddSpareRow.addEventListener('click', () => addSpareRow());
+  }
 
   // Submit Tool Master Form
   DOM.formToolMaster.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    const toolNumber = DOM.inpToolNumber.value.trim().toUpperCase();
+    const applicationPartNo = DOM.inpAppPartNo ? DOM.inpAppPartNo.value.trim() : '001';
+    const productName = DOM.inpProductName ? DOM.inpProductName.value.trim() : '';
+    const toolNumber = DOM.inpToolNumber.value.trim();
     const toolDescription = DOM.inpToolDescription.value.trim();
-    const toolType = DOM.inpToolType.value.trim().toUpperCase();
-    const existingTool = State.editingToolNumber ? TMS.getTool(State.editingToolNumber) : null;
-    const machineNumber = DOM.inpMachineSelect ? DOM.inpMachineSelect.value : (existingTool?.machineNumber || 'MC-01');
-    const machineName = DOM.inpMachineName ? DOM.inpMachineName.value : (existingTool?.machineName || 'Yoke Milling MC-01');
-    const operation = DOM.inpOperation.value.trim();
-    const issuedDate = DOM.inpIssuedDate.value;
-    const replacementFrequency = DOM.inpReplacementFrequency ? Number(DOM.inpReplacementFrequency.value) : (existingTool?.replacementFrequency || 200000);
-    const preparedBy = DOM.inpPreparedBy.value.trim();
-    const checkedBy = DOM.inpCheckedBy.value.trim();
-    const approvedBy = DOM.inpApprovedBy.value.trim();
-    const remarks = DOM.inpRemarks ? DOM.inpRemarks.value.trim() : (existingTool?.remarks || '');
+    const issuedDate = DOM.inpIssuedDate.value || new Date().toISOString().slice(0, 10);
+    const lifeTime = Number(DOM.inpLifeTime ? DOM.inpLifeTime.value : 200000) || 200000;
+    const classification = DOM.inpClassification ? DOM.inpClassification.value : 'Critical';
+    const toolCount = Number(DOM.inpToolCount ? DOM.inpToolCount.value : 1) || 1;
 
-    // Extract applications from sub-table
-    const applications = [];
-    if (DOM.appFormTableBody) {
-      DOM.appFormTableBody.querySelectorAll('tr').forEach(tr => {
-        const slNo = tr.querySelector('.app-sl-no')?.value.trim() || '01';
-        const application = tr.querySelector('.app-name')?.value.trim() || '';
-        const amr = tr.querySelector('.app-amr')?.value.trim() || '';
-        if (application || amr) {
-          applications.push({ slNo, application, amr });
+    if (!applicationPartNo || !productName || !toolNumber || !toolDescription) {
+      showToast('Please fill in Application Part No, Product Name, Tool No, and Description', 'danger');
+      return;
+    }
+
+    const existingTool = State.editingToolNumber ? TMS.getTool(State.editingToolNumber) : TMS.getTool(toolNumber);
+    const operation = DOM.inpOperation ? DOM.inpOperation.value.trim() : (existingTool?.operation || '');
+    const machineNumber = DOM.inpMachineNumber ? DOM.inpMachineNumber.value.trim() : (existingTool?.machineNumber || 'MCH-01');
+    const preparedBy = DOM.inpPreparedBy ? DOM.inpPreparedBy.value.trim() : (existingTool?.preparedBy || 'Tool Room');
+    const checkedBy = DOM.inpCheckedBy ? DOM.inpCheckedBy.value.trim() : (existingTool?.checkedBy || 'Tool Lead');
+    const approvedBy = DOM.inpApprovedBy ? DOM.inpApprovedBy.value.trim() : (existingTool?.approvedBy || 'Plant Head');
+
+    // Extract spares if provided
+    const spares = [];
+    if (DOM.sparesFormTableBody) {
+      DOM.sparesFormTableBody.querySelectorAll('tr').forEach(tr => {
+        const detailNo = tr.querySelector('.spare-detail-no')?.value.trim() || '01';
+        const desc = tr.querySelector('.spare-desc')?.value.trim();
+        const qtySet = Number(tr.querySelector('.spare-qty')?.value) || 1;
+        const required = Number(tr.querySelector('.spare-req')?.value) || 0;
+        const available = Number(tr.querySelector('.spare-avail')?.value) || 0;
+        const freqReplacement = Number(tr.querySelector('.spare-freq')?.value) || lifeTime;
+        if (desc) {
+          spares.push({ detailNo, description: desc, qtySet, required, available, freqReplacement });
         }
       });
     }
 
-    const application = applications.length > 0
-      ? applications.map(a => a.application).filter(Boolean).join(', ')
-      : (DOM.inpApplication ? DOM.inpApplication.value.trim() : (existingTool?.application || ''));
-    const amrQuantity = applications.length > 0 && applications[0].amr
-      ? applications[0].amr
-      : (DOM.inpAmrQuantity ? DOM.inpAmrQuantity.value.trim() : (existingTool?.amrQuantity || ''));
-
-    // Extract spares from sub-table
-    const spares = [];
-    DOM.sparesFormTableBody.querySelectorAll('tr').forEach(tr => {
-      const detailNo = tr.querySelector('.spare-detail-no').value.trim();
-      const desc = tr.querySelector('.spare-desc').value.trim();
-      const qtySet = Number(tr.querySelector('.spare-qty').value) || 1;
-      const required = Number(tr.querySelector('.spare-req').value) || 0;
-      const available = Number(tr.querySelector('.spare-avail').value) || 0;
-      const freqReplacement = Number(tr.querySelector('.spare-freq').value) || replacementFrequency;
-      if (desc) {
-        spares.push({ detailNo, description: desc, qtySet, required, available, freqReplacement });
-      }
-    });
-
     const toolData = {
+      ...(existingTool || {}),
+      applicationPartNo,
+      productName,
       toolNumber,
       toolDescription,
-      toolType,
-      machineId: machineNumber,
-      machineNumber,
-      machineName,
-      operation,
-      application,
-      applications,
       issuedDate,
-      replacementFrequency,
-      amrQuantity,
+      lifeTime,
+      replacementFrequency: lifeTime,
+      classification,
+      toolType: classification,
+      toolCount,
+      operation,
+      machineNumber,
+      machineId: machineNumber,
       preparedBy,
       checkedBy,
       approvedBy,
-      remarks,
-      spares
+      spares: spares.length > 0 ? spares : (existingTool?.spares || [])
     };
 
-    TMS.saveTool(toolData);
+    TMS.saveTool(toolData, State.editingToolNumber);
     closeModal(DOM.modalAddTool);
-    showToast(`Tool Master ${toolNumber} saved successfully!`, 'success');
+    showToast(`Tool ${toolNumber} saved under Part No. ${applicationPartNo} successfully!`, 'success');
     renderToolMaster();
     updateBadgesAndCounters();
   });
@@ -984,14 +1010,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Populate Tool Summary Card
     DOM.shToolNumber.textContent = tool.toolNumber;
     DOM.shToolDescription.textContent = tool.toolDescription;
-    DOM.shToolTypeBadge.textContent = tool.toolType || 'STD';
+    DOM.shToolTypeBadge.textContent = tool.classification === 'Critical' ? 'CRT' : 'STD';
     DOM.shToolStatusBadge.className = `badge ${tool.statusClass}`;
     DOM.shToolStatusBadge.innerHTML = `<span class="badge-dot"></span>${tool.status}`;
 
-    DOM.shMachineVal.textContent = `${tool.machineNumber} (${tool.machineName || 'Press'})`;
-    DOM.shOperationVal.textContent = tool.operation || '-';
-    DOM.shApplicationVal.textContent = tool.application || '-';
-    DOM.shRepLimitVal.textContent = `${formatNum(tool.replacementFrequency)} pcs`;
+    if (DOM.shAppPartVal) DOM.shAppPartVal.textContent = tool.applicationPartNo || '-';
+    if (DOM.shProductVal) DOM.shProductVal.textContent = tool.productName || '-';
+    if (DOM.shClassificationVal) {
+      DOM.shClassificationVal.innerHTML = `<span class="${tool.classification === 'Critical' ? 'badge-critical' : 'badge-non-critical'}">${tool.classification || 'Critical'}</span>`;
+    }
+    if (DOM.shToolCountVal) DOM.shToolCountVal.textContent = `${tool.toolCount || 1} set`;
+    if (DOM.shMachineVal) DOM.shMachineVal.textContent = `${tool.machineNumber} (${tool.machineName || 'Press'})`;
+    if (DOM.shOperationVal) DOM.shOperationVal.textContent = tool.operation || '-';
+    if (DOM.shApplicationVal) DOM.shApplicationVal.textContent = tool.productName || tool.application || '-';
+    DOM.shRepLimitVal.textContent = `${formatNum(tool.lifeTime || tool.replacementFrequency)} pcs`;
     DOM.shCumulativeVal.textContent = `${formatNum(tool.cumulativeQuantity)} pcs`;
     DOM.shBalanceVal.textContent = `${formatNum(tool.balance)} pcs`;
     
@@ -1561,8 +1593,8 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.dossierModalBody.innerHTML = `
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;">
         <div style="background: var(--slate-50); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <div style="font-size: 11px; text-transform: uppercase; color: var(--slate-500); font-weight: 600;">Replacement Limit</div>
-          <div style="font-size: 18px; font-weight: 700; color: var(--accent-700); margin-top: 4px;">${formatNum(tool.replacementFrequency)} pcs</div>
+          <div style="font-size: 11px; text-transform: uppercase; color: var(--slate-500); font-weight: 600;">Life Time Limit</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--accent-700); margin-top: 4px;">${formatNum(tool.lifeTime || tool.replacementFrequency)} pcs</div>
         </div>
         <div style="background: var(--slate-50); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
           <div style="font-size: 11px; text-transform: uppercase; color: var(--slate-500); font-weight: 600;">Cumulative Production</div>
@@ -1578,20 +1610,20 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
 
-      <!-- Specifications Grid -->
-      <div style="margin-bottom: 22px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px;">
-        <h4 style="font-size: 14px; font-weight: 700; color: var(--slate-900); margin-bottom: 12px;">Master Specifications & Sign-Offs</h4>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 13px;">
-          <div><span style="color: var(--slate-500);">Tool Type:</span> <strong>${tool.toolType || 'Standard'}</strong></div>
-          <div><span style="color: var(--slate-500);">Machine:</span> <strong>${tool.machineNumber}</strong></div>
-          <div><span style="color: var(--slate-500);">Operation:</span> <strong>${tool.operation || '-'}</strong></div>
-          <div><span style="color: var(--slate-500);">Issued Date:</span> <strong>${tool.issuedDate || '-'}</strong></div>
-          <div><span style="color: var(--slate-500);">Prepared By:</span> <strong>${tool.preparedBy || '-'}</strong></div>
-          <div><span style="color: var(--slate-500);">Approved By:</span> <strong>${tool.approvedBy || '-'}</strong></div>
+      <!-- Master Specifications Grid -->
+      <div style="margin-bottom: 22px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; background: #fff;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--slate-900); margin-bottom: 12px;">Master List Specifications</h4>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; font-size: 13px;">
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Application Part No (Parent):</span> <span class="badge-parent">${tool.applicationPartNo || '-'}</span></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Product Name:</span> <strong>${tool.productName || '-'}</strong></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool No:</span> <strong>${tool.toolNumber}</strong></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Classification:</span> <span class="${tool.classification === 'Critical' ? 'badge-critical' : 'badge-non-critical'}">${tool.classification || 'Critical'}</span></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool Count:</span> <strong>${tool.toolCount || 1} set</strong></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool Issued On:</span> <strong>${tool.issuedDate || '-'}</strong></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Description:</span> <strong>${tool.toolDescription}</strong></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Machine Assigned:</span> <strong>${tool.machineNumber}</strong></div>
         </div>
-        <div style="margin-top: 10px; font-size: 12.5px; color: var(--slate-600);">
-          <span style="font-weight: 600;">Remarks:</span> ${tool.remarks || 'None'}
-        </div>
+        ${tool.remarks ? `<div style="margin-top: 12px; font-size: 12.5px; color: var(--slate-600);"><span style="font-weight: 600;">Remarks:</span> ${tool.remarks}</div>` : ''}
       </div>
 
       <!-- Application & AMR Matrix -->
