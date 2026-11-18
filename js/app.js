@@ -102,6 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
     modalAddTool: document.getElementById('modalAddTool'),
     formToolMaster: document.getElementById('formToolMaster'),
     modalToolTitle: document.getElementById('modalToolTitle'),
+    comboboxAppPart: document.getElementById('comboboxAppPart'),
+    btnToggleAppPartList: document.getElementById('btnToggleAppPartList'),
+    dropdownAppPartList: document.getElementById('dropdownAppPartList'),
+    optionsAppPartList: document.getElementById('optionsAppPartList'),
+    appPartCountBadge: document.getElementById('appPartCountBadge'),
     selAppPartDropdown: document.getElementById('selAppPartDropdown'),
     inpAppPartNo: document.getElementById('inpAppPartNo'),
     inpProductName: document.getElementById('inpProductName'),
@@ -621,9 +626,9 @@ document.addEventListener('DOMContentLoaded', () => {
       String(a).localeCompare(String(b), undefined, { numeric: true })
     );
 
-    let html = '<option value="">All Part Nos (Parent)</option>';
+    let html = '<option value="">All Part Nos</option>';
     distinctParts.forEach(p => {
-      html += `<option value="${p}" ${p === currentVal ? 'selected' : ''}>Part ${p}</option>`;
+      html += `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p}</option>`;
     });
     DOM.tmAppPartFilter.innerHTML = html;
   }
@@ -809,35 +814,233 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.inpMachineSelect.addEventListener('change', syncMachineNameFromSelect);
   }
 
-  function populateAppPartDatalist() {
-    if (!DOM.listAppPartNos) return;
+  // =========================================================================
+  // SEARCHABLE COMBOBOX: APPLICATION PART NO (SEARCH & SELECT)
+  // =========================================================================
+  let activeComboboxIndex = -1;
+
+  function highlightMatch(text, query) {
+    if (!query) return String(text);
+    const s = String(text);
+    const idx = s.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1) return s;
+    const before = s.slice(0, idx);
+    const match = s.slice(idx, idx + query.length);
+    const after = s.slice(idx + query.length);
+    return `${before}<mark>${match}</mark>${after}`;
+  }
+
+  function getDistinctPartNumbers() {
     const tools = TMS.getTools();
-    const distinct = [...new Set(tools.map(t => t.applicationPartNo).filter(Boolean))].sort((a, b) =>
+    return [...new Set(tools.map(t => t.applicationPartNo).filter(Boolean))].sort((a, b) =>
       String(a).localeCompare(String(b), undefined, { numeric: true })
     );
-    DOM.listAppPartNos.innerHTML = distinct.map(p => `<option value="${p}">`).join('');
+  }
+
+  function renderComboboxOptions(filterText = '', selectedValue = '') {
+    if (!DOM.optionsAppPartList) return;
+    const parts = getDistinctPartNumbers();
+    const query = filterText.trim().toLowerCase();
+
+    if (DOM.appPartCountBadge) {
+      DOM.appPartCountBadge.textContent = `${parts.length} saved`;
+    }
+
+    const filtered = query ? parts.filter(p => p.toLowerCase().includes(query)) : parts;
+    const exactMatch = parts.find(p => p.toLowerCase() === query);
+
+    let html = '';
+
+    if (filtered.length === 0 && !query) {
+      html = '<div style="padding: 12px; text-align: center; color: var(--slate-400); font-size: 12px;">No saved Part Numbers</div>';
+    } else {
+      filtered.forEach((p, idx) => {
+        const isSelected = selectedValue && p.toLowerCase() === selectedValue.toLowerCase();
+        html += `
+          <div class="combobox-option ${isSelected ? 'selected' : ''}" data-value="${p}" data-index="${idx}">
+            <span class="combobox-num">${highlightMatch(p, query)}</span>
+            <span class="combobox-option-badge">Part No</span>
+          </div>
+        `;
+      });
+    }
+
+    // If query is typed and does not exactly match any existing part, offer to create new
+    if (query && !exactMatch) {
+      const originalTyped = filterText.trim();
+      html += `
+        <div class="combobox-new-option" data-value="${originalTyped}" data-index="${filtered.length}">
+          <span><strong>+ Use "${originalTyped}"</strong> (New Part No)</span>
+          <span style="font-size: 10.5px; opacity: 0.85;">Enter ↵</span>
+        </div>
+      `;
+    }
+
+    DOM.optionsAppPartList.innerHTML = html;
+    activeComboboxIndex = -1;
+  }
+
+  function openAppPartDropdown() {
+    if (!DOM.dropdownAppPartList) return;
+    DOM.dropdownAppPartList.style.display = 'flex';
+    const currentVal = DOM.inpAppPartNo ? DOM.inpAppPartNo.value.trim() : '';
+    renderComboboxOptions(currentVal, currentVal);
+  }
+
+  function closeAppPartDropdown() {
+    if (!DOM.dropdownAppPartList) return;
+    DOM.dropdownAppPartList.style.display = 'none';
+    activeComboboxIndex = -1;
+  }
+
+  function toggleAppPartDropdown() {
+    if (!DOM.dropdownAppPartList) return;
+    if (DOM.dropdownAppPartList.style.display === 'flex') {
+      closeAppPartDropdown();
+    } else {
+      openAppPartDropdown();
+      if (DOM.inpAppPartNo) DOM.inpAppPartNo.focus();
+    }
+  }
+
+  function selectAppPartValue(value) {
+    if (!value) return;
+    if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = value;
+    if (DOM.selAppPartDropdown) DOM.selAppPartDropdown.value = value;
+
+    // Auto-fill product name if matching tool exists in storage
+    const match = TMS.getTools().find(t => t.applicationPartNo && t.applicationPartNo.toLowerCase() === value.toLowerCase());
+    if (match && match.productName && DOM.inpProductName) {
+      DOM.inpProductName.value = match.productName;
+    }
+
+    closeAppPartDropdown();
+
+    // Advance focus to Tool Number or Product Name
+    if (DOM.inpProductName && !DOM.inpProductName.value) {
+      DOM.inpProductName.focus();
+    } else if (DOM.inpToolNumber) {
+      DOM.inpToolNumber.focus();
+    }
+  }
+
+  function populateAppPartDropdown(selectedPart = '') {
+    const parts = getDistinctPartNumbers();
+    if (DOM.selAppPartDropdown) {
+      let html = '<option value="">-- Select Part No --</option>';
+      parts.forEach(p => {
+        html += `<option value="${p}" ${p === selectedPart ? 'selected' : ''}>${p}</option>`;
+      });
+      DOM.selAppPartDropdown.innerHTML = html;
+      DOM.selAppPartDropdown.value = selectedPart;
+    }
+    if (DOM.appPartCountBadge) {
+      DOM.appPartCountBadge.textContent = `${parts.length} saved`;
+    }
+    renderComboboxOptions('', selectedPart);
   }
 
   if (DOM.inpAppPartNo) {
+    DOM.inpAppPartNo.addEventListener('focus', () => {
+      openAppPartDropdown();
+    });
+
+    DOM.inpAppPartNo.addEventListener('click', () => {
+      openAppPartDropdown();
+    });
+
     DOM.inpAppPartNo.addEventListener('input', () => {
-      const typed = DOM.inpAppPartNo.value.trim().toLowerCase();
+      const typed = DOM.inpAppPartNo.value.trim();
+      if (DOM.selAppPartDropdown) DOM.selAppPartDropdown.value = typed;
+      openAppPartDropdown();
+      renderComboboxOptions(typed, typed);
+
       if (!typed) return;
-      const match = TMS.getTools().find(t => t.applicationPartNo && t.applicationPartNo.toLowerCase() === typed);
-      if (match && match.productName && !DOM.inpProductName.value) {
+      const match = TMS.getTools().find(t => t.applicationPartNo && t.applicationPartNo.toLowerCase() === typed.toLowerCase());
+      if (match && match.productName && DOM.inpProductName && !DOM.inpProductName.value) {
         DOM.inpProductName.value = match.productName;
+      }
+    });
+
+    DOM.inpAppPartNo.addEventListener('keydown', (e) => {
+      if (!DOM.dropdownAppPartList || DOM.dropdownAppPartList.style.display !== 'flex') {
+        if (e.key === 'ArrowDown') {
+          openAppPartDropdown();
+          e.preventDefault();
+        }
+        return;
+      }
+
+      const items = DOM.optionsAppPartList ? DOM.optionsAppPartList.querySelectorAll('.combobox-option, .combobox-new-option') : [];
+      if (items.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeComboboxIndex = (activeComboboxIndex + 1) % items.length;
+        items.forEach((it, idx) => it.classList.toggle('active', idx === activeComboboxIndex));
+        if (items[activeComboboxIndex]) items[activeComboboxIndex].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeComboboxIndex = (activeComboboxIndex - 1 + items.length) % items.length;
+        items.forEach((it, idx) => it.classList.toggle('active', idx === activeComboboxIndex));
+        if (items[activeComboboxIndex]) items[activeComboboxIndex].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (activeComboboxIndex >= 0 && items[activeComboboxIndex]) {
+          selectAppPartValue(items[activeComboboxIndex].dataset.value);
+        } else if (items.length === 1) {
+          selectAppPartValue(items[0].dataset.value);
+        } else {
+          closeAppPartDropdown();
+          if (DOM.inpProductName && !DOM.inpProductName.value) {
+            DOM.inpProductName.focus();
+          } else if (DOM.inpToolNumber) {
+            DOM.inpToolNumber.focus();
+          }
+        }
+      } else if (e.key === 'Escape') {
+        e.stopPropagation();
+        closeAppPartDropdown();
+      } else if (e.key === 'Tab') {
+        closeAppPartDropdown();
       }
     });
   }
 
+  if (DOM.btnToggleAppPartList) {
+    DOM.btnToggleAppPartList.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAppPartDropdown();
+    });
+  }
+
+  if (DOM.optionsAppPartList) {
+    DOM.optionsAppPartList.addEventListener('click', (e) => {
+      const option = e.target.closest('.combobox-option, .combobox-new-option');
+      if (option && option.dataset.value) {
+        selectAppPartValue(option.dataset.value);
+      }
+    });
+  }
+
+  // Close combobox when clicking outside
+  document.addEventListener('click', (e) => {
+    if (DOM.comboboxAppPart && !DOM.comboboxAppPart.contains(e.target)) {
+      closeAppPartDropdown();
+    }
+  });
+
   function openAddEditToolModal(toolNumber = null) {
     State.editingToolNumber = toolNumber;
-    populateAppPartDatalist();
 
     if (toolNumber) {
       // Edit Mode
       const tool = TMS.getTool(toolNumber);
       if (tool) {
         DOM.modalToolTitle.textContent = `Edit Tool - ${tool.toolNumber} (Part: ${tool.applicationPartNo || '-'})`;
+        populateAppPartDropdown(tool.applicationPartNo || '');
+        closeAppPartDropdown();
         if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = tool.applicationPartNo || '';
         if (DOM.inpProductName) DOM.inpProductName.value = tool.productName || '';
         DOM.inpToolNumber.value = tool.toolNumber;
@@ -852,15 +1055,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add Mode
       DOM.modalToolTitle.textContent = 'Add Tool to Master List';
       DOM.formToolMaster.reset();
+      populateAppPartDropdown('');
+      closeAppPartDropdown();
       DOM.inpToolNumber.readOnly = false;
       DOM.inpIssuedDate.value = new Date().toISOString().slice(0, 10);
       if (DOM.inpLifeTime) DOM.inpLifeTime.value = 200000;
       if (DOM.inpClassification) DOM.inpClassification.value = 'Critical';
       if (DOM.inpToolCount) DOM.inpToolCount.value = 1;
 
-      // Default suggested inputs to guide user
-      if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = '001';
-      if (DOM.inpProductName) DOM.inpProductName.value = 'Steering Yoke Assembly';
+      if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = '';
+      if (DOM.inpProductName) DOM.inpProductName.value = '';
       if (DOM.inpToolNumber) DOM.inpToolNumber.value = '';
       if (DOM.inpToolDescription) DOM.inpToolDescription.value = '';
     }

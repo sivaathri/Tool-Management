@@ -915,14 +915,47 @@
             <div class="form-row-2">
               <div class="form-group">
                 <label class="form-label" for="inpAppPartNo">Application Part No. (Parent No) *</label>
-                <div style="display: flex; gap: 8px;">
-                  <select class="form-select" id="selAppPartDropdown" style="flex: 1.1; min-width: 140px;" title="Select from saved Part Numbers">
-                    <option value="">-- Saved Parts --</option>
+                <div class="combobox-container" id="comboboxAppPart">
+                  <div class="combobox-input-wrapper">
+                    <input
+                      type="text"
+                      class="form-input combobox-input"
+                      id="inpAppPartNo"
+                      placeholder="Search saved part or enter new (e.g. 001)"
+                      autocomplete="off"
+                      required
+                    >
+                    <button type="button" class="combobox-chevron-btn" id="btnToggleAppPartList" tabindex="-1" title="Click to view all saved Part Numbers">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Floating Searchable Options Dropdown -->
+                  <div class="combobox-dropdown" id="dropdownAppPartList" style="display: none;">
+                    <div class="combobox-header">
+                      <span>Saved Part Numbers</span>
+                      <span class="combobox-header-badge" id="appPartCountBadge">0 saved</span>
+                    </div>
+                    <div class="combobox-options" id="optionsAppPartList"></div>
+                    <div class="combobox-footer">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <span>Search & select, or type any new number</span>
+                    </div>
+                  </div>
+
+                  <!-- Hidden select for programmatic sync -->
+                  <select id="selAppPartDropdown" style="display: none;">
+                    <option value="">-- Select Part No --</option>
                   </select>
-                  <input type="text" class="form-input" id="inpAppPartNo" placeholder="Or enter new No (e.g. 001)" required style="flex: 1.2;">
                 </div>
                 <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">
-                  Select previously saved Part No from dropdown, or type a new number
+                  Search and select from saved Part Numbers, or type a new number
                 </div>
               </div>
               <div class="form-group">
