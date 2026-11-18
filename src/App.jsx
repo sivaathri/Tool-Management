@@ -30,7 +30,22 @@ import {
 } from './data/storage';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('master-list');
+  const [currentView, setCurrentView] = useState(() => {
+    try {
+      return localStorage.getItem('tms_current_view') || 'master-list';
+    } catch (e) {
+      return 'master-list';
+    }
+  });
+
+  const [selectedServiceToolId, setSelectedServiceToolId] = useState(() => {
+    try {
+      return localStorage.getItem('tms_selected_pm_tool') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
   const [tools, setTools] = useState([]);
   const [productionLogs, setProductionLogs] = useState([]);
   const [users, setUsers] = useState([]);
@@ -49,7 +64,24 @@ export default function App() {
   const [dossierTool, setDossierTool] = useState(null);
   const [toolToDelete, setToolToDelete] = useState(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const [selectedServiceToolId, setSelectedServiceToolId] = useState(null);
+
+  // Persist view across browser refresh
+  useEffect(() => {
+    try {
+      localStorage.setItem('tms_current_view', currentView);
+    } catch (e) {}
+  }, [currentView]);
+
+  // Persist selected PM tool across browser refresh
+  useEffect(() => {
+    try {
+      if (selectedServiceToolId) {
+        localStorage.setItem('tms_selected_pm_tool', selectedServiceToolId);
+      } else {
+        localStorage.removeItem('tms_selected_pm_tool');
+      }
+    } catch (e) {}
+  }, [selectedServiceToolId]);
 
   // Mobile sidebar
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
