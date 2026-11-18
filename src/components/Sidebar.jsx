@@ -84,34 +84,7 @@ export default function Sidebar({
             <span>Tool Service History</span>
           </a>
 
-          <a
-            className={`nav-item ${currentView === 'production-tracking' ? 'active' : ''}`}
-            onClick={() => { onNavigate('production-tracking'); onCloseMobile?.(); }}
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            <span>Production Tracking</span>
-          </a>
-
           <div className="nav-section-label">Maintenance & Audits</div>
-
-          <a
-            className={`nav-item ${currentView === 'replacement-alerts' ? 'active' : ''}`}
-            onClick={() => { onNavigate('replacement-alerts'); onCloseMobile?.(); }}
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <span>Replacement Alerts</span>
-            <span className={`nav-badge ${urgentAlertCount > 0 ? 'danger' : ''}`} id="sidebarAlertCount">
-              {urgentAlertCount}
-            </span>
-          </a>
 
           <a
             className={`nav-item ${currentView === 'reports' ? 'active' : ''}`}
