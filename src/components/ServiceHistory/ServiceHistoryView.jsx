@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { formatNumber } from '../../data/storage';
 import AddProductionModal from './AddProductionModal';
 import PMChecklistSheet from './PMChecklistSheet';
+import ToolReplacementModal from './ToolReplacementModal';
 
 // Format date string to "MMM-YY" (e.g. "Oct-18", "Nov-18", "Feb-23")
 function formatMonthYear(dateStr) {
@@ -35,6 +36,7 @@ export default function ServiceHistoryView({
   productionLogs, 
   onAddProductionLog, 
   onDeleteProductionLog,
+  onReplaceTool,
   showToast,
   selectedToolId: propSelectedToolId = null,
   onSelectToolId,
@@ -51,6 +53,8 @@ export default function ServiceHistoryView({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
+  const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
+  const [selectedCycleTab, setSelectedCycleTab] = useState('current');
   const searchComboRef = useRef(null);
 
   useEffect(() => {
@@ -62,6 +66,11 @@ export default function ServiceHistoryView({
       }
     }
   }, [propSelectedToolId, tools]);
+
+  // Reset cycle tab whenever selected tool changes
+  useEffect(() => {
+    setSelectedCycleTab('current');
+  }, [selectedToolId]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -91,6 +100,85 @@ export default function ServiceHistoryView({
     if (!selectedToolId) return null;
     return tools.find(t => t.id === selectedToolId) || null;
   }, [tools, selectedToolId]);
+
+  const currentCycle = selectedTool ? (selectedTool.toolCount || 0) : 0;
+
+  // Identify all past retired cycles for this tool
+  const pastCycles = useMemo(() => {
+    if (!selectedTool) return [];
+    const set = new Set();
+    (selectedTool.replacements || []).forEach(r => {
+      if (r.cycle !== undefined && r.cycle !== null) set.add(Number(r.cycle));
+    });
+    productionLogs.forEach(l => {
+      if (l.toolId === selectedTool.id || (l.toolNo && l.toolNo.toLowerCase() === selectedTool.toolNo.toLowerCase())) {
+        const c = l.cycle !== undefined && l.cycle !== null ? Number(l.cycle) : 0;
+        if (c < currentCycle) set.add(c);
+      }
+    });
+    for (let i = 0; i < currentCycle; i++) {
+      set.add(i);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [selectedTool, productionLogs, currentCycle]);
+
+  // All logs belonging to this tool sorted chronologically
+  const allToolLogs = useMemo(() => {
+    if (!selectedTool) return [];
+    return [...productionLogs]
+      .filter(l => l.toolId === selectedTool.id || (l.toolNo && l.toolNo.toLowerCase() === selectedTool.toolNo.toLowerCase()))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [productionLogs, selectedTool]);
+
+  // Calculate cumulative per cycle (starts fresh at 0 for each new cycle)
+  const logsWithCycleCumulative = useMemo(() => {
+    if (!selectedTool) return [];
+    const byCycle = {};
+    allToolLogs.forEach(l => {
+      const c = l.cycle !== undefined && l.cycle !== null ? Number(l.cycle) : 0;
+      if (!byCycle[c]) byCycle[c] = [];
+      byCycle[c].push(l);
+    });
+
+    const result = [];
+    Object.keys(byCycle).forEach(cStr => {
+      const c = Number(cStr);
+      const cycleLogs = byCycle[c];
+
+      let running = 0;
+      if (c === 0 && selectedTool.toolCount === 0) {
+        const totalFromLogs = cycleLogs.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+        running = Math.max(0, (selectedTool.cumulative || 0) - totalFromLogs);
+      }
+
+      cycleLogs.forEach(l => {
+        const qty = Number(l.quantity) || 0;
+        running += qty;
+        result.push({
+          ...l,
+          cycle: c,
+          monthDisplay: formatMonthYear(l.date),
+          quantityMade: qty,
+          cumulativeMade: running
+        });
+      });
+    });
+
+    return result.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [allToolLogs, selectedTool]);
+
+  // Current displayed logs based on selected cycle tab
+  const displayedLogs = useMemo(() => {
+    if (!selectedTool) return [];
+    if (selectedCycleTab === 'current') {
+      return logsWithCycleCumulative.filter(l => (l.cycle ?? 0) === currentCycle);
+    }
+    if (selectedCycleTab === 'all') {
+      return logsWithCycleCumulative;
+    }
+    const targetCycle = Number(selectedCycleTab);
+    return logsWithCycleCumulative.filter(l => (l.cycle ?? 0) === targetCycle);
+  }, [logsWithCycleCumulative, selectedCycleTab, currentCycle, selectedTool]);
 
   // Filter tools for autocomplete dropdown as user types
   const matchingTools = useMemo(() => {
@@ -148,29 +236,6 @@ export default function ServiceHistoryView({
     }
   };
 
-  const toolLogs = useMemo(() => {
-    if (!selectedTool) return [];
-    // Sort chronologically (earliest to latest)
-    const logs = [...productionLogs]
-      .filter(l => l.toolId === selectedTool.id || (l.toolNo && l.toolNo.toLowerCase() === selectedTool.toolNo.toLowerCase()))
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    const totalFromLogs = logs.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
-    const baseOffset = Math.max(0, (selectedTool.cumulative || 0) - totalFromLogs);
-
-    let running = baseOffset;
-    return logs.map(l => {
-      const qty = Number(l.quantity) || 0;
-      running += qty;
-      return {
-        ...l,
-        monthDisplay: formatMonthYear(l.date),
-        quantityMade: qty,
-        cumulativeMade: running
-      };
-    });
-  }, [productionLogs, selectedTool]);
-
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
     if (matchingTools.length > 0) {
@@ -190,14 +255,24 @@ export default function ServiceHistoryView({
   const handleSaveLog = (newLog) => {
     if (!selectedTool) return;
     const targetMonth = (newLog.month || newLog.date || '').slice(0, 7);
-    const alreadyExists = toolLogs.some(l => (l.month || l.date || '').slice(0, 7) === targetMonth);
+    const alreadyExists = allToolLogs.some(l => {
+      const lCycle = l.cycle !== undefined && l.cycle !== null ? Number(l.cycle) : 0;
+      return lCycle === currentCycle && (l.month || l.date || '').slice(0, 7) === targetMonth;
+    });
     if (alreadyExists) {
-      showToast(`An entry for ${formatMonthYear(targetMonth + '-01')} already exists for ${selectedTool.toolNo}. You cannot add the same month twice.`, 'warning');
+      showToast(`An entry for ${formatMonthYear(targetMonth + '-01')} already exists for ${selectedTool.toolNo} in Cycle ${currentCycle}. You cannot add the same month twice.`, 'warning');
       return;
     }
     onAddProductionLog(newLog);
     setIsAddLogOpen(false);
     showToast(`Logged ${formatNumber(newLog.quantity)} output for ${selectedTool.toolNo} (${formatMonthYear(newLog.date)})`, 'success');
+  };
+
+  const handleConfirmReplace = (replacementData) => {
+    if (!selectedTool) return;
+    onReplaceTool?.(selectedTool.id, replacementData);
+    setIsReplaceModalOpen(false);
+    setSelectedCycleTab('current');
   };
 
   const pct = selectedTool ? Math.min(100, Math.round((selectedTool.cumulative / (selectedTool.lifetime || 1)) * 100)) : 0;
@@ -358,7 +433,38 @@ export default function ServiceHistoryView({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={`btn ${selectedTool.status === 'Replacement Due' ? 'btn-danger' : 'btn-secondary'}`}
+              id="btnReplaceTool"
+              onClick={() => setIsReplaceModalOpen(true)}
+              style={{
+                padding: '9px 16px',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                ...(selectedTool.status === 'Replacement Due' ? {
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  borderColor: '#dc2626',
+                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.35)'
+                } : {
+                  backgroundColor: '#ffffff',
+                  color: 'var(--slate-700)',
+                  borderColor: '#cbd5e1'
+                })
+              }}
+              title="Replace tool to start a fresh cycle upon reaching life limit"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              <span>{selectedTool.status === 'Replacement Due' ? 'Replace Tool (Life Limit Reached)' : 'Replace Tool'}</span>
+            </button>
+
             <button
               type="button"
               className="btn btn-primary"
@@ -460,45 +566,210 @@ export default function ServiceHistoryView({
       {/* PREVENTIVE MAINTENANCE CHECK LIST SHEET (ENTER DATA) */}
       <PMChecklistSheet tool={selectedTool} showToast={showToast} />
 
-      {/* QUANTITY PRODUCED (PRODUCTION TRACKING) TABLE */}
-      <div className="card" style={{ marginTop: '24px' }}>
-        <div className="card-header">
-          <div>
-            <div className="card-title">Quantity Produced (Production Tracking)</div>
+      {/* LIFE TIME LIMIT OVERRUN ALERT BANNER */}
+      {selectedTool.status === 'Replacement Due' && (
+        <div style={{
+          marginTop: '20px',
+          padding: '16px 20px',
+          backgroundColor: '#fef2f2',
+          border: '1.5px solid #fecaca',
+          borderRadius: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+          boxShadow: '0 2px 8px rgba(220, 38, 38, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: '#fee2e2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#dc2626',
+              flexShrink: 0
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ color: '#991b1b', fontSize: '15px', fontWeight: 800 }}>
+                Tool Life Time Limit Reached: {formatNumber(selectedTool.cumulative)} / {formatNumber(selectedTool.lifetime)} strokes (100% Used)
+              </div>
+              <div style={{ color: '#b91c1c', fontSize: '13px', marginTop: '3px', lineHeight: 1.45 }}>
+                This tool has completed its rated life limit. Click <strong>Replace Tool</strong> to start a fresh production cycle (cumulative reset to 0, full balance restored). All historical records are permanently preserved.
+              </div>
+            </div>
           </div>
           <button
             type="button"
-            className="btn btn-primary"
-            onClick={() => setIsAddLogOpen(true)}
+            className="btn btn-danger"
+            onClick={() => setIsReplaceModalOpen(true)}
             style={{
-              backgroundColor: '#059669',
-              padding: '9px 18px',
+              padding: '9px 20px',
               fontSize: '13.5px',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '7px',
-              boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+              fontWeight: 800,
+              whiteSpace: 'nowrap',
+              backgroundColor: '#dc2626',
+              boxShadow: '0 2px 6px rgba(220, 38, 38, 0.35)'
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>Add Quantity Record</span>
+            Replace Tool Now
           </button>
+        </div>
+      )}
+
+      {/* QUANTITY PRODUCED (PRODUCTION TRACKING) TABLE WITH CYCLE SEGREGATION */}
+      <div className="card" style={{ marginTop: '24px' }}>
+        <div className="card-header" style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div>
+            <div className="card-title" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--slate-900)' }}>
+              Quantity Produced (Production Tracking)
+            </div>
+            <div style={{ fontSize: '12.5px', color: 'var(--slate-500)', marginTop: '2px' }}>
+              Cycle-based production history. Replacing a tool starts a fresh cycle while preserving all historical records.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setIsAddLogOpen(true)}
+              style={{
+                backgroundColor: '#059669',
+                padding: '9px 18px',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Add Quantity Record</span>
+            </button>
+          </div>
+        </div>
+
+        {/* CYCLE SELECTOR TABS / NAVIGATION BAR */}
+        <div style={{
+          padding: '12px 18px',
+          backgroundColor: '#f8fafc',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.4px', marginRight: '4px' }}>
+              Cycle View:
+            </span>
+
+            {/* Current Active / Fresh Cycle Tab */}
+            <button
+              type="button"
+              className={`btn btn-sm ${selectedCycleTab === 'current' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setSelectedCycleTab('current')}
+              style={{
+                fontWeight: 700,
+                fontSize: '12.5px',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                backgroundColor: selectedCycleTab === 'current' ? '#0284c7' : '#ffffff',
+                borderColor: selectedCycleTab === 'current' ? '#0284c7' : '#cbd5e1'
+              }}
+            >
+              🟢 Current Cycle (Cycle {currentCycle}) {selectedCycleTab === 'current' ? '• Fresh' : ''}
+            </button>
+
+            {/* Previous Retired Cycles */}
+            {pastCycles.map(c => (
+              <button
+                key={c}
+                type="button"
+                className={`btn btn-sm ${selectedCycleTab === String(c) ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setSelectedCycleTab(String(c))}
+                style={{
+                  fontWeight: 600,
+                  fontSize: '12.5px',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  backgroundColor: selectedCycleTab === String(c) ? '#475569' : '#ffffff',
+                  borderColor: selectedCycleTab === String(c) ? '#475569' : '#cbd5e1'
+                }}
+              >
+                📁 Cycle {c} (History)
+              </button>
+            ))}
+
+            {/* All Cycles Combined Tab */}
+            {(pastCycles.length > 0 || currentCycle > 0) && (
+              <button
+                type="button"
+                className={`btn btn-sm ${selectedCycleTab === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setSelectedCycleTab('all')}
+                style={{
+                  fontWeight: 600,
+                  fontSize: '12.5px',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  backgroundColor: selectedCycleTab === 'all' ? '#1e293b' : '#ffffff',
+                  borderColor: selectedCycleTab === 'all' ? '#1e293b' : '#cbd5e1'
+                }}
+              >
+                📑 All Cycles History
+              </button>
+            )}
+          </div>
+
+          <div style={{ fontSize: '12px', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px' }}>ℹ️</span>
+            {selectedCycleTab === 'current' ? (
+              <span>Showing fresh production records for active <strong>Cycle {currentCycle}</strong> (Fresh Cumulative: {formatNumber(selectedTool.cumulative)})</span>
+            ) : selectedCycleTab === 'all' ? (
+              <span>Showing complete history across all cycles. Old records are permanently preserved.</span>
+            ) : (
+              <span>Showing preserved historical production records for retired <strong>Cycle {selectedCycleTab}</strong></span>
+            )}
+          </div>
         </div>
 
         <div className="table-responsive">
           <table className="enterprise-table">
             <thead>
               <tr>
+                {selectedCycleTab === 'all' && (
+                  <th
+                    rowSpan="2"
+                    style={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '120px',
+                      borderRight: '1px solid var(--border-subtle)'
+                    }}
+                  >
+                    CYCLE
+                  </th>
+                )}
                 <th
                   rowSpan="2"
                   style={{
                     textAlign: 'center',
                     verticalAlign: 'middle',
-                    width: '28%',
+                    width: selectedCycleTab === 'all' ? '22%' : '28%',
                     borderRight: '1px solid var(--border-subtle)'
                   }}
                 >
@@ -547,15 +818,50 @@ export default function ServiceHistoryView({
               </tr>
             </thead>
             <tbody id="quantityProducedTableBody">
-              {toolLogs.length === 0 ? (
+              {displayedLogs.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--slate-400)' }}>
-                    No production logs recorded yet for <strong>{selectedTool.toolNo}</strong>. Click "+ Add Quantity Record" to record output.
+                  <td colSpan={selectedCycleTab === 'all' ? 5 : 4} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--slate-500)' }}>
+                    {selectedCycleTab === 'current' ? (
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>
+                          ✨ Fresh Cycle {currentCycle} Active (0 strokes logged)
+                        </div>
+                        <div style={{ fontSize: '13px', color: 'var(--slate-500)', maxWidth: '520px', margin: '0 auto 12px auto' }}>
+                          This tool is currently running on a fresh replacement cycle. Full stroke limit balance of <strong>{formatNumber(selectedTool.lifetime)}</strong> is available. Click <strong>+ Add Quantity Record</strong> above to begin logging monthly production.
+                        </div>
+                        {pastCycles.length > 0 && (
+                          <div style={{ fontSize: '12px', color: '#1e40af', backgroundColor: '#eff6ff', display: 'inline-block', padding: '4px 12px', borderRadius: '12px' }}>
+                            🔒 Previous cycle records are preserved and available under the <strong>📁 Cycle {pastCycles.join(', ')}</strong> tabs above.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        No records found for Cycle {selectedCycleTab}.
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
-                toolLogs.map((log) => (
+                displayedLogs.map((log) => (
                   <tr key={log.id}>
+                    {/* Optional CYCLE column when viewing All Cycles */}
+                    {selectedCycleTab === 'all' && (
+                      <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>
+                        <span style={{
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          backgroundColor: log.cycle === currentCycle ? '#dbeafe' : '#f1f5f9',
+                          color: log.cycle === currentCycle ? '#1d4ed8' : '#475569',
+                          fontFamily: 'var(--font-mono)'
+                        }}>
+                          Cycle {log.cycle ?? 0} {log.cycle === currentCycle ? '(Active)' : ''}
+                        </span>
+                      </td>
+                    )}
+
                     {/* MONTH */}
                     <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--slate-800)', fontSize: '13.5px' }}>
@@ -602,13 +908,101 @@ export default function ServiceHistoryView({
         </div>
       </div>
 
+      {/* TOOL REPLACEMENT & OVERHAUL HISTORY LOG */}
+      {selectedTool.replacements && selectedTool.replacements.length > 0 && (
+        <div className="card" style={{ marginTop: '20px' }}>
+          <div className="card-header" style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                backgroundColor: '#fef3c7',
+                color: '#b45309',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+              </div>
+              <div>
+                <div className="card-title" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--slate-900)' }}>
+                  Tool Replacement & Overhaul History ({selectedTool.replacements.length})
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--slate-500)' }}>
+                  Permanent log of life limit completions, die set renewals, and cycle transitions
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <table className="enterprise-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '130px', textAlign: 'center' }}>DATE</th>
+                  <th style={{ width: '150px', textAlign: 'center' }}>CYCLE TRANSITION</th>
+                  <th style={{ width: '170px', textAlign: 'right' }}>STROKES AT RETIREMENT</th>
+                  <th style={{ width: '180px' }}>AUTHORIZED BY</th>
+                  <th>REASON & REMARKS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedTool.replacements.map((rep) => (
+                  <tr key={rep.id}>
+                    <td style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600 }}>
+                      {rep.replacementDate}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        padding: '3px 10px',
+                        borderRadius: '12px',
+                        backgroundColor: '#f0fdf4',
+                        color: '#15803d',
+                        border: '1px solid #bbf7d0',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        Cycle {rep.cycle} ➔ Cycle {rep.newCycle}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#dc2626', fontSize: '13.5px' }}>
+                      {formatNumber(rep.finalCumulative)} / {formatNumber(rep.lifetimeLimit)}
+                    </td>
+                    <td style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-800)' }}>
+                      {rep.replacedBy}
+                    </td>
+                    <td style={{ fontSize: '12.5px', color: 'var(--slate-600)' }}>
+                      {rep.remarks}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Add Production Modal */}
       {isAddLogOpen && selectedTool && (
         <AddProductionModal
           tool={selectedTool}
-          existingLogs={toolLogs}
+          existingLogs={allToolLogs}
           onClose={() => setIsAddLogOpen(false)}
           onSave={handleSaveLog}
+        />
+      )}
+
+      {/* Tool Replacement Modal */}
+      {isReplaceModalOpen && selectedTool && (
+        <ToolReplacementModal
+          tool={selectedTool}
+          isOpen={isReplaceModalOpen}
+          onClose={() => setIsReplaceModalOpen(false)}
+          onConfirm={handleConfirmReplace}
         />
       )}
         </>

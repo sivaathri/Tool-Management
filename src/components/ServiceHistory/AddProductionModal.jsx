@@ -34,12 +34,15 @@ function getNextMonth(monthStr) {
 }
 
 export default function AddProductionModal({ tool, existingLogs = [], onClose, onSave }) {
-  // Collect existing months recorded for this tool
+  const activeCycle = tool?.toolCount || 0;
+
+  // Collect existing months recorded for this tool in the current active cycle
   const existingMonths = useMemo(() => {
     return (existingLogs || [])
+      .filter(l => (l.cycle !== undefined && l.cycle !== null ? Number(l.cycle) : 0) === activeCycle)
       .map(l => (l.month || l.date || '').slice(0, 7))
       .filter(m => /^\d{4}-\d{2}$/.test(m));
-  }, [existingLogs]);
+  }, [existingLogs, activeCycle]);
 
   // Determine latest recorded month and default to the NEXT month
   const initialMonth = useMemo(() => {
@@ -69,7 +72,7 @@ export default function AddProductionModal({ tool, existingLogs = [], onClose, o
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isMonthDuplicate) {
-      setError(`An entry for ${formatMonthName(selectedMonth)} already exists for this tool. Only one entry per month is permitted.`);
+      setError(`An entry for ${formatMonthName(selectedMonth)} already exists for this tool in Cycle ${activeCycle}. Only one entry per month is permitted.`);
       return;
     }
 
@@ -84,6 +87,7 @@ export default function AddProductionModal({ tool, existingLogs = [], onClose, o
       date: `${selectedMonth}-01`,
       month: selectedMonth,
       quantity: numQty,
+      cycle: activeCycle,
       operator: operator.trim() || 'Operator',
       notes: ''
     });

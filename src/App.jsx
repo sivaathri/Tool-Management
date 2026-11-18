@@ -17,6 +17,7 @@ import UserManagementView from './components/UserManagement/UserManagementView';
 import {
   getTools,
   saveTool,
+  replaceTool,
   deleteTool,
   getProductionLogs,
   addProductionLog,
@@ -123,6 +124,13 @@ export default function App() {
     }
   };
 
+  // Tool Lifecycle Replacement Handler (Starts Fresh Cycle, Preserves History)
+  const handleReplaceTool = (toolId, replacementData) => {
+    const updated = replaceTool(toolId, replacementData);
+    reloadData();
+    addToast(`Tool ${updated?.toolNo || toolId} replaced successfully! Fresh Cycle ${updated?.toolCount || ''} started with 0 cumulative output.`, 'success');
+  };
+
   // Production Log Handlers
   const handleAddProductionLog = (logData) => {
     addProductionLog(logData);
@@ -224,6 +232,7 @@ export default function App() {
               onBackToMaster={() => setCurrentView('master-list')}
               onAddProductionLog={handleAddProductionLog}
               onDeleteProductionLog={handleDeleteProductionLog}
+              onReplaceTool={handleReplaceTool}
               showToast={addToast}
             />
           )}
@@ -241,6 +250,8 @@ export default function App() {
               onViewDossier={setDossierTool}
               onViewServiceHistory={handleViewServiceHistory}
               onNavigate={setCurrentView}
+              onReplaceTool={handleReplaceTool}
+              showToast={addToast}
             />
           )}
 

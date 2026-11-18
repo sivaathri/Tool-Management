@@ -77,6 +77,8 @@ function normalizeToolItem(raw, productionLogs = []) {
   const toolIssuedOn = raw.toolIssuedOn || raw.issuedDate || new Date().toISOString().slice(0, 10);
   const lifetime = Number(raw.lifetime || raw.lifeTime || raw.replacementFrequency || 0);
   const classification = raw.classification === 'Critical' ? 'Critical' : 'Non-Critical';
+  const toolCount = Number(raw.toolCount !== undefined && raw.toolCount !== null ? raw.toolCount : 0);
+  const replacements = Array.isArray(raw.replacements) ? raw.replacements : [];
 
   // Normalize checkPoints to array of string strings
   let checkPoints = [];
@@ -88,24 +90,31 @@ function normalizeToolItem(raw, productionLogs = []) {
     }).filter(Boolean);
   }
 
-  // Calculate cumulative from matching production logs
+  // All matching logs for this tool across all time
   const matchingLogs = productionLogs.filter(p => 
     p.toolId === id || (p.toolNo && p.toolNo.toLowerCase() === toolNo.toLowerCase())
   );
   
-  const loggedCumulative = matchingLogs.reduce((acc, curr) => acc + (Number(curr.quantity) || Number(curr.quantityMade) || 0), 0);
-  const baseCumulative = Number(raw.cumulative || raw.cumulativeQuantity || 0);
-  const cumulative = Math.max(loggedCumulative, baseCumulative);
+  // Total cumulative across ALL cycles ever logged
+  const totalAllTimeLogs = matchingLogs.reduce((acc, curr) => acc + (Number(curr.quantity) || Number(curr.quantityMade) || 0), 0);
 
-  // Remaining balance
+  // Filter logs for the CURRENT ACTIVE cycle (toolCount)
+  const currentCycleLogs = matchingLogs.filter(p => {
+    const logCycle = p.cycle !== undefined && p.cycle !== null ? Number(p.cycle) : 0;
+    return logCycle === toolCount;
+  });
+
+  const currentLoggedCumulative = currentCycleLogs.reduce((acc, curr) => acc + (Number(curr.quantity) || Number(curr.quantityMade) || 0), 0);
+  
+  // For cycle 0, allow baseCumulative if set
+  const baseCumulative = toolCount === 0 ? Number(raw.cumulative || raw.cumulativeQuantity || 0) : 0;
+  const cumulative = Math.max(currentLoggedCumulative, baseCumulative);
+
+  // Remaining balance for current active cycle
   const rawBalance = lifetime > 0 ? (lifetime - cumulative) : 0;
   const balance = rawBalance < 0 ? 0 : rawBalance;
 
-  // Tool Count: auto-calculated cycle count (starts at 0, increments to 1, 2... as cumulative exceeds lifetime)
-  const computedCycles = lifetime > 0 ? Math.floor(cumulative / lifetime) : 0;
-  const toolCount = computedCycles;
-
-  // Lifecycle status
+  // Lifecycle status for current active cycle
   let status = 'Active';
   if (lifetime > 0) {
     const wearPct = (cumulative / lifetime) * 100;
@@ -128,8 +137,10 @@ function normalizeToolItem(raw, productionLogs = []) {
     toolCount,
     checkPoints,
     cumulative,
+    totalAllTime: Math.max(totalAllTimeLogs, cumulative),
     balance,
-    status
+    status,
+    replacements
   };
 }
 
@@ -148,6 +159,11 @@ function normalizeProductionItem(raw) {
   if (!dateVal) {
     dateVal = new Date().toISOString().slice(0, 10);
   }
+
+  const cycleVal = raw.cycle !== undefined && raw.cycle !== null 
+    ? Number(raw.cycle) 
+    : (raw.toolNumber === 'INE T 0652' || raw.toolNumber === 'INE T 0002' || raw.toolNumber === 'INE T 0005' ? 1 : 0);
+
   return {
     id: raw.id || `prd-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     toolId: raw.toolId || null,
@@ -155,6 +171,7 @@ function normalizeProductionItem(raw) {
     date: dateVal,
     month: raw.month || dateVal.slice(0, 7),
     quantity: Number(raw.quantity || raw.quantityMade || 0),
+    cycle: cycleVal,
     operator: raw.operator || 'Operator',
     notes: raw.notes || raw.remarks || ''
   };
@@ -201,6 +218,53 @@ export function saveTool(toolData) {
 
   localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
   return normalized;
+}
+
+// Record a tool replacement: advances cycle, preserves history, starts fresh current cycle
+export function replaceTool(toolId, replacementData = {}) {
+  initStorage();
+  const logs = getProductionLogs();
+  const rawData = localStorage.getItem(STORAGE_KEYS.TOOLS);
+  const tools = rawData ? JSON.parse(rawData) : INITIAL_TOOLS;
+  
+  const existingIdx = tools.findIndex(t => t.id === toolId || formatToolNumber(t.toolNo || t.toolNumber).toLowerCase() === formatToolNumber(toolId).toLowerCase());
+  if (existingIdx === -1) return null;
+
+  const rawTool = tools[existingIdx];
+  const oldCycle = Number(rawTool.toolCount !== undefined && rawTool.toolCount !== null ? rawTool.toolCount : 0);
+  const newCycle = oldCycle + 1;
+
+  // Get current cycle cumulative to preserve in replacement history event
+  const currentToolModel = normalizeToolItem(rawTool, logs);
+  const finalCumulative = currentToolModel.cumulative;
+
+  const repEvent = {
+    id: `rep-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    toolId: rawTool.id,
+    toolNo: currentToolModel.toolNo,
+    cycle: oldCycle,
+    newCycle: newCycle,
+    replacementDate: replacementData.date || new Date().toISOString().slice(0, 10),
+    finalCumulative: finalCumulative,
+    lifetimeLimit: currentToolModel.lifetime,
+    replacedBy: replacementData.replacedBy || 'Tool Room Lead',
+    remarks: replacementData.remarks || 'Standard lifecycle replacement upon reaching rated stroke limit'
+  };
+
+  const updatedReplacements = [...(rawTool.replacements || []), repEvent];
+
+  // Update raw tool for the new cycle
+  rawTool.toolCount = newCycle;
+  rawTool.replacements = updatedReplacements;
+  rawTool.cumulative = 0; // reset base cumulative for new cycle
+  rawTool.cumulativeQuantity = 0;
+  rawTool.toolIssuedOn = replacementData.date || new Date().toISOString().slice(0, 10);
+  rawTool.issuedDate = rawTool.toolIssuedOn;
+
+  tools[existingIdx] = rawTool;
+  localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
+
+  return normalizeToolItem(rawTool, logs);
 }
 
 // Delete a tool
@@ -379,6 +443,7 @@ export function deleteUser(userId) {
 export const TMSStorage = {
   getTools,
   saveTool,
+  replaceTool,
   deleteTool,
   getProductionLogs,
   addProductionLog,

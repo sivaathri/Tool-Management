@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { formatNumber, exportToolsToCSV } from '../../data/storage';
+import ToolReplacementModal from '../ServiceHistory/ToolReplacementModal';
 
-export default function ReplacementAlertsView({ tools, onViewDossier, onViewServiceHistory, onNavigate }) {
+export default function ReplacementAlertsView({ tools, onViewDossier, onViewServiceHistory, onNavigate, onReplaceTool, showToast }) {
   const [filterType, setFilterType] = useState('ALL');
+  const [replacingTool, setReplacingTool] = useState(null);
 
   const dueTools = useMemo(() => {
     return tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun');
@@ -156,7 +158,27 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${isDue ? 'btn-danger' : 'btn-secondary'}`}
+                            onClick={() => setReplacingTool(tool)}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              ...(isDue ? { backgroundColor: '#dc2626', color: '#fff', borderColor: '#dc2626' } : {})
+                            }}
+                            title="Replace tool and start fresh cycle"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
+                            <span>Replace</span>
+                          </button>
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
@@ -167,9 +189,9 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
                           <button
                             type="button"
                             className="btn btn-primary btn-sm"
-                            onClick={() => onNavigate('service-history')}
+                            onClick={() => onViewServiceHistory ? onViewServiceHistory(tool) : onNavigate('service-history')}
                           >
-                            Service Tool
+                            PM Card
                           </button>
                         </div>
                       </td>
@@ -181,6 +203,19 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
           </table>
         </div>
       </div>
+
+      {/* Replacement Modal */}
+      {replacingTool && (
+        <ToolReplacementModal
+          tool={replacingTool}
+          isOpen={true}
+          onClose={() => setReplacingTool(null)}
+          onConfirm={(data) => {
+            onReplaceTool?.(replacingTool.id, data);
+            setReplacingTool(null);
+          }}
+        />
+      )}
     </section>
   );
 }
