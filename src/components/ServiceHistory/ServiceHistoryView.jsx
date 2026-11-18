@@ -79,20 +79,7 @@ export default function ServiceHistoryView({
       {/* Page Header */}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          {onBackToMaster && (
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={onBackToMaster}
-              title="Back to Master List"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span>Back to Master List</span>
-            </button>
-          )}
+         
           <div>
             <h1 className="page-title">Tool Service History</h1>
             <p className="page-subtitle">Digital Tool Service History Card & Production Output Tracking</p>
@@ -138,21 +125,7 @@ export default function ServiceHistoryView({
           </button>
         </form>
 
-        {/* Quick select chips */}
-        <div className="quick-tool-chips">
-          <span className="chip-label">Quick select:</span>
-          {tools.slice(0, 8).map(t => (
-            <button
-              key={t.id}
-              type="button"
-              className={`chip-btn ${t.id === selectedTool.id ? 'active' : ''}`}
-              onClick={() => handleSelectTool(t.id)}
-              style={t.id === selectedTool.id ? { backgroundColor: 'var(--accent-600)', color: '#fff', borderColor: 'var(--accent-600)' } : {}}
-            >
-              {t.toolNo} ({t.applicationPartNo} - {t.productName || 'Tool'})
-            </button>
-          ))}
-        </div>
+        
       </div>
 
       {/* SELECTED TOOL SUMMARY DIGITAL CARD */}

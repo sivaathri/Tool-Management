@@ -6,6 +6,7 @@ export default function DashboardView({
   metrics, 
   onNavigate, 
   onViewDossier, 
+  onViewServiceHistory,
   onAddTool,
   onRefresh
 }) {
@@ -247,9 +248,14 @@ export default function DashboardView({
                 urgentTools.slice(0, 5).map((tool) => (
                   <tr key={tool.id}>
                     <td>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-600)' }}>
+                      <button
+                        type="button"
+                        className="tool-no-btn"
+                        onClick={() => onViewServiceHistory ? onViewServiceHistory(tool) : onViewDossier(tool)}
+                        title={`Click to view Tool Service History Card for ${tool.toolNo}`}
+                      >
                         {tool.toolNo}
-                      </span>
+                      </button>
                     </td>
                     <td>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>

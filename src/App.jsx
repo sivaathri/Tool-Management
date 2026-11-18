@@ -43,6 +43,7 @@ export default function App() {
   const [dossierTool, setDossierTool] = useState(null);
   const [toolToDelete, setToolToDelete] = useState(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [selectedServiceToolId, setSelectedServiceToolId] = useState(null);
 
   // Mobile sidebar
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -128,6 +129,14 @@ export default function App() {
     addToast('You have been logged out successfully.', 'info');
   };
 
+  // View Tool History Service Card
+  const handleViewServiceHistory = (tool) => {
+    if (tool && tool.id) {
+      setSelectedServiceToolId(tool.id);
+    }
+    setCurrentView('service-history');
+  };
+
   return (
     <div className="app-layout">
       {/* Sidebar Navigation */}
@@ -161,6 +170,7 @@ export default function App() {
               metrics={metrics}
               onNavigate={setCurrentView}
               onViewDossier={setDossierTool}
+              onViewServiceHistory={handleViewServiceHistory}
               onAddTool={handleOpenAddTool}
               onRefresh={reloadData}
             />
@@ -173,6 +183,7 @@ export default function App() {
               onEditTool={handleOpenEditTool}
               onDeleteTool={handleDeleteToolClick}
               onViewDossier={setDossierTool}
+              onViewServiceHistory={handleViewServiceHistory}
               showToast={addToast}
             />
           )}
@@ -181,6 +192,9 @@ export default function App() {
             <ServiceHistoryView
               tools={tools}
               productionLogs={productionLogs}
+              selectedToolId={selectedServiceToolId}
+              onSelectToolId={setSelectedServiceToolId}
+              onBackToMaster={() => setCurrentView('master-list')}
               onAddProductionLog={handleAddProductionLog}
               onDeleteProductionLog={handleDeleteProductionLog}
               showToast={addToast}
@@ -198,6 +212,7 @@ export default function App() {
             <ReplacementAlertsView
               tools={tools}
               onViewDossier={setDossierTool}
+              onViewServiceHistory={handleViewServiceHistory}
               onNavigate={setCurrentView}
             />
           )}

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { formatNumber, exportToolsToCSV } from '../../data/storage';
 
-export default function ReplacementAlertsView({ tools, onViewDossier, onNavigate }) {
+export default function ReplacementAlertsView({ tools, onViewDossier, onViewServiceHistory, onNavigate }) {
   const [filterType, setFilterType] = useState('ALL');
 
   const dueTools = useMemo(() => {
@@ -103,9 +103,14 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onNavigate
                   return (
                     <tr key={tool.id}>
                       <td>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-600)' }}>
+                        <button
+                          type="button"
+                          className="tool-no-btn"
+                          onClick={() => onViewServiceHistory ? onViewServiceHistory(tool) : onViewDossier(tool)}
+                          title={`Click to view Tool Service History Card for ${tool.toolNo}`}
+                        >
                           {tool.toolNo}
-                        </span>
+                        </button>
                       </td>
                       <td>
                         <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
