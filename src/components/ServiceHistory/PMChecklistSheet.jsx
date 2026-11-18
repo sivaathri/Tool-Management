@@ -35,17 +35,20 @@ export default function PMChecklistSheet({ tool, showToast }) {
     return { method: 'Visual', specification: 'Free from chip off and damages', sampleActual: 'Free from Damage' };
   };
 
-  // Default rows derived from tool checkPoints or industrial standards
+  // Default rows derived directly from tool checkPoints created in Master List
   const createDefaultRows = () => {
-    const rawPoints = Array.isArray(tool.checkPoints) && tool.checkPoints.length > 0
-      ? tool.checkPoints
-      : [
-          'CHECK COIL LOCATOR FOR ANY DAMAGES',
-          'CHECK COUPLER LOCATOR FOR ANY DAMAGES',
-          'CHECK COUPLER LOCATOR ANY PLAY',
-          'CHECK WIRE GUIDE FOR ANY DAMAGES',
-          'ENSURE TOOL IDENTIFICATION NUMBER'
-        ];
+    let rawPoints = [];
+    if (Array.isArray(tool.checkPoints) && tool.checkPoints.length > 0) {
+      rawPoints = tool.checkPoints;
+    } else {
+      rawPoints = [
+        'CHECK COIL LOCATOR FOR ANY DAMAGES',
+        'CHECK COUPLER LOCATOR FOR ANY DAMAGES',
+        'CHECK COUPLER LOCATOR ANY PLAY',
+        'CHECK WIRE GUIDE FOR ANY DAMAGES',
+        'ENSURE TOOL IDENTIFICATION NUMBER'
+      ];
+    }
 
     return rawPoints.map((cp, idx) => {
       const text = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || '') : String(cp || '');
@@ -62,28 +65,23 @@ export default function PMChecklistSheet({ tool, showToast }) {
   };
 
   // Form State
-  const [refNo, setRefNo] = useState('MFG/FR/075');
+  const refNo = 'MFG/FR/075';
+  const toolDescription = tool.description || 'Precision Manufacturing Tool';
+  const application = tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || '—');
   const [checkDate, setCheckDate] = useState(getTodayDate());
   const [nextDueDate, setNextDueDate] = useState(getNextDueDate());
-  const [toolDescription, setToolDescription] = useState(tool.description || 'PRESSING TOOL (PRIMARY & SECONDARY)');
-  const [application, setApplication] = useState(
-    tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || 'N251C IG COIL')
-  );
   const [rows, setRows] = useState([]);
   const [activeRecordId, setActiveRecordId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Sync rows whenever tool changes
+  // Sync rows whenever tool changes or tool checkPoints change
   useEffect(() => {
-    setRefNo('MFG/FR/075');
     setCheckDate(getTodayDate());
     setNextDueDate(getNextDueDate());
-    setToolDescription(tool.description || 'PRESSING TOOL (PRIMARY & SECONDARY)');
-    setApplication(tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || 'N251C IG COIL'));
     setRows(createDefaultRows());
     setActiveRecordId(null);
     setIsEditing(false);
-  }, [tool.id, tool.toolNo]);
+  }, [tool.id, tool.toolNo, tool.checkPoints]);
 
   const handleRowChange = (index, field, value) => {
     if (!isEditing) return;
@@ -349,28 +347,12 @@ export default function PMChecklistSheet({ tool, showToast }) {
               <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc', fontSize: '11.5px' }}>
                 Ref No.:
               </div>
-              <div style={{ padding: '4px 8px' }}>
-                <input
-                  type="text"
-                  className="pm-sheet-input"
-                  value={refNo}
-                  onChange={(e) => setRefNo(e.target.value)}
-                  readOnly={!isEditing}
-                  style={{
-                    width: '100%',
-                    border: 'none',
-                    background: isEditing ? '#f0f9ff' : 'transparent',
-                    fontWeight: 700,
-                    color: 'var(--slate-800)',
-                    cursor: isEditing ? 'text' : 'default',
-                    padding: '2px 4px',
-                    borderRadius: '3px'
-                  }}
-                />
+              <div style={{ padding: '6px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0f172a' }}>
+                {refNo}
               </div>
             </div>
 
-            {/* Row 2: Tool description | Next due Date */}
+            {/* Row 2: Tool description (Locked to Master List) | Next due Date */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '130px 1fr 120px 350px',
@@ -381,25 +363,8 @@ export default function PMChecklistSheet({ tool, showToast }) {
               <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc' }}>
                 Tool description
               </div>
-              <div style={{ padding: '4px 10px', borderRight: '1px solid #334155' }}>
-                <input
-                  type="text"
-                  className="pm-sheet-input"
-                  value={toolDescription}
-                  onChange={(e) => setToolDescription(e.target.value)}
-                  readOnly={!isEditing}
-                  placeholder="e.g. PRESSING TOOL (PRIMARY & SECONDARY)"
-                  style={{
-                    width: '100%',
-                    border: 'none',
-                    background: isEditing ? '#f0f9ff' : 'transparent',
-                    fontWeight: 600,
-                    color: '#0f172a',
-                    cursor: isEditing ? 'text' : 'default',
-                    padding: '2px 4px',
-                    borderRadius: '3px'
-                  }}
-                />
+              <div style={{ padding: '6px 12px', fontWeight: 600, color: '#0f172a', borderRight: '1px solid #334155' }}>
+                {tool.description || 'Precision Manufacturing Tool'}
               </div>
               <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc' }}>
                 Next due Date:
@@ -425,7 +390,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
               </div>
             </div>
 
-            {/* Row 3: Application & Tool Issued On */}
+            {/* Row 3: Application (Locked to Master List) & Tool Issued On (Locked to Master List) */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '130px 1fr 120px 200px',
@@ -435,25 +400,8 @@ export default function PMChecklistSheet({ tool, showToast }) {
               <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc' }}>
                 Application
               </div>
-              <div style={{ padding: '4px 10px', borderRight: '1px solid #334155' }}>
-                <input
-                  type="text"
-                  className="pm-sheet-input"
-                  value={application}
-                  onChange={(e) => setApplication(e.target.value)}
-                  readOnly={!isEditing}
-                  placeholder="e.g. N251C IG COIL / Steering Yoke Assembly"
-                  style={{
-                    width: '100%',
-                    border: 'none',
-                    background: isEditing ? '#f0f9ff' : 'transparent',
-                    fontWeight: 600,
-                    color: '#0f172a',
-                    cursor: isEditing ? 'text' : 'default',
-                    padding: '2px 4px',
-                    borderRadius: '3px'
-                  }}
-                />
+              <div style={{ padding: '6px 12px', fontWeight: 600, color: '#0f172a', borderRight: '1px solid #334155' }}>
+                {tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || '—')}
               </div>
               <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f8fafc' }}>
                 Tool Issued On:
@@ -522,36 +470,17 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       {row.sno}
                     </td>
 
-                    {/* Check point description */}
+                    {/* Check point description (Directly retrieved from Master List) */}
                     <td style={{
-                      padding: '6px 8px',
+                      padding: '10px 14px',
+                      fontWeight: 700,
+                      color: '#0f172a',
                       borderRight: '1px solid #cbd5e1',
-                      verticalAlign: 'top'
+                      verticalAlign: 'top',
+                      lineHeight: 1.5,
+                      fontSize: '12.5px'
                     }}>
-                      <textarea
-                        rows={2}
-                        value={row.checkPoint}
-                        onChange={(e) => handleRowChange(idx, 'checkPoint', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Check point description..." : ""}
-                        style={{
-                          width: '100%',
-                          minHeight: '62px',
-                          padding: '7px 10px',
-                          borderRadius: '4px',
-                          border: isEditing ? '1px solid #cbd5e1' : '1px solid transparent',
-                          backgroundColor: isEditing ? '#ffffff' : 'transparent',
-                          fontWeight: 600,
-                          fontSize: '12px',
-                          lineHeight: 1.45,
-                          color: '#0f172a',
-                          outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
-                          fontFamily: 'inherit',
-                          boxSizing: 'border-box'
-                        }}
-                      />
+                      {row.checkPoint}
                     </td>
 
                     {/* Checking Method (Editable input with visible field styling) */}
