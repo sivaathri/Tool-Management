@@ -345,14 +345,7 @@
               <h1 class="page-title">Master List</h1>
             </div>
             <div class="header-actions">
-              <button class="btn btn-secondary btn-sm" id="btnExportToolMasterCSV">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Export CSV</span>
-              </button>
+             
               <button class="btn btn-primary" id="btnOpenNewToolModal">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -365,13 +358,12 @@
 
           <!-- SEARCH & FILTER BAR -->
           <div class="filter-card">
-            <div class="filter-grid" style="grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr auto;">
+            <div class="filter-grid" style="grid-template-columns: 2.2fr 1.3fr 1.3fr auto; gap: 14px; align-items: flex-end;">
               <div class="form-group">
                 <label class="form-label" for="tmSearchInput">Search Master List</label>
                 <input type="text" class="form-input" id="tmSearchInput"
                   placeholder="Search Tool No., Product Name, App Part No., Description...">
               </div>
-           
               <div class="form-group">
                 <label class="form-label" for="tmClassificationFilter">Classification</label>
                 <select class="form-select" id="tmClassificationFilter">
@@ -389,8 +381,9 @@
                   <option value="Replacement Due">Replacement Due</option>
                 </select>
               </div>
-              <div class="form-group" style="justify-content: flex-end;">
-                <button class="btn btn-secondary" id="btnResetToolFilters" style="height: 38px;">Reset</button>
+              <div class="form-group">
+                <label class="form-label" style="visibility: hidden;">&nbsp;</label>
+                <button class="btn btn-secondary" id="btnResetToolFilters" style="height: 38px; min-width: 90px;">Reset</button>
               </div>
             </div>
           </div>
