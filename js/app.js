@@ -116,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
     inpLifeTime: document.getElementById('inpLifeTime'),
     inpClassification: document.getElementById('inpClassification'),
     inpToolCount: document.getElementById('inpToolCount'),
+    btnAddCheckPointRow: document.getElementById('btnAddCheckPointRow'),
+    checkPointsTableBody: document.getElementById('checkPointsTableBody'),
     listAppPartNos: document.getElementById('listAppPartNos'),
     inpMachineNumber: document.getElementById('inpMachineNumber'),
     inpToolType: document.getElementById('inpToolType'),
@@ -1033,6 +1035,111 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // =========================================================================
+  // CHECK POINTS MATRIX MANAGEMENT (Able to enter more than 1)
+  // =========================================================================
+  const DEFAULT_CHECK_POINTS = [
+    'CHECK COIL LOCATOR FOR ANY DAMAGES',
+    'CHECK COUPLER LOCATOR FOR ANY DAMAGES',
+    'CHECK COUPLER LOCATOR ANY PLAY',
+    'CHECK WIRE GUIDE FOR ANY DAMAGES',
+    'ENSURE TOOL IDENTIFICATION NUMBER'
+  ];
+
+  function escapeHtmlAttr(str) {
+    return String(str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function autoExpandTextarea(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.max(52, el.scrollHeight) + 'px';
+  }
+
+  function renderCheckPointRow(sno, text = '') {
+    const tr = document.createElement('tr');
+    tr.className = 'cp-row';
+    tr.innerHTML = `
+      <td style="text-align: center; font-weight: 700; color: var(--slate-700); font-family: var(--font-mono); width: 60px; vertical-align: middle; padding: 8px 6px;" class="cp-sno">${sno}</td>
+      <td style="padding: 8px 10px;">
+        <textarea class="form-textarea cp-input" rows="2" placeholder="e.g. CHECK COIL LOCATOR FOR ANY DAMAGES" required style="width: 100%; min-height: 52px; resize: vertical; font-size: 13px; line-height: 1.5; padding: 8px 12px; margin: 0; box-sizing: border-box; font-family: inherit;">${escapeHtmlAttr(text)}</textarea>
+      </td>
+      <td style="text-align: center; width: 60px; vertical-align: middle; padding: 8px 6px;">
+        <button type="button" class="btn btn-secondary btn-sm btn-delete-cp" style="color: #ef4444; padding: 6px 10px; height: 34px;" title="Remove check point">✕</button>
+      </td>
+    `;
+    const textarea = tr.querySelector('.cp-input');
+    if (textarea) {
+      textarea.addEventListener('input', () => autoExpandTextarea(textarea));
+    }
+    return tr;
+  }
+
+  function renumberCheckPoints() {
+    if (!DOM.checkPointsTableBody) return;
+    const rows = DOM.checkPointsTableBody.querySelectorAll('.cp-row');
+    rows.forEach((row, idx) => {
+      const snoCell = row.querySelector('.cp-sno');
+      if (snoCell) snoCell.textContent = String(idx + 1);
+    });
+  }
+
+  function loadCheckPointsIntoForm(points = []) {
+    if (!DOM.checkPointsTableBody) return;
+    DOM.checkPointsTableBody.innerHTML = '';
+    const list = (points && points.length > 0) ? points : DEFAULT_CHECK_POINTS;
+    list.forEach((pt, idx) => {
+      const text = typeof pt === 'string' ? pt : (pt.point || pt.text || '');
+      const row = renderCheckPointRow(idx + 1, text);
+      DOM.checkPointsTableBody.appendChild(row);
+    });
+    // Auto-adjust heights on initial load
+    DOM.checkPointsTableBody.querySelectorAll('.cp-input').forEach(autoExpandTextarea);
+  }
+
+  function getCheckPointsFromForm() {
+    if (!DOM.checkPointsTableBody) return [];
+    const rows = DOM.checkPointsTableBody.querySelectorAll('.cp-row');
+    const points = [];
+    rows.forEach((row, idx) => {
+      const inp = row.querySelector('.cp-input');
+      if (inp && inp.value.trim()) {
+        points.push({ sno: idx + 1, point: inp.value.trim() });
+      }
+    });
+    return points;
+  }
+
+  if (DOM.btnAddCheckPointRow) {
+    DOM.btnAddCheckPointRow.addEventListener('click', () => {
+      if (!DOM.checkPointsTableBody) return;
+      const currentCount = DOM.checkPointsTableBody.querySelectorAll('.cp-row').length;
+      const newRow = renderCheckPointRow(currentCount + 1, '');
+      DOM.checkPointsTableBody.appendChild(newRow);
+      const input = newRow.querySelector('.cp-input');
+      if (input) input.focus();
+    });
+  }
+
+  if (DOM.checkPointsTableBody) {
+    DOM.checkPointsTableBody.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('.btn-delete-cp');
+      if (delBtn) {
+        const row = delBtn.closest('.cp-row');
+        if (row) {
+          const totalRows = DOM.checkPointsTableBody.querySelectorAll('.cp-row').length;
+          if (totalRows <= 1) {
+            const inp = row.querySelector('.cp-input');
+            if (inp) inp.value = '';
+          } else {
+            row.remove();
+            renumberCheckPoints();
+          }
+        }
+      }
+    });
+  }
+
   function openAddEditToolModal(toolNumber = null) {
     State.editingToolNumber = toolNumber;
 
@@ -1052,6 +1159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (DOM.inpLifeTime) DOM.inpLifeTime.value = tool.lifeTime || tool.replacementFrequency || 200000;
         if (DOM.inpClassification) DOM.inpClassification.value = tool.classification || 'Critical';
         if (DOM.inpToolCount) DOM.inpToolCount.value = tool.toolCount !== undefined ? tool.toolCount : 0;
+        loadCheckPointsIntoForm(tool.checkPoints || []);
       }
     } else {
       // Add Mode
@@ -1069,6 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.inpProductName) DOM.inpProductName.value = '';
       if (DOM.inpToolNumber) DOM.inpToolNumber.value = '';
       if (DOM.inpToolDescription) DOM.inpToolDescription.value = '';
+      loadCheckPointsIntoForm(DEFAULT_CHECK_POINTS);
     }
 
     openModal(DOM.modalAddTool);
@@ -1081,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.btnQuickAddTool.addEventListener('click', () => openAddEditToolModal(null));
   }
 
-  // Submit Tool Master Form (Only the 8 Master List Inputs)
+  // Submit Tool Master Form (Master List Inputs + Check Points Matrix)
   DOM.formToolMaster.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -1093,9 +1202,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const lifeTime = Number(DOM.inpLifeTime ? DOM.inpLifeTime.value : 200000) || 200000;
     const classification = DOM.inpClassification ? DOM.inpClassification.value : 'Critical';
     const toolCount = Number(DOM.inpToolCount ? DOM.inpToolCount.value : 0) || 0;
+    const checkPoints = getCheckPointsFromForm();
 
     if (!applicationPartNo || !productName || !toolNumber || !toolDescription) {
       showToast('Please fill in Application Part No, Product Name, Tool No, and Description', 'danger');
+      return;
+    }
+
+    if (checkPoints.length === 0) {
+      showToast('Please enter at least 1 Check Point for the tool', 'danger');
       return;
     }
 
@@ -1112,12 +1227,13 @@ document.addEventListener('DOMContentLoaded', () => {
       replacementFrequency: lifeTime,
       classification,
       toolType: classification,
-      toolCount
+      toolCount,
+      checkPoints
     };
 
     TMS.saveTool(toolData, State.editingToolNumber);
     closeModal(DOM.modalAddTool);
-    showToast(`Tool ${toolNumber} saved under Part No. ${applicationPartNo} successfully!`, 'success');
+    showToast(`Tool ${toolNumber} saved under Part No. ${applicationPartNo} with ${checkPoints.length} Check Points!`, 'success');
     renderToolMaster();
     updateBadgesAndCounters();
   });
@@ -1763,6 +1879,31 @@ document.addEventListener('DOMContentLoaded', () => {
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Machine Assigned:</span> <strong>${tool.machineNumber}</strong></div>
         </div>
         ${tool.remarks ? `<div style="margin-top: 12px; font-size: 12.5px; color: var(--slate-600);"><span style="font-weight: 600;">Remarks:</span> ${tool.remarks}</div>` : ''}
+      </div>
+
+      <!-- Tool Check Points Table (Shop floor Inspection Standard) -->
+      <div style="margin-bottom: 22px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--slate-900); margin-bottom: 10px;">Tool Check Points (${(tool.checkPoints || []).length} items)</h4>
+        <div class="table-responsive">
+          <table class="enterprise-table">
+            <thead>
+              <tr style="background: var(--slate-100);">
+                <th style="width: 70px; text-align: center;">S.no</th>
+                <th>Check points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(tool.checkPoints && tool.checkPoints.length > 0)
+                ? tool.checkPoints.map((cp, idx) => `
+                    <tr>
+                      <td style="text-align: center; font-weight: 700; font-family: var(--font-mono); color: var(--slate-700);">${cp.sno || (idx + 1)}</td>
+                      <td style="font-weight: 600; color: var(--slate-900);">${cp.point || cp}</td>
+                    </tr>
+                  `).join('')
+                : '<tr><td colspan="2" style="text-align:center; color: var(--slate-500);">No check points specified</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Application & AMR Matrix -->

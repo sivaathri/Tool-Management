@@ -573,6 +573,15 @@ const TMS = {
     const lifeTime = Number(tool.lifeTime || tool.replacementFrequency || 200000);
     const classification = tool.classification || (tool.toolType === 'A' ? 'Critical' : (tool.toolType === 'C' ? 'Non-Critical' : 'Critical'));
     const toolCount = Number(tool.toolCount !== undefined && tool.toolCount !== null ? tool.toolCount : 0);
+    const checkPoints = Array.isArray(tool.checkPoints) && tool.checkPoints.length > 0
+      ? tool.checkPoints.map((cp, idx) => typeof cp === 'string' ? { sno: idx + 1, point: cp } : { sno: idx + 1, point: cp.point || cp.text || '' })
+      : [
+          { sno: 1, point: 'CHECK COIL LOCATOR FOR ANY DAMAGES' },
+          { sno: 2, point: 'CHECK COUPLER LOCATOR FOR ANY DAMAGES' },
+          { sno: 3, point: 'CHECK COUPLER LOCATOR ANY PLAY' },
+          { sno: 4, point: 'CHECK WIRE GUIDE FOR ANY DAMAGES' },
+          { sno: 5, point: 'ENSURE TOOL IDENTIFICATION NUMBER' }
+        ];
 
     return {
       ...tool,
@@ -585,7 +594,8 @@ const TMS = {
       replacementFrequency: lifeTime,
       classification,
       toolType: classification,
-      toolCount
+      toolCount,
+      checkPoints
     };
   },
 

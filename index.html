@@ -923,15 +923,15 @@
               </div>
             </div>
 
-            <!-- Row 4: Check Point Classification & Tool Count -->
+            <!-- Row 4: Classification & Tool Count -->
             <div class="form-row-2">
               <div class="form-group">
-                <label class="form-label" for="inpClassification">Check Point Classification *</label>
+                <label class="form-label" for="inpClassification">Classification *</label>
                 <select class="form-select" id="inpClassification" required>
                   <option value="Critical">Critical</option>
                   <option value="Non-Critical">Non-Critical</option>
                 </select>
-                <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">Tool inspection classification</div>
+                <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">Classification (Critical or Non-Critical)</div>
               </div>
               <div class="form-group">
                 <label class="form-label" for="inpToolCount">Tool Count (Cycle Count)</label>
@@ -947,6 +947,37 @@
                 <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">
                   Auto-calculated (starts at 0 by default; increments to 1 once lifetime completes)
                 </div>
+              </div>
+            </div>
+
+            <!-- Row 5: Check Points Matrix (Dynamic list of check points) -->
+            <div class="form-group" style="margin-top: 18px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div>
+                  <label class="form-label" style="margin-bottom: 2px;">Check Points *</label>
+                  <div style="font-size: 11.5px; color: var(--slate-500);">Tool inspection check points (click "+ Add Check Point" to add more)</div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnAddCheckPointRow">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>+ Add Check Point</span>
+                </button>
+              </div>
+              <div class="table-responsive" style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; background: #fff;">
+                <table class="enterprise-table" style="margin: 0; font-size: 12.5px;">
+                  <thead>
+                    <tr style="background: var(--slate-100);">
+                      <th style="width: 70px; text-align: center;">S.no</th>
+                      <th>Check points</th>
+                      <th style="width: 60px; text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="checkPointsTableBody">
+                    <!-- Check point rows injected dynamically -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
