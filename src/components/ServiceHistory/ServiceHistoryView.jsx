@@ -437,6 +437,32 @@ export default function ServiceHistoryView({
       {/* SHOW SERVICE DATA ONLY WHEN A TOOL HAS BEEN SEARCHED / SELECTED */}
       {selectedTool ? (
         <>
+          {/* Printable Official Header - Visible exclusively in Print / PDF view */}
+          <div className="print-only-header" style={{ display: 'none' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '2.5px solid #0f172a',
+              paddingBottom: '10px',
+              marginBottom: '12px'
+            }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0, textTransform: 'uppercase', color: '#0f172a', letterSpacing: '0.5px' }}>
+                  TOOL MANAGEMENT SYSTEM
+                </h2>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e40af', marginTop: '2px' }}>
+                  PREVENTIVE MAINTENANCE & LIFECYCLE SERVICE REPORT
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', fontSize: '11px', color: '#475569', lineHeight: 1.5 }}>
+                <div><strong>DOC REF:</strong> MFG/FR/075</div>
+                <div><strong>TOOL NO:</strong> {selectedTool.toolNo}</div>
+                <div><strong>PRINTED:</strong> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</div>
+              </div>
+            </div>
+          </div>
+
           {/* SELECTED TOOL SUMMARY DIGITAL CARD */}
           <div className="tool-summary-card" id="selectedToolSummaryCard">
         <div className="tool-summary-top">
@@ -1222,6 +1248,40 @@ export default function ServiceHistoryView({
           </div>
         </div>
       )}
+
+      {/* Printable Official Sign-off Footer - Visible exclusively in Print / PDF view */}
+      <div className="print-only-footer" style={{ display: 'none' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          border: '1.5px solid #0f172a',
+          backgroundColor: '#ffffff',
+          textAlign: 'center',
+          marginTop: '16px'
+        }}>
+          <div style={{ padding: '12px 10px', borderRight: '1px solid #0f172a' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Inspected & Prepared By</div>
+            <div style={{ height: '36px' }}></div>
+            <div style={{ fontSize: '11.5px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '4px', color: '#0f172a' }}>
+              Tool Maintenance Technician
+            </div>
+          </div>
+          <div style={{ padding: '12px 10px', borderRight: '1px solid #0f172a' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Verified & Checked By</div>
+            <div style={{ height: '36px' }}></div>
+            <div style={{ fontSize: '11.5px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '4px', color: '#0f172a' }}>
+              Quality Assurance Lead
+            </div>
+          </div>
+          <div style={{ padding: '12px 10px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Approved By</div>
+            <div style={{ height: '36px' }}></div>
+            <div style={{ fontSize: '11.5px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '4px', color: '#0f172a' }}>
+              Tool Room Lead / Plant Incharge
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Add Production Modal */}
       {isAddLogOpen && selectedTool && (

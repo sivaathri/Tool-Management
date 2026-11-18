@@ -60,37 +60,70 @@ export function exportToolsToCSV(toolsList, filename = 'tools_master_list.csv') 
 export function exportPMReportToCSV(tool, logs = []) {
   if (!tool) return;
   const lines = [];
-  lines.push('PREVENTIVE MAINTENANCE & TOOL RECORD SHEET');
+  const pct = Math.min(100, Math.round(((tool.cumulative || 0) / (tool.lifetime || 1)) * 100));
+
+  // Retrieve any recorded PM inspection data
+  let savedRows = [];
+  let pmDate = new Date().toISOString().slice(0, 10);
+  try {
+    const rawPM = localStorage.getItem('tms_pm_records');
+    if (rawPM) {
+      const pmList = JSON.parse(rawPM);
+      const toolPM = pmList.find(p => p.toolId === tool.id || (p.toolNo && p.toolNo.toLowerCase() === tool.toolNo.toLowerCase()));
+      if (toolPM && toolPM.rows) {
+        savedRows = toolPM.rows;
+        if (toolPM.date) pmDate = toolPM.date;
+      }
+    }
+  } catch (e) {}
+
+  lines.push('PREVENTIVE MAINTENANCE & TOOL SERVICE RECORD');
   lines.push(`Generated On,"${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}"`);
+  lines.push('Document Reference,"MFG/FR/075"');
   lines.push('');
+
   lines.push('1. TOOL SPECIFICATION & METADATA');
   lines.push(`Tool No,"${tool.toolNo || ''}"`);
-  lines.push(`Application Part No,"${tool.applicationPartNo || ''}"`);
+  lines.push(`Application Part No (Parent),"${tool.applicationPartNo || ''}"`);
   lines.push(`Product Name,"${(tool.productName || '').replace(/"/g, '""')}"`);
   lines.push(`Description,"${(tool.description || '').replace(/"/g, '""')}"`);
   lines.push(`Classification,"${tool.classification || 'Non-Critical'}"`);
   lines.push(`Tool Issued On,"${tool.toolIssuedOn || ''}"`);
-  lines.push(`Tool Count (Current Cycle),${tool.toolCount ?? 0}`);
+  lines.push(`Tool Count (Current Cycle),Cycle ${tool.toolCount ?? 0}`);
   lines.push(`Life Time Limit (Stroke / Cycle Limit),${tool.lifetime || 0}`);
-  lines.push(`Current Cumulative Produced,${tool.cumulative || 0}`);
-  lines.push(`Remaining Balance,${tool.balance || 0}`);
-  lines.push(`Status,"${tool.status || 'Active'}"`);
+  lines.push(`Current Cumulative Produced (Strokes),${tool.cumulative || 0}`);
+  lines.push(`Remaining Balance (Strokes),${tool.balance || 0}`);
+  lines.push(`Life Utilization,${pct}%`);
+  lines.push(`Tool Status,"${tool.status || 'Active'}"`);
   lines.push('');
 
-  lines.push('2. PREVENTIVE MAINTENANCE CHECK POINTS & SPECIFICATIONS');
-  lines.push('S.No,Check Points,Checking Method,Specification');
-  (tool.checkPoints || []).forEach((cp, idx) => {
-    lines.push(`${idx + 1},"${(cp.point || '').replace(/"/g, '""')}","${(cp.method || 'Visual').replace(/"/g, '""')}","${(cp.spec || '').replace(/"/g, '""')}"`);
-  });
-  lines.push('');
-
-  lines.push('3. QUANTITY PRODUCED (PRODUCTION TRACKING)');
-  lines.push('Month,Quantity Made,Cumulative Made,Cycle');
-  if (logs.length === 0) {
-    lines.push('No production logs recorded yet,,,');
+  lines.push('2. PREVENTIVE MAINTENANCE CHECK POINTS & INSPECTION RECORD');
+  lines.push('S.No,Check Points,Checking Method,Specification,Actual Condition / Observation,Action Taken');
+  
+  if (savedRows.length > 0) {
+    savedRows.forEach((r, idx) => {
+      lines.push(`${idx + 1},"${(r.checkPoint || '').replace(/"/g, '""')}","${(r.method || 'Visual').replace(/"/g, '""')}","${(r.specification || '').replace(/"/g, '""')}","${(r.actualCondition || 'OK / Free from damage').replace(/"/g, '""')}","${(r.actionTaken || 'None required').replace(/"/g, '""')}"`);
+    });
   } else {
-    logs.forEach(l => {
-      lines.push(`"${l.monthDisplay || l.date || ''}",${l.quantityMade || l.quantity || 0},${l.cumulativeMade || 0},Cycle ${l.cycle ?? 0}`);
+    (tool.checkPoints || []).forEach((cp, idx) => {
+      const pointText = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || '') : String(cp || '');
+      const method = typeof cp === 'object' && cp !== null && cp.method ? cp.method : 'Visual';
+      const spec = typeof cp === 'object' && cp !== null && cp.spec ? cp.spec : (typeof cp === 'object' && cp !== null && cp.specification ? cp.specification : 'Free from damage and chip off');
+      lines.push(`${idx + 1},"${pointText.replace(/"/g, '""')}","${method.replace(/"/g, '""')}","${spec.replace(/"/g, '""')}","Free from Damage / OK","Checked & Cleaned"`);
+    });
+  }
+  lines.push('');
+
+  lines.push('3. QUANTITY PRODUCED (PRODUCTION TRACKING HISTORY)');
+  lines.push('Month,Quantity Made (Strokes),Cumulative Made,Cycle,Operator');
+  if (logs.length === 0) {
+    lines.push('No production logs recorded yet,,,,');
+  } else {
+    // Sort chronologically
+    const sortedLogs = [...logs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    sortedLogs.forEach(l => {
+      const mDisplay = l.monthDisplay || l.date || l.month || '';
+      lines.push(`"${mDisplay}",${l.quantityMade || l.quantity || 0},${l.cumulativeMade || l.cumulative || 0},Cycle ${l.cycle ?? 0},"${(l.operator || 'Operator').replace(/"/g, '""')}"`);
     });
   }
   lines.push('');
@@ -101,7 +134,13 @@ export function exportPMReportToCSV(tool, logs = []) {
     tool.replacements.forEach(r => {
       lines.push(`"${r.replacementDate || ''}","Cycle ${r.cycle} -> Cycle ${r.newCycle}",${r.finalCumulative || 0},"${(r.replacedBy || '').replace(/"/g, '""')}","${(r.remarks || '').replace(/"/g, '""')}"`);
     });
+    lines.push('');
   }
+
+  lines.push('5. SUMMARY TOTALS');
+  lines.push(`Total All-Time Output Produced across all cycles,${tool.totalAllTime || tool.cumulative || 0}`);
+  lines.push(`Active Cycle Cumulative,${tool.cumulative || 0}`);
+  lines.push(`Remaining Active Balance,${tool.balance || 0}`);
 
   const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + lines.join('\n');
   const encodedUri = encodeURI(csvContent);

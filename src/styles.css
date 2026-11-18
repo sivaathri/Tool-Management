@@ -2214,20 +2214,200 @@ body {
   margin-bottom: 4px;
 }
 
+/* ==========================================================================
+   Comprehensive ISO-Compliant Print / PDF Styles for Preventive Maintenance
+   ========================================================================== */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 8mm;
+  }
+
+  /* Hide app navigation and interactive controls */
+  .app-sidebar,
+  .top-header,
+  .header-actions,
   .prominent-search-box,
   .pm-action-toolbar,
-  .tool-summary-card {
+  .btn,
+  .btn-export-pill,
+  .btn-trash-outline,
+  .btn-trash,
+  .btn-edit,
+  .btn-view,
+  .modal-backdrop,
+  .modal-card,
+  #modalExportReport,
+  .toast-container,
+  #quantityProducedCard .card-header button,
+  #quantityProducedCard > div:nth-child(2) /* cycle selector buttons */,
+  .alert-banner,
+  .filter-card {
     display: none !important;
   }
+
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .main-wrapper {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .app-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .view-section {
+    padding: 0 !important;
+  }
+
+  /* Printable Header & Sign-off footer */
+  .print-only-header {
+    display: block !important;
+    margin-bottom: 12px !important;
+  }
+
+  .print-only-footer {
+    display: block !important;
+    margin-top: 18px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Tool Summary Card in PDF/Print */
+  .tool-summary-card {
+    display: block !important;
+    box-shadow: none !important;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    padding: 12px 14px !important;
+    margin-bottom: 14px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .tool-summary-top {
+    margin-bottom: 8px !important;
+  }
+
+  .tool-summary-top .btn, 
+  .tool-summary-top button {
+    display: none !important;
+  }
+
+  .tool-summary-meta-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    border-top: 1px solid #cbd5e1 !important;
+    padding-top: 8px !important;
+  }
+
+  .tool-summary-progress {
+    display: none !important;
+  }
+
+  /* PM Official Form Sheet */
   .pm-sheet-card {
     box-shadow: none !important;
     border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
   }
+
   .pm-official-sheet-wrapper {
     padding: 0 !important;
+    margin: 0 !important;
   }
+
   .pm-form-sheet {
-    border: 2px solid #000 !important;
+    border: 2px solid #0f172a !important;
+    page-break-inside: avoid !important;
+    background: #ffffff !important;
+    width: 100% !important;
+  }
+
+  .pm-table {
+    border-collapse: collapse !important;
+    border-color: #0f172a !important;
+    width: 100% !important;
+  }
+
+  .pm-table th, .pm-table td {
+    border-color: #0f172a !important;
+    color: #000000 !important;
+    padding: 5px 8px !important;
+  }
+
+  .pm-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Inputs and Textareas in print appear as clean static text */
+  .pm-textarea,
+  .pm-input,
+  textarea,
+  input[type="text"],
+  input[type="date"] {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    resize: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    color: #000000 !important;
+    font-size: 11px !important;
+    font-family: inherit !important;
+  }
+
+  /* Quantity Produced Table in Print */
+  #quantityProducedCard {
+    margin-top: 14px !important;
+    box-shadow: none !important;
+    border: 1.5px solid #0f172a !important;
+    page-break-inside: avoid !important;
+  }
+
+  #quantityProducedCard .card-header {
+    border-bottom: 1px solid #0f172a !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Hide the Action column in print */
+  #quantityProducedCard table th:last-child,
+  #quantityProducedCard table td:last-child {
+    display: none !important;
+  }
+
+  .enterprise-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .enterprise-table th,
+  .enterprise-table td {
+    border: 1px solid #0f172a !important;
+    color: #000000 !important;
+    padding: 5px 8px !important;
+  }
+
+  .enterprise-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+  }
+
+  .card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
