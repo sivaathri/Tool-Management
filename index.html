@@ -50,7 +50,7 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          <span>Tool Master</span>
+          <span>Master List</span>
           <span class="nav-badge" id="sidebarToolCount">15</span>
         </a>
 
@@ -92,22 +92,7 @@
         </a>
       </nav>
 
-      <div class="sidebar-footer">
-        <div class="user-card">
-          <div class="user-avatar">EN</div>
-          <div class="user-info">
-            <div class="user-name">Eng. Rajesh Patel</div>
-            <div class="user-role">Senior Tooling Lead</div>
-          </div>
-        </div>
-        <button class="reset-demo-btn" id="btnResetData" title="Reset to original sample data">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="1 4 1 10 7 10"></polyline>
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-          </svg>
-          <span>Restore Demo Data</span>
-        </button>
-      </div>
+     
     </aside>
 
     <!-- MAIN VIEWPORT -->
@@ -122,16 +107,7 @@
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
-          <div class="header-search">
-            <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="globalSearchInput" placeholder="Quick search Tool No. (e.g. TOOL-001)..."
-              autocomplete="off">
-            <div class="header-search-results" id="globalSearchResults"></div>
-          </div>
+        
         </div>
 
         <div class="header-right">
@@ -143,13 +119,7 @@
             <span class="header-badge-dot" id="headerNotificationDot"></span>
           </button>
 
-          <button class="btn btn-primary" id="btnQuickAddTool">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span> Add New Tool</span>
-          </button>
+          
         </div>
       </header>
 
@@ -206,7 +176,7 @@
                 </div>
               </div>
               <div class="kpi-value" id="kpiTotalTools">15</div>
-              <div class="kpi-subtext">Registered in Tool Master</div>
+              <div class="kpi-subtext">Registered in Master List</div>
             </div>
 
             <div class="kpi-card kpi-green">
@@ -372,8 +342,7 @@
         <section class="view-section" id="view-tool-master">
           <div class="page-header">
             <div>
-              <h1 class="page-title">Tool Master</h1>
-              <p class="page-subtitle">Create and manage machine and tool master information (Digital Master Card)</p>
+              <h1 class="page-title">Master List</h1>
             </div>
             <div class="header-actions">
               <button class="btn btn-secondary btn-sm" id="btnExportToolMasterCSV">
@@ -389,7 +358,7 @@
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                <span>+ Add New Tool</span>
+                <span>Add New Tool</span>
               </button>
             </div>
           </div>
@@ -402,12 +371,7 @@
                 <input type="text" class="form-input" id="tmSearchInput"
                   placeholder="Search Tool No., Product Name, App Part No., Description...">
               </div>
-              <div class="form-group">
-                <label class="form-label" for="tmAppPartFilter">Application Part No.</label>
-                <select class="form-select" id="tmAppPartFilter">
-                  <option value="">All Part Nos (Parent)</option>
-                </select>
-              </div>
+           
               <div class="form-group">
                 <label class="form-label" for="tmClassificationFilter">Classification</label>
                 <select class="form-select" id="tmClassificationFilter">
@@ -894,7 +858,7 @@
   <div class="modal-backdrop" id="modalAddTool">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title" id="modalToolTitle">Tool Master Card - Add / Edit Tool</h3>
+        <h3 class="modal-title" id="modalToolTitle">Master List - Add / Edit Tool</h3>
         <button class="modal-close-btn" data-close-modal="modalAddTool">&times;</button>
       </div>
       <form id="formToolMaster">
@@ -998,15 +962,25 @@
               <div class="form-group">
                 <label class="form-label" for="inpClassification">Check Point Classification *</label>
                 <select class="form-select" id="inpClassification" required>
-                  <option value="Critical">Critical (Spare set & continuous monitoring required)</option>
-                  <option value="Non-Critical">Non-Critical (Standard tooling / detailed spares)</option>
+                  <option value="Critical">Critical</option>
+                  <option value="Non-Critical">Non-Critical</option>
                 </select>
                 <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">Tool inspection classification</div>
               </div>
               <div class="form-group">
-                <label class="form-label" for="inpToolCount">Tool Count *</label>
-                <input type="number" class="form-input" id="inpToolCount" placeholder="e.g. 1" min="1" value="1" required>
-                <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">Number of physical tools in set</div>
+                <label class="form-label" for="inpToolCount">Tool Count (Cycle Count)</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  id="inpToolCount"
+                  value="0"
+                  readonly
+                  style="background-color: var(--slate-100); color: var(--slate-700); cursor: not-allowed; font-weight: 600;"
+                  title="Auto-calculated cycle count: 0 by default; becomes 1 once life time completes"
+                >
+                <div style="font-size: 11.5px; color: var(--slate-500); margin-top: 4px;">
+                  Auto-calculated (starts at 0 by default; increments to 1 once lifetime completes)
+                </div>
               </div>
             </div>
           </div>

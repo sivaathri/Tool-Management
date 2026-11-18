@@ -38,7 +38,7 @@ const INITIAL_TOOLS = [
     replacementFrequency: 200000,
     classification: 'Critical',
     toolType: 'Critical',
-    toolCount: 1,
+    toolCount: 0,
     machineId: 'MCH-01',
     machineNumber: 'MCH-01',
     machineName: 'Hydraulic Press 100T',
@@ -91,7 +91,7 @@ const INITIAL_TOOLS = [
     replacementFrequency: 180000,
     classification: 'Critical',
     toolType: 'Critical',
-    toolCount: 2,
+    toolCount: 1,
     machineId: 'MCH-07',
     machineNumber: 'MCH-07',
     machineName: 'Hydraulic Deep Draw Press 120T',
@@ -116,7 +116,7 @@ const INITIAL_TOOLS = [
     replacementFrequency: 150000,
     classification: 'Critical',
     toolType: 'Critical',
-    toolCount: 1,
+    toolCount: 0,
     machineId: 'MCH-04',
     machineNumber: 'MCH-04',
     machineName: 'Heavy Duty Forging Press 250T',
@@ -168,7 +168,7 @@ const INITIAL_TOOLS = [
     replacementFrequency: 300000,
     classification: 'Critical',
     toolType: 'Critical',
-    toolCount: 1,
+    toolCount: 0,
     machineId: 'MCH-10',
     machineNumber: 'MCH-10',
     machineName: 'High Speed Progressive Press HP-80',
@@ -572,7 +572,7 @@ const TMS = {
     const issuedDate = tool.issuedDate || tool.toolIssuedOn || new Date().toISOString().slice(0, 10);
     const lifeTime = Number(tool.lifeTime || tool.replacementFrequency || 200000);
     const classification = tool.classification || (tool.toolType === 'A' ? 'Critical' : (tool.toolType === 'C' ? 'Non-Critical' : 'Critical'));
-    const toolCount = Number(tool.toolCount || 1);
+    const toolCount = Number(tool.toolCount !== undefined && tool.toolCount !== null ? tool.toolCount : 0);
 
     return {
       ...tool,
@@ -927,8 +927,14 @@ const TMS = {
     services.sort((a, b) => new Date(b.date) - new Date(a.date));
     const lastServiceDate = services.length > 0 ? services[0].date : (tool.issuedDate || 'N/A');
 
+    // Tool Count (Life Cycle Count): starts at 0 by default;
+    // When lifetime completes and production continues, advances to cycle 1, 2...
+    const computedCycles = repFreq > 0 ? Math.floor(cumulative / repFreq) : 0;
+    const toolCount = computedCycles;
+
     return {
       ...tool,
+      toolCount: toolCount,
       cumulativeQuantity: cumulative,
       balance: balance,
       rawBalance: rawBalance,

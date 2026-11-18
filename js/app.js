@@ -700,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ${tool.classification || 'Critical'}
             </span>
           </td>
-          <td class="col-numeric" style="font-weight: 600;">${tool.toolCount || 1}</td>
+          <td class="col-numeric" style="font-weight: 600;">${tool.toolCount !== undefined ? tool.toolCount : 0}</td>
           <td style="font-size: 12.5px; color: var(--slate-600);">${tool.issuedDate || '-'}</td>
           <td class="col-numeric">${formatNum(tool.lifeTime || tool.replacementFrequency)}</td>
           <td class="col-numeric" style="font-weight: 600;">${formatNum(tool.cumulativeQuantity)}</td>
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tools = TMS.getTools();
     let csv = 'Application Part No,Product Name,Tool Number,Description,Classification,Tool Count,Issued On,Life Time,Cumulative Quantity,Remaining Balance,Status\n';
     tools.forEach(t => {
-      csv += `"${t.applicationPartNo || ''}","${t.productName || ''}","${t.toolNumber}","${t.toolDescription}","${t.classification || ''}",${t.toolCount || 1},"${t.issuedDate || ''}",${t.lifeTime || t.replacementFrequency},${t.cumulativeQuantity},${t.balance},"${t.status}"\n`;
+      csv += `"${t.applicationPartNo || ''}","${t.productName || ''}","${t.toolNumber}","${t.toolDescription}","${t.classification || ''}",${t.toolCount !== undefined ? t.toolCount : 0},"${t.issuedDate || ''}",${t.lifeTime || t.replacementFrequency},${t.cumulativeQuantity},${t.balance},"${t.status}"\n`;
     });
     downloadCSV(csv, 'tool_master_register.csv');
     showToast('Tool Master List exported to CSV', 'success');
@@ -1049,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.inpIssuedDate.value = tool.issuedDate || '';
         if (DOM.inpLifeTime) DOM.inpLifeTime.value = tool.lifeTime || tool.replacementFrequency || 200000;
         if (DOM.inpClassification) DOM.inpClassification.value = tool.classification || 'Critical';
-        if (DOM.inpToolCount) DOM.inpToolCount.value = tool.toolCount || 1;
+        if (DOM.inpToolCount) DOM.inpToolCount.value = tool.toolCount !== undefined ? tool.toolCount : 0;
       }
     } else {
       // Add Mode
@@ -1061,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
       DOM.inpIssuedDate.value = new Date().toISOString().slice(0, 10);
       if (DOM.inpLifeTime) DOM.inpLifeTime.value = 200000;
       if (DOM.inpClassification) DOM.inpClassification.value = 'Critical';
-      if (DOM.inpToolCount) DOM.inpToolCount.value = 1;
+      if (DOM.inpToolCount) DOM.inpToolCount.value = 0;
 
       if (DOM.inpAppPartNo) DOM.inpAppPartNo.value = '';
       if (DOM.inpProductName) DOM.inpProductName.value = '';
@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const issuedDate = DOM.inpIssuedDate.value || new Date().toISOString().slice(0, 10);
     const lifeTime = Number(DOM.inpLifeTime ? DOM.inpLifeTime.value : 200000) || 200000;
     const classification = DOM.inpClassification ? DOM.inpClassification.value : 'Critical';
-    const toolCount = Number(DOM.inpToolCount ? DOM.inpToolCount.value : 1) || 1;
+    const toolCount = Number(DOM.inpToolCount ? DOM.inpToolCount.value : 0) || 0;
 
     if (!applicationPartNo || !productName || !toolNumber || !toolDescription) {
       showToast('Please fill in Application Part No, Product Name, Tool No, and Description', 'danger');
@@ -1146,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (DOM.shClassificationVal) {
       DOM.shClassificationVal.innerHTML = `<span class="${tool.classification === 'Critical' ? 'badge-critical' : 'badge-non-critical'}">${tool.classification || 'Critical'}</span>`;
     }
-    if (DOM.shToolCountVal) DOM.shToolCountVal.textContent = `${tool.toolCount || 1} set`;
+    if (DOM.shToolCountVal) DOM.shToolCountVal.textContent = String(tool.toolCount !== undefined ? tool.toolCount : 0);
     if (DOM.shMachineVal) DOM.shMachineVal.textContent = `${tool.machineNumber} (${tool.machineName || 'Press'})`;
     if (DOM.shOperationVal) DOM.shOperationVal.textContent = tool.operation || '-';
     if (DOM.shApplicationVal) DOM.shApplicationVal.textContent = tool.productName || tool.application || '-';
@@ -1745,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Product Name:</span> <strong>${tool.productName || '-'}</strong></div>
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool No:</span> <strong>${tool.toolNumber}</strong></div>
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Classification:</span> <span class="${tool.classification === 'Critical' ? 'badge-critical' : 'badge-non-critical'}">${tool.classification || 'Critical'}</span></div>
-          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool Count:</span> <strong>${tool.toolCount || 1} set</strong></div>
+          <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool Count:</span> <strong>${tool.toolCount !== undefined ? tool.toolCount : 0}</strong></div>
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Tool Issued On:</span> <strong>${tool.issuedDate || '-'}</strong></div>
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Description:</span> <strong>${tool.toolDescription}</strong></div>
           <div><span style="color: var(--slate-500); display: block; font-size: 11.5px;">Machine Assigned:</span> <strong>${tool.machineNumber}</strong></div>
