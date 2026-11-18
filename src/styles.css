@@ -2738,29 +2738,37 @@ body {
   left: 40px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 12px;
   z-index: 20;
   user-select: none;
 }
 
 .inel-brand-symbol {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  padding: 3px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  padding: 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.inel-brand-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .inel-brand-name {
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: #0f172a;
   font-family: var(--font-sans);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
 }
 
 .inel-login-right-pane {

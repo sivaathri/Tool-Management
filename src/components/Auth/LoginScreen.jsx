@@ -64,7 +64,7 @@ export default function LoginScreen({ onLogin, users = [], showToast }) {
       {/* Top Left Branding */}
       <div className="inel-login-brand">
         <div className="inel-brand-symbol">
-          <img src="/inel-logo.png" alt="INEL Logo" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+          <img src="/inel-logo.png" alt="INEL Logo" className="inel-brand-img" />
         </div>
         <span className="inel-brand-name">Tool Management</span>
       </div>
