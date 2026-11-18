@@ -33,7 +33,7 @@ export default function Sidebar({
           </div>
           <div>
             <div className="brand-title">Tool Management</div>
-            <div className="brand-subtitle">Manufacturing ERP</div>
+         
           </div>
         </div>
 

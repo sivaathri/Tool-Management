@@ -125,7 +125,6 @@ body {
 .brand-icon {
   width: 34px;
   height: 34px;
-  background: linear-gradient(135deg, var(--accent-600), var(--accent-700));
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -1273,6 +1272,37 @@ body {
 
 .tool-summary-meta-grid .meta-val {
   text-align: left !important;
+}
+
+/* ==========================================================================
+   Modern Rounded Outline Delete / Trash Button (matches UI specification)
+   ========================================================================== */
+.btn-trash-outline {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+  padding: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-trash-outline:hover {
+  background-color: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.22);
+  transform: translateY(-1px);
+}
+
+.btn-trash-outline:active {
+  transform: translateY(0);
 }
 
 .tool-summary-progress {
