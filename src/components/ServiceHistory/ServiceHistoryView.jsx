@@ -3,6 +3,33 @@ import { formatNumber } from '../../data/storage';
 import AddProductionModal from './AddProductionModal';
 import PMChecklistSheet from './PMChecklistSheet';
 
+// Format date string to "MMM-YY" (e.g. "Oct-18", "Nov-18", "Feb-23")
+function formatMonthYear(dateStr) {
+  if (!dateStr) return '—';
+  const str = String(dateStr).trim();
+  if (/^[A-Za-z]{3}-\d{2}$/.test(str)) {
+    return str;
+  }
+  const parts = str.split('-');
+  if (parts.length >= 2) {
+    const year = parts[0];
+    const monthNum = parseInt(parts[1], 10);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    if (monthNum >= 1 && monthNum <= 12) {
+      const shortYear = year.slice(-2);
+      return `${months[monthNum - 1]}-${shortYear}`;
+    }
+  }
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+    }
+  } catch (e) {}
+  return str;
+}
+
 export default function ServiceHistoryView({ 
   tools, 
   productionLogs, 
@@ -103,9 +130,25 @@ export default function ServiceHistoryView({
 
   const toolLogs = useMemo(() => {
     if (!selectedTool) return [];
-    return productionLogs
-      .filter(l => l.toolId === selectedTool.id || l.toolNo === selectedTool.toolNo)
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Sort chronologically (earliest to latest)
+    const logs = [...productionLogs]
+      .filter(l => l.toolId === selectedTool.id || (l.toolNo && l.toolNo.toLowerCase() === selectedTool.toolNo.toLowerCase()))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const totalFromLogs = logs.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+    const baseOffset = Math.max(0, (selectedTool.cumulative || 0) - totalFromLogs);
+
+    let running = baseOffset;
+    return logs.map(l => {
+      const qty = Number(l.quantity) || 0;
+      running += qty;
+      return {
+        ...l,
+        monthDisplay: formatMonthYear(l.date),
+        quantityMade: qty,
+        cumulativeMade: running
+      };
+    });
   }, [productionLogs, selectedTool]);
 
   const handleSearchSubmit = (e) => {
@@ -144,7 +187,6 @@ export default function ServiceHistoryView({
          
           <div>
             <h1 className="page-title">Preventive Maintenance</h1>
-            <p className="page-subtitle">Digital PM Inspection Card, Check Points & Production Output Tracking</p>
           </div>
         </div>
         <div className="header-actions">
@@ -163,9 +205,7 @@ export default function ServiceHistoryView({
       <div className="prominent-search-box">
         <div className="prominent-search-header">
           <div className="prominent-search-title">Search Tool PM Card</div>
-          <div className="prominent-search-desc">
-            Enter any Tool Number to instantly retrieve Master Card specs, inspection check points, and preventive maintenance history
-          </div>
+          
         </div>
         <form className="prominent-search-bar" onSubmit={handleSearchSubmit}>
           <div className="search-input-combo" ref={searchComboRef}>

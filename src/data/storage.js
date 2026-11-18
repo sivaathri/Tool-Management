@@ -133,11 +133,18 @@ function normalizeToolItem(raw, productionLogs = []) {
 
 // Convert raw initial production to standardized model
 function normalizeProductionItem(raw) {
+  let dateVal = raw.date || raw.productionDate;
+  if (!dateVal && raw.month) {
+    dateVal = String(raw.month).length === 7 ? `${raw.month}-01` : String(raw.month);
+  }
+  if (!dateVal) {
+    dateVal = new Date().toISOString().slice(0, 10);
+  }
   return {
     id: raw.id || `prd-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     toolId: raw.toolId || null,
     toolNo: formatToolNumber(raw.toolNo || raw.toolNumber),
-    date: raw.date || raw.productionDate || new Date().toISOString().slice(0, 10),
+    date: dateVal,
     quantity: Number(raw.quantity || raw.quantityMade || 0),
     operator: raw.operator || 'Operator',
     notes: raw.notes || raw.remarks || ''
