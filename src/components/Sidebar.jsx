@@ -66,7 +66,6 @@ export default function Sidebar({
               <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
             <span>Master List</span>
-            <span className="nav-badge" id="sidebarToolCount">{toolCount}</span>
           </a>
 
           <a
@@ -90,7 +89,6 @@ export default function Sidebar({
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
             <span>User Management</span>
-            {userCount > 0 && <span className="nav-badge" id="sidebarUserCount">{userCount}</span>}
           </a>
         </nav>
 

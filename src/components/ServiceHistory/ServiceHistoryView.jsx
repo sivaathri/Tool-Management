@@ -41,7 +41,13 @@ export default function ServiceHistoryView({
   onBackToMaster
 }) {
   const [selectedToolId, setSelectedToolId] = useState(propSelectedToolId || null);
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState(() => {
+    if (propSelectedToolId && Array.isArray(tools)) {
+      const t = tools.find(x => x.id === propSelectedToolId);
+      return t ? t.toolNo : '';
+    }
+    return '';
+  });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
@@ -49,7 +55,13 @@ export default function ServiceHistoryView({
 
   useEffect(() => {
     setSelectedToolId(propSelectedToolId || null);
-  }, [propSelectedToolId]);
+    if (propSelectedToolId) {
+      const tool = tools.find(t => t.id === propSelectedToolId);
+      if (tool) {
+        setSearchInput(tool.toolNo);
+      }
+    }
+  }, [propSelectedToolId, tools]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -65,6 +77,14 @@ export default function ServiceHistoryView({
   const handleSelectTool = (id) => {
     setSelectedToolId(id);
     onSelectToolId?.(id);
+    if (id) {
+      const tool = tools.find(t => t.id === id);
+      if (tool) {
+        setSearchInput(tool.toolNo);
+      }
+    } else {
+      setSearchInput('');
+    }
   };
 
   const selectedTool = useMemo(() => {
