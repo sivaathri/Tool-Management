@@ -10,6 +10,7 @@ export default function ToolReplacementModal({ tool, isOpen = true, onClose, onC
   const isOverLimit = tool.cumulative >= (tool.lifetime || 0);
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newLifetimeLimit, setNewLifetimeLimit] = useState(tool.lifetime || 200000);
   const [replacedBy, setReplacedBy] = useState('Tool Room Lead');
   const [remarks, setRemarks] = useState(
     isOverLimit 
@@ -22,7 +23,8 @@ export default function ToolReplacementModal({ tool, isOpen = true, onClose, onC
     onConfirm({
       date,
       replacedBy: replacedBy.trim() || 'Tool Room Lead',
-      remarks: remarks.trim()
+      remarks: remarks.trim(),
+      newLifetimeLimit: Number(newLifetimeLimit) || tool.lifetime || 200000
     });
   };
 
@@ -135,6 +137,32 @@ export default function ToolReplacementModal({ tool, isOpen = true, onClose, onC
               />
             </div>
 
+            {/* Change / Update Life Time Limit for Fresh Cycle */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>
+                  Life Time Limit (Stroke / Cycle Limit) *
+                </label>
+                <span style={{ fontSize: '11px', color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                  Current: {formatNumber(tool.lifetime)}
+                </span>
+              </div>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                className="form-control"
+                value={newLifetimeLimit}
+                onChange={(e) => setNewLifetimeLimit(e.target.value)}
+                required
+                placeholder="Enter life time limit (e.g. 200000)"
+                style={{ fontSize: '13.5px', padding: '8px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#1e40af' }}
+              />
+              <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                Edit this if the replacement tool set has a different stroke limit. Clicking OK will reset cumulative to 0 with this limit.
+              </div>
+            </div>
+
             {/* Replaced By */}
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>
@@ -196,19 +224,19 @@ export default function ToolReplacementModal({ tool, isOpen = true, onClose, onC
               className="btn btn-primary"
               style={{
                 backgroundColor: '#059669',
-                padding: '8px 20px',
-                fontSize: '13px',
+                padding: '8px 22px',
+                fontSize: '13.5px',
                 fontWeight: 700,
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '7px',
                 boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              <span>Confirm Replacement & Start Fresh Cycle</span>
+              <span>OK - Reset & Start Fresh Cycle</span>
             </button>
           </div>
         </form>

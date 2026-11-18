@@ -128,7 +128,7 @@ export default function App() {
   const handleReplaceTool = (toolId, replacementData) => {
     const updated = replaceTool(toolId, replacementData);
     reloadData();
-    addToast(`Tool ${updated?.toolNo || toolId} replaced successfully! Fresh Cycle ${updated?.toolCount || ''} started with 0 cumulative output.`, 'success');
+    addToast(`Tool ${updated?.toolNo || toolId} replaced! Fresh Cycle ${updated?.toolCount || ''} started with limit ${updated?.lifetime?.toLocaleString() || ''} strokes. Cumulative reset to 0.`, 'success');
   };
 
   // Production Log Handlers

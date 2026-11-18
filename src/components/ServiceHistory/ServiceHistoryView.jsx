@@ -55,7 +55,9 @@ export default function ServiceHistoryView({
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
   const [selectedCycleTab, setSelectedCycleTab] = useState('current');
+  const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const searchComboRef = useRef(null);
+  const cycleDropdownRef = useRef(null);
 
   useEffect(() => {
     setSelectedToolId(propSelectedToolId || null);
@@ -70,13 +72,17 @@ export default function ServiceHistoryView({
   // Reset cycle tab whenever selected tool changes
   useEffect(() => {
     setSelectedCycleTab('current');
+    setIsCycleDropdownOpen(false);
   }, [selectedToolId]);
 
-  // Close dropdown on outside click
+  // Close search & cycle dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchComboRef.current && !searchComboRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
+      }
+      if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(e.target)) {
+        setIsCycleDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -297,7 +303,7 @@ export default function ServiceHistoryView({
             onClick={() => window.print()}
             title="Export Report"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -434,6 +440,37 @@ export default function ServiceHistoryView({
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Quick button to toggle & view old preserved data */}
+            {pastCycles.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                id="btnToggleOldRecordsTop"
+                onClick={() => {
+                  setSelectedCycleTab(selectedCycleTab === 'current' ? (pastCycles[pastCycles.length - 1].toString()) : 'current');
+                  const el = document.getElementById('quantityProducedCard');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  padding: '9px 15px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: selectedCycleTab !== 'current' ? '#eff6ff' : '#ffffff',
+                  color: selectedCycleTab !== 'current' ? '#1d4ed8' : 'var(--slate-700)',
+                  borderColor: selectedCycleTab !== 'current' ? '#bfdbfe' : '#cbd5e1'
+                }}
+                title={selectedCycleTab === 'current' ? 'Click to jump down and view old preserved data' : 'Click to view fresh active cycle'}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{selectedCycleTab === 'current' ? '📜 View Old Data' : '✨ View Fresh Cycle'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               className={`btn ${selectedTool.status === 'Replacement Due' ? 'btn-danger' : 'btn-secondary'}`}
@@ -627,8 +664,8 @@ export default function ServiceHistoryView({
       )}
 
       {/* QUANTITY PRODUCED (PRODUCTION TRACKING) TABLE WITH CYCLE SEGREGATION */}
-      <div className="card" style={{ marginTop: '24px' }}>
-        <div className="card-header" style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="card" id="quantityProducedCard" style={{ marginTop: '24px' }}>
+        <div className="card-header" style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <div className="card-title" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--slate-900)' }}>
               Quantity Produced (Production Tracking)
@@ -637,7 +674,34 @@ export default function ServiceHistoryView({
               Cycle-based production history. Replacing a tool starts a fresh cycle while preserving all historical records.
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Dedicated button to click and see old data */}
+            {pastCycles.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                id="btnClickToSeeOldData"
+                onClick={() => setSelectedCycleTab(selectedCycleTab === 'current' ? (pastCycles[pastCycles.length - 1].toString()) : 'current')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  backgroundColor: selectedCycleTab === 'current' ? '#eff6ff' : '#0284c7',
+                  color: selectedCycleTab === 'current' ? '#1d4ed8' : '#ffffff',
+                  borderColor: selectedCycleTab === 'current' ? '#bfdbfe' : '#0284c7'
+                }}
+                title={selectedCycleTab === 'current' ? 'Click to see previous cycle records' : 'Click to see fresh active cycle'}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{selectedCycleTab === 'current' ? '📜 Click to View Old Data' : '✨ Back to Fresh Active Cycle'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               className="btn btn-primary"
@@ -695,25 +759,177 @@ export default function ServiceHistoryView({
               🟢 Current Cycle (Cycle {currentCycle}) {selectedCycleTab === 'current' ? '• Fresh' : ''}
             </button>
 
-            {/* Previous Retired Cycles */}
-            {pastCycles.map(c => (
+            {/* Previous Retired Cycles: Dropdown if more than 1 cycle, or single button if 1 cycle */}
+            {pastCycles.length > 1 ? (
+              <div style={{ position: 'relative', display: 'inline-block' }} ref={cycleDropdownRef}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${selectedCycleTab !== 'current' && selectedCycleTab !== 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)}
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '12.5px',
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: selectedCycleTab !== 'current' && selectedCycleTab !== 'all' ? '#334155' : '#ffffff',
+                    color: selectedCycleTab !== 'current' && selectedCycleTab !== 'all' ? '#ffffff' : '#334155',
+                    borderColor: selectedCycleTab !== 'current' && selectedCycleTab !== 'all' ? '#334155' : '#cbd5e1'
+                  }}
+                  title="Click dropdown to select and view a past cycle"
+                >
+                  <span>
+                    📁 {selectedCycleTab !== 'current' && selectedCycleTab !== 'all' 
+                      ? `Cycle ${selectedCycleTab} (History)` 
+                      : `Past Cycles (${pastCycles.length})`}
+                  </span>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transform: isCycleDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.18s ease'
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu to click and view any past cycle */}
+                {isCycleDropdownOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 5px)',
+                    left: 0,
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)',
+                    minWidth: '220px',
+                    zIndex: 100,
+                    overflow: 'hidden',
+                    padding: '6px 0'
+                  }}>
+                    <div style={{
+                      padding: '6px 14px 4px 14px',
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      color: '#64748b',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Select Past Cycle ({pastCycles.length} available)
+                    </div>
+
+                    {pastCycles.map(c => {
+                      const isSelected = selectedCycleTab === String(c);
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCycleTab(String(c));
+                            setIsCycleDropdownOpen(false);
+                          }}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '9px 14px',
+                            fontSize: '13px',
+                            fontWeight: isSelected ? 700 : 500,
+                            backgroundColor: isSelected ? '#f1f5f9' : '#ffffff',
+                            color: isSelected ? '#0f172a' : '#334155',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            transition: 'background-color 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) e.currentTarget.style.backgroundColor = '#f8fafc';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) e.currentTarget.style.backgroundColor = '#ffffff';
+                          }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>📁</span>
+                            <span>Cycle {c} (History)</span>
+                          </span>
+                          {isSelected && (
+                            <span style={{ color: '#0284c7', fontWeight: 800, fontSize: '14px' }}>✓</span>
+                          )}
+                        </button>
+                      );
+                    })}
+
+                    <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }}></div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCycleTab('all');
+                        setIsCycleDropdownOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '9px 14px',
+                        fontSize: '13px',
+                        fontWeight: selectedCycleTab === 'all' ? 700 : 500,
+                        backgroundColor: selectedCycleTab === 'all' ? '#f1f5f9' : '#ffffff',
+                        color: selectedCycleTab === 'all' ? '#0f172a' : '#334155',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedCycleTab !== 'all') e.currentTarget.style.backgroundColor = '#f8fafc';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedCycleTab !== 'all') e.currentTarget.style.backgroundColor = '#ffffff';
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14px' }}>📑</span>
+                        <span>All Cycles Combined</span>
+                      </span>
+                      {selectedCycleTab === 'all' && (
+                        <span style={{ color: '#0284c7', fontWeight: 800, fontSize: '14px' }}>✓</span>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : pastCycles.length === 1 ? (
               <button
-                key={c}
+                key={pastCycles[0]}
                 type="button"
-                className={`btn btn-sm ${selectedCycleTab === String(c) ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setSelectedCycleTab(String(c))}
+                className={`btn btn-sm ${selectedCycleTab === String(pastCycles[0]) ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setSelectedCycleTab(String(pastCycles[0]))}
                 style={{
                   fontWeight: 600,
                   fontSize: '12.5px',
                   padding: '6px 14px',
                   borderRadius: '6px',
-                  backgroundColor: selectedCycleTab === String(c) ? '#475569' : '#ffffff',
-                  borderColor: selectedCycleTab === String(c) ? '#475569' : '#cbd5e1'
+                  backgroundColor: selectedCycleTab === String(pastCycles[0]) ? '#475569' : '#ffffff',
+                  borderColor: selectedCycleTab === String(pastCycles[0]) ? '#475569' : '#cbd5e1'
                 }}
               >
-                📁 Cycle {c} (History)
+                📁 Cycle {pastCycles[0]} (History)
               </button>
-            ))}
+            ) : null}
 
             {/* All Cycles Combined Tab */}
             {(pastCycles.length > 0 || currentCycle > 0) && (
@@ -746,6 +962,37 @@ export default function ServiceHistoryView({
             )}
           </div>
         </div>
+
+        {/* Historical View Active Notice */}
+        {selectedCycleTab !== 'current' && (
+          <div style={{
+            margin: '12px 18px',
+            padding: '10px 16px',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#1e40af' }}>
+              <span style={{ fontSize: '15px' }}>🔒</span>
+              <span>
+                <strong>Old Records View:</strong> You are viewing preserved historical data for {selectedCycleTab === 'all' ? 'All Past Cycles' : `Cycle ${selectedCycleTab}`}. Old data is never deleted.
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => setSelectedCycleTab('current')}
+              style={{ fontSize: '12px', padding: '4px 14px', fontWeight: 700, backgroundColor: '#0284c7', borderColor: '#0284c7' }}
+            >
+              ✨ Switch Back to Fresh Active Cycle
+            </button>
+          </div>
+        )}
 
         <div className="table-responsive">
           <table className="enterprise-table">

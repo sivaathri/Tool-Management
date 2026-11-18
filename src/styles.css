@@ -1358,16 +1358,17 @@ body {
   color: #ffffff !important;
   border: none !important;
   border-radius: 9999px !important;
-  padding: 8px 22px !important;
-  font-size: 13.5px !important;
+  padding: 10px 26px !important;
+  font-size: 15px !important;
   font-weight: 700 !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35) !important;
   transition: all 0.18s ease-in-out !important;
   outline: none;
+  letter-spacing: 0.2px;
 }
 
 .btn-export-pill:hover {

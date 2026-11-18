@@ -253,6 +253,14 @@ export function replaceTool(toolId, replacementData = {}) {
 
   const updatedReplacements = [...(rawTool.replacements || []), repEvent];
 
+  // Update lifetime limit if adjusted for new cycle
+  const newLimit = Number(replacementData.newLifetimeLimit || replacementData.lifetime);
+  if (!isNaN(newLimit) && newLimit > 0) {
+    rawTool.lifetime = newLimit;
+    rawTool.lifeTimeLimit = newLimit;
+    rawTool.frequencyLimit = newLimit;
+  }
+
   // Update raw tool for the new cycle
   rawTool.toolCount = newCycle;
   rawTool.replacements = updatedReplacements;
