@@ -1898,3 +1898,88 @@ body {
   text-decoration: underline;
   box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
 }
+
+/* ==========================================================================
+   Table Pagination Controls
+   ========================================================================== */
+.table-pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: #ffffff;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--slate-600);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-info strong {
+  color: var(--slate-900);
+  font-weight: 700;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background-color: #ffffff;
+  color: var(--slate-700);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--accent-500);
+  color: var(--accent-700);
+  background-color: var(--accent-50);
+}
+
+.pagination-btn.active {
+  background-color: var(--accent-600);
+  color: #ffffff;
+  border-color: var(--accent-600);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background-color: var(--slate-50);
+  border-color: var(--border-subtle);
+}
+
+.pagination-page-size-select {
+  height: 30px;
+  padding: 2px 24px 2px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--slate-700);
+  background-color: #ffffff;
+  cursor: pointer;
+}
