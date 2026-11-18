@@ -189,14 +189,23 @@ export default function PMChecklistSheet({ tool, showToast }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
           <button
             type="button"
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary"
             onClick={handleSave}
-            style={{ backgroundColor: '#059669', fontSize: '12.5px', fontWeight: 600 }}
+            style={{
+              backgroundColor: '#059669',
+              padding: '9px 20px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            Save PM Record
+            <span>Save PM Record</span>
           </button>
         </div>
       </div>
