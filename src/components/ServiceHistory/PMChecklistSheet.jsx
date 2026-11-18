@@ -357,22 +357,22 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   fontSize: '12px',
                   letterSpacing: '0.2px'
                 }}>
-                  <th style={{ width: '45px', textAlign: 'center', padding: '9px 4px', borderRight: '1px solid #334155' }}>
+                  <th style={{ width: '45px', textAlign: 'center', padding: '10px 4px', borderRight: '1px solid #334155' }}>
                     S.no
                   </th>
-                  <th style={{ minWidth: '240px', textAlign: 'left', padding: '9px 12px', borderRight: '1px solid #334155' }}>
+                  <th style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px', borderRight: '1px solid #334155' }}>
                     Check points
                   </th>
-                  <th style={{ width: '120px', textAlign: 'center', padding: '9px 8px', borderRight: '1px solid #334155' }}>
+                  <th style={{ width: '130px', textAlign: 'center', padding: '10px 8px', borderRight: '1px solid #334155' }}>
                     Checking Method
                   </th>
-                  <th style={{ width: '190px', textAlign: 'left', padding: '9px 10px', borderRight: '1px solid #334155' }}>
+                  <th style={{ minWidth: '200px', textAlign: 'left', padding: '10px 10px', borderRight: '1px solid #334155' }}>
                     Specification
                   </th>
-                  <th style={{ minWidth: '220px', textAlign: 'left', padding: '9px 10px', borderRight: '1px solid #334155', backgroundColor: '#eff6ff' }}>
+                  <th style={{ minWidth: '280px', textAlign: 'left', padding: '10px 12px', borderRight: '1px solid #334155', backgroundColor: '#eff6ff' }}>
                     Actual condition *
                   </th>
-                  <th style={{ minWidth: '150px', textAlign: 'left', padding: '9px 10px' }}>
+                  <th style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px' }}>
                     Action Taken
                   </th>
                 </tr>
@@ -391,118 +391,154 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       textAlign: 'center',
                       fontWeight: 700,
                       color: '#475569',
-                      padding: '8px 4px',
-                      borderRight: '1px solid #cbd5e1'
+                      padding: '10px 4px',
+                      borderRight: '1px solid #cbd5e1',
+                      verticalAlign: 'top'
                     }}>
                       {row.sno}
                     </td>
 
                     {/* Check point description */}
                     <td style={{
-                      padding: '6px 12px',
-                      fontWeight: 600,
-                      color: '#0f172a',
-                      borderRight: '1px solid #cbd5e1'
+                      padding: '6px 8px',
+                      borderRight: '1px solid #cbd5e1',
+                      verticalAlign: 'top'
                     }}>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={2}
                         value={row.checkPoint}
                         onChange={(e) => handleRowChange(idx, 'checkPoint', e.target.value)}
                         placeholder="Check point description..."
                         style={{
                           width: '100%',
-                          border: 'none',
-                          background: 'transparent',
+                          minHeight: '62px',
+                          padding: '7px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
                           fontWeight: 600,
                           fontSize: '12px',
-                          color: '#0f172a'
+                          lineHeight: 1.45,
+                          color: '#0f172a',
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
                         }}
                       />
                     </td>
 
-                    {/* Checking Method */}
+                    {/* Checking Method (Editable input with visible field styling) */}
                     <td style={{
-                      textAlign: 'center',
-                      padding: '6px 6px',
-                      borderRight: '1px solid #cbd5e1'
+                      padding: '6px 8px',
+                      borderRight: '1px solid #cbd5e1',
+                      verticalAlign: 'top'
                     }}>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={2}
                         value={row.method}
                         onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
-                        placeholder="Visual / Gauge"
+                        placeholder="e.g. Visual"
                         style={{
                           width: '100%',
-                          border: 'none',
-                          background: 'transparent',
+                          minHeight: '62px',
+                          padding: '7px 8px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
                           textAlign: 'center',
                           fontSize: '12px',
-                          color: '#334155'
+                          lineHeight: 1.45,
+                          color: '#334155',
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
                         }}
                       />
                     </td>
 
-                    {/* Specification */}
+                    {/* Specification (Editable textarea for long text) */}
                     <td style={{
-                      padding: '6px 10px',
+                      padding: '6px 8px',
                       borderRight: '1px solid #cbd5e1',
-                      color: '#475569'
+                      verticalAlign: 'top'
                     }}>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={2}
                         value={row.specification}
                         onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
                         placeholder="Specification standard..."
                         style={{
                           width: '100%',
-                          border: 'none',
-                          background: 'transparent',
+                          minHeight: '62px',
+                          padding: '7px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
                           fontSize: '12px',
-                          color: '#475569'
+                          lineHeight: 1.45,
+                          color: '#334155',
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
                         }}
                       />
                     </td>
 
-                    {/* Actual Condition (Handwritten-style or input) */}
+                    {/* Actual Condition (Multi-line Textarea for comfortable reading & long text) */}
                     <td style={{
-                      padding: '4px 8px',
+                      padding: '6px 8px',
                       borderRight: '1px solid #cbd5e1',
-                      backgroundColor: '#f0f9ff'
+                      backgroundColor: '#f0f9ff',
+                      verticalAlign: 'top'
                     }}>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={2}
                         value={row.actualCondition}
                         onChange={(e) => handleRowChange(idx, 'actualCondition', e.target.value)}
                         placeholder="e.g. Locator Free from Damage / OK"
                         style={{
                           width: '100%',
-                          padding: '5px 8px',
+                          minHeight: '62px',
+                          padding: '7px 10px',
                           borderRadius: '4px',
-                          border: '1px solid #93c5fd',
+                          border: '1.5px solid #93c5fd',
                           backgroundColor: '#ffffff',
                           fontWeight: 600,
                           fontSize: '12.5px',
+                          lineHeight: 1.45,
                           color: '#1e3a8a',
-                          outline: 'none'
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
                         }}
                       />
                     </td>
 
-                    {/* Action Taken */}
-                    <td style={{ padding: '4px 8px' }}>
-                      <input
-                        type="text"
+                    {/* Action Taken (Multi-line Textarea for comfortable long text) */}
+                    <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>
+                      <textarea
+                        rows={2}
                         value={row.actionTaken}
                         onChange={(e) => handleRowChange(idx, 'actionTaken', e.target.value)}
                         placeholder="Action taken if any..."
                         style={{
                           width: '100%',
-                          padding: '5px 8px',
+                          minHeight: '62px',
+                          padding: '7px 10px',
                           borderRadius: '4px',
-                          border: '1px solid var(--border-subtle)',
+                          border: '1px solid #cbd5e1',
                           backgroundColor: '#ffffff',
                           fontSize: '12px',
-                          color: '#334155'
+                          lineHeight: 1.45,
+                          color: '#334155',
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
                         }}
                       />
                     </td>
