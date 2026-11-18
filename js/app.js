@@ -846,15 +846,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (DOM.inpLifeTime) DOM.inpLifeTime.value = tool.lifeTime || tool.replacementFrequency || 200000;
         if (DOM.inpClassification) DOM.inpClassification.value = tool.classification || 'Critical';
         if (DOM.inpToolCount) DOM.inpToolCount.value = tool.toolCount || 1;
-
-        // Optional collapsible fields
-        if (DOM.inpOperation) DOM.inpOperation.value = tool.operation || '';
-        if (DOM.inpMachineNumber) DOM.inpMachineNumber.value = tool.machineNumber || '';
-        if (DOM.inpPreparedBy) DOM.inpPreparedBy.value = tool.preparedBy || '';
-        if (DOM.inpCheckedBy) DOM.inpCheckedBy.value = tool.checkedBy || '';
-        if (DOM.inpApprovedBy) DOM.inpApprovedBy.value = tool.approvedBy || '';
-
-        renderSparesFormRows(tool.spares || []);
       }
     } else {
       // Add Mode
@@ -871,10 +862,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.inpProductName) DOM.inpProductName.value = 'Steering Yoke Assembly';
       if (DOM.inpToolNumber) DOM.inpToolNumber.value = '';
       if (DOM.inpToolDescription) DOM.inpToolDescription.value = '';
-
-      renderSparesFormRows([
-        { detailNo: '01', description: 'Top Punch Insert', qtySet: 1, required: 1, available: 1, freqReplacement: 200000 }
-      ]);
     }
 
     openModal(DOM.modalAddTool);
@@ -883,44 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
   DOM.btnOpenNewToolModal.addEventListener('click', () => openAddEditToolModal(null));
   DOM.btnQuickAddTool.addEventListener('click', () => openAddEditToolModal(null));
 
-  function renderSparesFormRows(spares) {
-    if (!DOM.sparesFormTableBody) return;
-    DOM.sparesFormTableBody.innerHTML = '';
-    spares.forEach(s => addSpareRow(s));
-  }
-
-  function addSpareRow(spare = null) {
-    if (!DOM.sparesFormTableBody) return;
-    const row = document.createElement('tr');
-    const curRows = DOM.sparesFormTableBody.querySelectorAll('tr').length + 1;
-    const detailNo = spare ? spare.detailNo : (curRows < 10 ? '0' + curRows : curRows);
-    const desc = spare ? spare.description : '';
-    const qty = spare ? spare.qtySet : 1;
-    const req = spare ? spare.required : 1;
-    const avail = spare ? spare.available : 1;
-    const freq = spare ? spare.freqReplacement : (DOM.inpLifeTime ? Number(DOM.inpLifeTime.value) : 200000) || 200000;
-
-    row.innerHTML = `
-      <td><input type="text" class="form-input spare-detail-no" value="${detailNo}" style="font-family: var(--font-mono); text-align: center;"></td>
-      <td><input type="text" class="form-input spare-desc" value="${desc}" placeholder="Spare item name"></td>
-      <td><input type="number" class="form-input spare-qty" value="${qty}" min="1"></td>
-      <td><input type="number" class="form-input spare-req" value="${req}" min="0"></td>
-      <td><input type="number" class="form-input spare-avail" value="${avail}" min="0"></td>
-      <td><input type="number" class="form-input spare-freq" value="${freq}"></td>
-      <td style="text-align: center;">
-        <button type="button" class="btn btn-icon-only btn-sm" style="color: #ef4444;" title="Remove row">✕</button>
-      </td>
-    `;
-
-    row.querySelector('button').addEventListener('click', () => row.remove());
-    DOM.sparesFormTableBody.appendChild(row);
-  }
-
-  if (DOM.btnAddSpareRow) {
-    DOM.btnAddSpareRow.addEventListener('click', () => addSpareRow());
-  }
-
-  // Submit Tool Master Form
+  // Submit Tool Master Form (Only the 8 Master List Inputs)
   DOM.formToolMaster.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -939,27 +889,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const existingTool = State.editingToolNumber ? TMS.getTool(State.editingToolNumber) : TMS.getTool(toolNumber);
-    const operation = DOM.inpOperation ? DOM.inpOperation.value.trim() : (existingTool?.operation || '');
-    const machineNumber = DOM.inpMachineNumber ? DOM.inpMachineNumber.value.trim() : (existingTool?.machineNumber || 'MCH-01');
-    const preparedBy = DOM.inpPreparedBy ? DOM.inpPreparedBy.value.trim() : (existingTool?.preparedBy || 'Tool Room');
-    const checkedBy = DOM.inpCheckedBy ? DOM.inpCheckedBy.value.trim() : (existingTool?.checkedBy || 'Tool Lead');
-    const approvedBy = DOM.inpApprovedBy ? DOM.inpApprovedBy.value.trim() : (existingTool?.approvedBy || 'Plant Head');
-
-    // Extract spares if provided
-    const spares = [];
-    if (DOM.sparesFormTableBody) {
-      DOM.sparesFormTableBody.querySelectorAll('tr').forEach(tr => {
-        const detailNo = tr.querySelector('.spare-detail-no')?.value.trim() || '01';
-        const desc = tr.querySelector('.spare-desc')?.value.trim();
-        const qtySet = Number(tr.querySelector('.spare-qty')?.value) || 1;
-        const required = Number(tr.querySelector('.spare-req')?.value) || 0;
-        const available = Number(tr.querySelector('.spare-avail')?.value) || 0;
-        const freqReplacement = Number(tr.querySelector('.spare-freq')?.value) || lifeTime;
-        if (desc) {
-          spares.push({ detailNo, description: desc, qtySet, required, available, freqReplacement });
-        }
-      });
-    }
 
     const toolData = {
       ...(existingTool || {}),
@@ -972,14 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
       replacementFrequency: lifeTime,
       classification,
       toolType: classification,
-      toolCount,
-      operation,
-      machineNumber,
-      machineId: machineNumber,
-      preparedBy,
-      checkedBy,
-      approvedBy,
-      spares: spares.length > 0 ? spares : (existingTool?.spares || [])
+      toolCount
     };
 
     TMS.saveTool(toolData, State.editingToolNumber);
