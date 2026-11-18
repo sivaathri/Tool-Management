@@ -13,6 +13,7 @@ import ProductionTrackingView from './components/ProductionTracking/ProductionTr
 import ReplacementAlertsView from './components/ReplacementAlerts/ReplacementAlertsView';
 import ReportsView from './components/Reports/ReportsView';
 import UserManagementView from './components/UserManagement/UserManagementView';
+import LoginScreen from './components/Auth/LoginScreen';
 
 import {
   getTools,
@@ -30,6 +31,24 @@ import {
 } from './data/storage';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tms_auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const handleLogin = (user, remember = true) => {
+    setCurrentUser(user);
+    if (remember) {
+      try {
+        localStorage.setItem('tms_auth_user', JSON.stringify(user));
+      } catch (e) {}
+    }
+  };
+
   const [currentView, setCurrentView] = useState(() => {
     try {
       return localStorage.getItem('tms_current_view') || 'master-list';
@@ -220,6 +239,10 @@ export default function App() {
   // Logout
   const handleConfirmLogout = () => {
     setIsLogoutConfirmOpen(false);
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('tms_auth_user');
+    } catch (e) {}
     addToast('You have been logged out successfully.', 'info');
   };
 
@@ -231,10 +254,20 @@ export default function App() {
     setCurrentView('service-history');
   };
 
+  if (!currentUser) {
+    return (
+      <>
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+        <LoginScreen onLogin={handleLogin} users={users} showToast={addToast} />
+      </>
+    );
+  }
+
   return (
     <div className="app-layout">
       {/* Sidebar Navigation */}
       <Sidebar
+        currentUser={currentUser}
         currentView={currentView}
         onNavigate={(view) => {
           if (view === 'service-history') {

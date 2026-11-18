@@ -2712,3 +2712,302 @@ body {
     break-inside: avoid !important;
   }
 }
+
+/* ==========================================================================
+   Exact Q TRACK / INEL Factory Background Login Screen Design
+   ========================================================================== */
+.inel-login-viewport {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Card floating on the right */
+  padding: 40px 10% 40px 40px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  font-family: var(--font-sans);
+}
+
+.inel-login-brand {
+  position: absolute;
+  top: 32px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  z-index: 20;
+  user-select: none;
+}
+
+.inel-brand-symbol {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.inel-brand-name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
+
+.inel-login-right-pane {
+  width: 100%;
+  max-width: 420px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inel-login-intro {
+  padding-left: 2px;
+}
+
+.inel-welcome-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.inel-welcome-subtitle {
+  font-size: 13.5px;
+  color: #475569;
+  margin: 6px 0 0;
+  font-weight: 500;
+}
+
+.inel-login-white-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inel-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inel-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inel-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.inel-field-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  height: 48px;
+  transition: all 0.2s ease;
+}
+
+.inel-field-input-box:focus-within {
+  background-color: #ffffff;
+  border-color: #5b36f5;
+  box-shadow: 0 0 0 3px rgba(91, 54, 245, 0.14);
+}
+
+.inel-field-icon {
+  margin-left: 14px;
+  color: #94a3b8;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.inel-field-input-box:focus-within .inel-field-icon {
+  color: #5b36f5;
+}
+
+.inel-field-input {
+  flex: 1;
+  height: 100%;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.inel-field-input::placeholder {
+  color: #94a3b8;
+}
+
+.inel-eye-toggle {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.inel-eye-toggle:hover {
+  color: #334155;
+}
+
+.inel-btn-signin {
+  height: 46px;
+  margin-top: 4px;
+  background-color: #5b36f5;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(91, 54, 245, 0.35);
+  transition: all 0.2s ease;
+}
+
+.inel-btn-signin:hover:not(:disabled) {
+  background-color: #4e2be3;
+  box-shadow: 0 6px 18px rgba(91, 54, 245, 0.45);
+  transform: translateY(-1px);
+}
+
+.inel-btn-signin:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.inel-btn-signin:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.inel-demo-bar {
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inel-demo-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.inel-demo-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inel-demo-pill {
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inel-demo-pill:hover {
+  background-color: #ede9fe;
+  color: #5b36f5;
+  border-color: #c4b5fd;
+}
+
+.inel-login-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 12px;
+}
+
+.inel-bottom-badge {
+  position: absolute;
+  bottom: 22px;
+  right: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #0f172a;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+  user-select: none;
+}
+
+@media (max-width: 900px) {
+  .inel-login-viewport {
+    justify-content: center;
+    padding: 30px 16px;
+  }
+  .inel-login-right-pane {
+    max-width: 380px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inel-login-brand {
+    top: 18px;
+    left: 18px;
+  }
+  .inel-welcome-title {
+    font-size: 26px;
+  }
+  .inel-login-white-card {
+    padding: 24px 18px 20px;
+    border-radius: 16px;
+  }
+  .inel-bottom-badge {
+    display: none;
+  }
+}

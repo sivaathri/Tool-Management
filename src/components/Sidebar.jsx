@@ -1,6 +1,7 @@
 import React from 'react';
 
 export default function Sidebar({
+  currentUser,
   currentView,
   onNavigate,
   toolCount = 0,
@@ -151,10 +152,12 @@ export default function Sidebar({
         {/* Footer */}
         <div className="sidebar-footer">
           <div className="user-card" style={{ marginBottom: '12px' }}>
-            <div className="user-avatar">AD</div>
+            <div className="user-avatar">{currentUser?.avatar || 'AD'}</div>
             <div className="user-info">
-              <div className="user-name">Admin User</div>
-           
+              <div className="user-name">{currentUser?.name || 'Admin User'}</div>
+              <div className="user-role" style={{ fontSize: '11px', color: 'var(--slate-400)' }}>
+                {currentUser?.role || 'Administrator'}
+              </div>
             </div>
           </div>
           <button
