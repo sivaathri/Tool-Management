@@ -143,6 +143,9 @@ export default function App() {
       <Sidebar
         currentView={currentView}
         onNavigate={(view) => {
+          if (view === 'service-history') {
+            setSelectedServiceToolId(null);
+          }
           setCurrentView(view);
           setIsMobileSidebarOpen(false);
         }}

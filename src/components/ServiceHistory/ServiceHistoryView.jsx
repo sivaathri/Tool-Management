@@ -12,14 +12,12 @@ export default function ServiceHistoryView({
   onSelectToolId,
   onBackToMaster
 }) {
-  const [selectedToolId, setSelectedToolId] = useState(propSelectedToolId || tools[0]?.id || null);
+  const [selectedToolId, setSelectedToolId] = useState(propSelectedToolId || null);
   const [searchInput, setSearchInput] = useState('');
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
 
   useEffect(() => {
-    if (propSelectedToolId) {
-      setSelectedToolId(propSelectedToolId);
-    }
+    setSelectedToolId(propSelectedToolId || null);
   }, [propSelectedToolId]);
 
   const handleSelectTool = (id) => {
@@ -28,7 +26,8 @@ export default function ServiceHistoryView({
   };
 
   const selectedTool = useMemo(() => {
-    return tools.find(t => t.id === selectedToolId) || tools[0] || null;
+    if (!selectedToolId) return null;
+    return tools.find(t => t.id === selectedToolId) || null;
   }, [tools, selectedToolId]);
 
   const toolLogs = useMemo(() => {
@@ -40,7 +39,10 @@ export default function ServiceHistoryView({
 
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
-    if (!searchInput.trim()) return;
+    if (!searchInput.trim()) {
+      showToast('Please enter a tool number to search', 'warning');
+      return;
+    }
     const q = searchInput.trim().toLowerCase();
     const match = tools.find(t => 
       t.toolNo.toLowerCase().includes(q) || 
@@ -56,22 +58,15 @@ export default function ServiceHistoryView({
   };
 
   const handleSaveLog = (newLog) => {
+    if (!selectedTool) return;
     onAddProductionLog(newLog);
     setIsAddLogOpen(false);
     showToast(`Logged ${formatNumber(newLog.quantity)} output for ${selectedTool.toolNo}`, 'success');
   };
 
-  if (!selectedTool) {
-    return (
-      <div style={{ padding: '36px', textAlign: 'center', color: 'var(--slate-500)' }}>
-        No tools registered. Please add tools in the Master List.
-      </div>
-    );
-  }
-
-  const pct = Math.min(100, Math.round((selectedTool.cumulative / (selectedTool.lifetime || 1)) * 100));
-  const isHealthy = selectedTool.status === 'Active' || selectedTool.status === 'Healthy';
-  const isNear = selectedTool.status === 'Near Limit';
+  const pct = selectedTool ? Math.min(100, Math.round((selectedTool.cumulative / (selectedTool.lifetime || 1)) * 100)) : 0;
+  const isHealthy = selectedTool ? (selectedTool.status === 'Active' || selectedTool.status === 'Healthy') : false;
+  const isNear = selectedTool ? selectedTool.status === 'Near Limit' : false;
   const progressClass = isHealthy ? 'progress-healthy' : isNear ? 'progress-warning' : 'progress-danger';
 
   return (
@@ -123,13 +118,28 @@ export default function ServiceHistoryView({
           <button type="submit" className="btn btn-primary" id="btnSearchServiceTool" style={{ padding: '0 24px' }}>
             Search Tool
           </button>
+          {selectedTool && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-reset-filter"
+              onClick={() => {
+                handleSelectTool(null);
+                setSearchInput('');
+              }}
+              style={{ padding: '0 16px' }}
+              title="Clear search"
+            >
+              Clear
+            </button>
+          )}
         </form>
-
-        
       </div>
 
-      {/* SELECTED TOOL SUMMARY DIGITAL CARD */}
-      <div className="tool-summary-card" id="selectedToolSummaryCard">
+      {/* SHOW SERVICE DATA ONLY WHEN A TOOL HAS BEEN SEARCHED / SELECTED */}
+      {selectedTool ? (
+        <>
+          {/* SELECTED TOOL SUMMARY DIGITAL CARD */}
+          <div className="tool-summary-card" id="selectedToolSummaryCard">
         <div className="tool-summary-top">
           <div className="tool-summary-left">
             <div className="tool-badge-large" id="shToolTypeBadge">
@@ -358,12 +368,52 @@ export default function ServiceHistoryView({
       </div>
 
       {/* Add Production Modal */}
-      {isAddLogOpen && (
+      {isAddLogOpen && selectedTool && (
         <AddProductionModal
           tool={selectedTool}
           onClose={() => setIsAddLogOpen(false)}
           onSave={handleSaveLog}
         />
+      )}
+        </>
+      ) : (
+        /* Empty State: Shown before searching for a tool */
+        <div
+          className="card"
+          style={{
+            padding: '56px 24px',
+            textAlign: 'center',
+            backgroundColor: '#ffffff',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px dashed var(--border-medium)',
+            marginTop: '20px'
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--slate-100)',
+              color: 'var(--accent-600)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px'
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--slate-800)', marginBottom: '8px' }}>
+            Search for a Tool to View Service History
+          </h3>
+          <p style={{ fontSize: '13.5px', color: 'var(--slate-500)', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
+            Please enter a Tool Number in the search box above (e.g. <strong style={{ color: 'var(--accent-600)', fontFamily: 'var(--font-mono)' }}>INE T 1122</strong>) or select a tool from the Master List to display its full service history card, specifications, inspection check points, and production records.
+          </p>
+        </div>
       )}
     </section>
   );
