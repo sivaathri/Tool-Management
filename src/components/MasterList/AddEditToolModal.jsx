@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SearchablePartInput from './SearchablePartInput';
+import SearchableProductInput from './SearchableProductInput';
 import CheckPointsTable from './CheckPointsTable';
 
 export default function AddEditToolModal({
@@ -70,6 +71,15 @@ export default function AddEditToolModal({
     );
     if (match && match.productName && !formData.productName) {
       setFormData(prev => ({ ...prev, productName: match.productName }));
+    }
+  };
+
+  const handleProductSelected = (prodName) => {
+    const match = allTools.find(
+      t => t.productName && t.productName.toLowerCase() === String(prodName).toLowerCase()
+    );
+    if (match && match.applicationPartNo && !formData.applicationPartNo) {
+      setFormData(prev => ({ ...prev, applicationPartNo: match.applicationPartNo }));
     }
   };
 
@@ -160,15 +170,11 @@ export default function AddEditToolModal({
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="inpProductName">Product Name *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    id="inpProductName"
-                    placeholder="e.g. Steering Yoke Assembly / Brake Caliper"
+                  <SearchableProductInput
                     value={formData.productName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
-                    required
+                    onChange={(val) => setFormData(prev => ({ ...prev, productName: val }))}
+                    onSelectProduct={handleProductSelected}
+                    existingTools={allTools}
                   />
                 </div>
               </div>
