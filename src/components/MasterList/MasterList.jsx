@@ -7,6 +7,7 @@ export default function MasterList({
   onEditTool, 
   onDeleteTool, 
   onViewDossier, 
+  onViewServiceHistory,
   showToast 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -197,9 +198,20 @@ export default function MasterList({
 
                     {/* Tool No */}
                     <td>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-600)' }}>
+                      <button
+                        type="button"
+                        className="tool-no-btn"
+                        onClick={() => {
+                          if (onViewServiceHistory) {
+                            onViewServiceHistory(tool);
+                          } else if (onViewDossier) {
+                            onViewDossier(tool);
+                          }
+                        }}
+                        title={`Click to view Tool Service History Card for ${tool.toolNo}`}
+                      >
                         {tool.toolNo}
-                      </span>
+                      </button>
                     </td>
 
                     {/* Product Name */}
@@ -279,8 +291,14 @@ export default function MasterList({
                         <button
                           type="button"
                           className="btn-action-icon btn-action-view"
-                          title="View Tool Master Card Dossier"
-                          onClick={() => onViewDossier(tool)}
+                          title="View Tool Service History Card"
+                          onClick={() => {
+                            if (onViewServiceHistory) {
+                              onViewServiceHistory(tool);
+                            } else if (onViewDossier) {
+                              onViewDossier(tool);
+                            }
+                          }}
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
