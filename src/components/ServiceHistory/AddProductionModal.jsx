@@ -55,7 +55,6 @@ export default function AddProductionModal({ tool, existingLogs = [], onClose, o
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [quantity, setQuantity] = useState('');
   const [operator, setOperator] = useState('Machine Operator');
-  const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
 
   if (!tool) return null;
@@ -86,7 +85,7 @@ export default function AddProductionModal({ tool, existingLogs = [], onClose, o
       month: selectedMonth,
       quantity: numQty,
       operator: operator.trim() || 'Operator',
-      notes: notes.trim()
+      notes: ''
     });
   };
 
@@ -95,10 +94,7 @@ export default function AddProductionModal({ tool, existingLogs = [], onClose, o
       <div className="modal-card" style={{ maxWidth: '520px' }}>
         <div className="modal-header">
           <div className="modal-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
+           
             <span>Log Monthly Production Output</span>
           </div>
           <button type="button" className="modal-close" onClick={onClose}>
@@ -201,18 +197,6 @@ export default function AddProductionModal({ tool, existingLogs = [], onClose, o
                 placeholder="e.g. Tool Room Supervisor / Operator"
                 value={operator}
                 onChange={(e) => setOperator(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label" htmlFor="inpProdRemarks">Shift / Machine Remarks</label>
-              <input
-                type="text"
-                className="form-input"
-                id="inpProdRemarks"
-                placeholder="e.g. Shift 1 regular production run"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
               />
             </div>
 
