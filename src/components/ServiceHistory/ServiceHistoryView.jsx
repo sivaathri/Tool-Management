@@ -43,11 +43,17 @@ export default function ServiceHistoryView({
   onSelectToolId,
   onBackToMaster
 }) {
+  // Helper to extract number digits from tool number for search input with static prefix
+  const getToolNumberOnly = (toolNo) => {
+    if (!toolNo) return '';
+    return String(toolNo).replace(/^INE\s*T\s*/i, '').trim();
+  };
+
   const [selectedToolId, setSelectedToolId] = useState(propSelectedToolId || null);
   const [searchInput, setSearchInput] = useState(() => {
     if (propSelectedToolId && Array.isArray(tools)) {
       const t = tools.find(x => x.id === propSelectedToolId);
-      return t ? t.toolNo : '';
+      return t ? getToolNumberOnly(t.toolNo) : '';
     }
     return '';
   });
@@ -66,7 +72,7 @@ export default function ServiceHistoryView({
     if (propSelectedToolId) {
       const tool = tools.find(t => t.id === propSelectedToolId);
       if (tool) {
-        setSearchInput(tool.toolNo);
+        setSearchInput(getToolNumberOnly(tool.toolNo));
       }
     } else {
       setSearchInput('');
@@ -190,31 +196,47 @@ export default function ServiceHistoryView({
     return logsWithCycleCumulative.filter(l => (l.cycle ?? 0) === targetCycle);
   }, [logsWithCycleCumulative, selectedCycleTab, currentCycle, selectedTool]);
 
-  // Filter tools for autocomplete dropdown as user types
+  // Filter tools for autocomplete dropdown as user types number
   const matchingTools = useMemo(() => {
-    const q = searchInput.trim().toLowerCase();
-    if (!q) {
+    const rawQ = searchInput.trim().toLowerCase();
+    const cleanNum = rawQ.replace(/^ine\s*t\s*/i, '').trim();
+    if (!cleanNum) {
       return tools.slice(0, 8);
     }
-    return tools.filter(t => 
-      t.toolNo.toLowerCase().includes(q) || 
-      (t.applicationPartNo && String(t.applicationPartNo).toLowerCase().includes(q)) ||
-      (t.productName && t.productName.toLowerCase().includes(q)) ||
-      (t.description && t.description.toLowerCase().includes(q))
-    );
+    return tools.filter(t => {
+      const numOnly = t.toolNo.toLowerCase().replace(/^ine\s*t\s*/i, '').trim();
+      return (
+        numOnly.includes(cleanNum) ||
+        t.toolNo.toLowerCase().includes(cleanNum) ||
+        (t.applicationPartNo && String(t.applicationPartNo).toLowerCase().includes(cleanNum)) ||
+        (t.productName && t.productName.toLowerCase().includes(cleanNum)) ||
+        (t.description && t.description.toLowerCase().includes(cleanNum))
+      );
+    });
   }, [tools, searchInput]);
 
   const handleSelectDropdownTool = (tool) => {
     handleSelectTool(tool.id);
-    setSearchInput(tool.toolNo);
+    setSearchInput(getToolNumberOnly(tool.toolNo));
     setIsDropdownOpen(false);
     setHighlightedIndex(-1);
     showToast?.(`Selected tool ${tool.toolNo}`, 'info');
   };
 
   const handleInputChange = (e) => {
-    setSearchInput(e.target.value);
+    let val = e.target.value;
+    // Strip leading "INE T " if user pastes full tool string
+    val = val.replace(/^INE\s*T\s*/i, '');
+    setSearchInput(val);
     setIsDropdownOpen(true);
+    setHighlightedIndex(-1);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSelectedToolId(null);
+    onSelectToolId?.(null);
+    setIsDropdownOpen(false);
     setHighlightedIndex(-1);
   };
 
@@ -259,7 +281,7 @@ export default function ServiceHistoryView({
       showToast('Please enter a tool number to search', 'warning');
       return;
     }
-    showToast(`No tool found matching "${searchInput}"`, 'warning');
+    showToast(`No tool found matching "INE T ${searchInput.trim()}"`, 'warning');
   };
 
   const handleSaveLog = (newLog) => {
@@ -348,11 +370,17 @@ export default function ServiceHistoryView({
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
+
+            {/* Static uneditable tool code prefix */}
+            <div className="static-inet-prefix" title="Static Tool Code (Fixed Prefix)">
+              INE T
+            </div>
+
             <input
               type="text"
               className="prominent-input"
               id="serviceSearchInput"
-              placeholder="Enter Tool Number (e.g. INE T 1122, INE T 0652)..."
+              placeholder="Enter number (e.g. 1122, 0652)..."
               value={searchInput}
               onChange={handleInputChange}
               onFocus={() => setIsDropdownOpen(true)}
@@ -360,18 +388,32 @@ export default function ServiceHistoryView({
               autoComplete="off"
             />
 
+            {searchInput && (
+              <button
+                type="button"
+                className="btn-search-clear"
+                onClick={handleClearSearch}
+                title="Clear number"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            )}
+
             {/* RELATED TOOLS DROPDOWN */}
             {isDropdownOpen && (
               <div className="pm-search-dropdown">
                 <div className="pm-search-header-hint">
                   {matchingTools.length === 0
-                    ? `No matching tools found for "${searchInput}"`
+                    ? `No matching tools found for "INE T ${searchInput}"`
                     : `Matching Tools (${matchingTools.length}) — Click to Select`}
                 </div>
 
                 {matchingTools.length === 0 ? (
                   <div style={{ padding: '12px', textAlign: 'center', fontSize: '12px', color: 'var(--slate-500)' }}>
-                    No tool found matching "{searchInput}". Please enter a valid tool number.
+                    No tool found matching "INE T {searchInput}". Please enter a valid tool number.
                   </div>
                 ) : (
                   matchingTools.map((t, idx) => {
