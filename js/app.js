@@ -1168,42 +1168,44 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.shProgressBarFill.style.width = `${Math.min(utilPct, 100)}%`;
     DOM.shProgressBarFill.className = `progress-bar-fill ${tool.status === 'Replacement Due' ? 'progress-danger' : (tool.status === 'Near Limit' ? 'progress-warning' : 'progress-healthy')}`;
 
-    // Render Section 1: Service History Records
-    const services = TMS.getServiceHistory(tool.toolNumber);
-    if (services.length === 0) {
-      DOM.toolServiceRecordsBody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; padding: 24px; color: var(--slate-500);">
-            No service or tool change records logged yet for ${tool.toolNumber}.
-          </td>
-        </tr>
-      `;
-    } else {
-      DOM.toolServiceRecordsBody.innerHTML = services.map(s => `
-        <tr>
-          <td style="font-weight: 600; color: var(--slate-800);">${s.date}</td>
-          <td style="font-weight: 600; color: var(--slate-900);">${s.description}</td>
-          <td><span class="badge ${s.approval === 'Approved' ? 'badge-healthy' : 'badge-warning'}">${s.approval}</span></td>
-          <td>${s.approvalDate || '-'}</td>
-          <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;" title="${s.remarks || ''}">${s.remarks || '-'}</td>
-          <td>${s.performedBy}</td>
-          <td style="text-align: right;">
-            <button class="btn btn-secondary btn-sm" style="color: #ef4444;" data-delete-service="${s.id}">✕</button>
-          </td>
-        </tr>
-      `).join('');
+    // Render Section 1: Service History Records (if table present)
+    if (DOM.toolServiceRecordsBody) {
+      const services = TMS.getServiceHistory(tool.toolNumber);
+      if (services.length === 0) {
+        DOM.toolServiceRecordsBody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 24px; color: var(--slate-500);">
+              No service or tool change records logged yet for ${tool.toolNumber}.
+            </td>
+          </tr>
+        `;
+      } else {
+        DOM.toolServiceRecordsBody.innerHTML = services.map(s => `
+          <tr>
+            <td style="font-weight: 600; color: var(--slate-800);">${s.date}</td>
+            <td style="font-weight: 600; color: var(--slate-900);">${s.description}</td>
+            <td><span class="badge ${s.approval === 'Approved' ? 'badge-healthy' : 'badge-warning'}">${s.approval}</span></td>
+            <td>${s.approvalDate || '-'}</td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;" title="${s.remarks || ''}">${s.remarks || '-'}</td>
+            <td>${s.performedBy}</td>
+            <td style="text-align: right;">
+              <button class="btn btn-secondary btn-sm" style="color: #ef4444;" data-delete-service="${s.id}">✕</button>
+            </td>
+          </tr>
+        `).join('');
 
-      DOM.toolServiceRecordsBody.querySelectorAll('[data-delete-service]').forEach(btn => {
-        btn.onclick = () => {
-          const srvId = btn.getAttribute('data-delete-service');
-          requestConfirmation('Delete Service Record?', 'Are you sure you want to delete this service record?', () => {
-            TMS.deleteServiceRecord(srvId);
-            showToast('Service record deleted', 'info');
-            renderServiceHistory(State.selectedToolNumber);
-            updateBadgesAndCounters();
-          });
-        };
-      });
+        DOM.toolServiceRecordsBody.querySelectorAll('[data-delete-service]').forEach(btn => {
+          btn.onclick = () => {
+            const srvId = btn.getAttribute('data-delete-service');
+            requestConfirmation('Delete Service Record?', 'Are you sure you want to delete this service record?', () => {
+              TMS.deleteServiceRecord(srvId);
+              showToast('Service record deleted', 'info');
+              renderServiceHistory(State.selectedToolNumber);
+              updateBadgesAndCounters();
+            });
+          };
+        });
+      }
     }
 
     // Render Section 2: Quantity Produced (Chronological Cumulative Calculation)
@@ -1306,8 +1308,12 @@ document.addEventListener('DOMContentLoaded', () => {
     openModal(DOM.modalAddService);
   }
 
-  DOM.btnAddServiceRecordBtn.addEventListener('click', () => openAddServiceModal(State.selectedToolNumber));
-  DOM.btnQuickAddServiceFromHeader.addEventListener('click', () => openAddServiceModal(State.selectedToolNumber));
+  if (DOM.btnAddServiceRecordBtn) {
+    DOM.btnAddServiceRecordBtn.addEventListener('click', () => openAddServiceModal(State.selectedToolNumber));
+  }
+  if (DOM.btnQuickAddServiceFromHeader) {
+    DOM.btnQuickAddServiceFromHeader.addEventListener('click', () => openAddServiceModal(State.selectedToolNumber));
+  }
 
   DOM.formAddService.addEventListener('submit', (e) => {
     e.preventDefault();
