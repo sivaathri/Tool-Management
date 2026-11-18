@@ -69,8 +69,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
   const [application, setApplication] = useState(
     tool.applicationPartNo ? `${tool.applicationPartNo} - ${tool.productName || ''}`.trim() : (tool.productName || 'N251C IG COIL')
   );
-  const [checkedBy, setCheckedBy] = useState('Tool Room Inspector');
-  const [remarks, setRemarks] = useState('');
   const [rows, setRows] = useState([]);
   const [pastRecords, setPastRecords] = useState([]);
   const [activeRecordId, setActiveRecordId] = useState(null);
@@ -101,38 +99,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
     });
   };
 
-  const handleAddRow = () => {
-    setRows(prev => [
-      ...prev,
-      {
-        sno: prev.length + 1,
-        checkPoint: '',
-        method: 'Visual',
-        specification: 'Free from chip off and damages',
-        actualCondition: '',
-        actionTaken: ''
-      }
-    ]);
-  };
-
-  const handleRemoveRow = (index) => {
-    if (rows.length <= 1) return;
-    setRows(prev => prev.filter((_, idx) => idx !== index).map((r, i) => ({ ...r, sno: i + 1 })));
-  };
-
-  // Quick fill all actual conditions
-  const handleQuickFill = (type = 'ok') => {
-    setRows(prev => prev.map(r => {
-      const { sampleActual } = getMethodAndSpec(r.checkPoint);
-      return {
-        ...r,
-        actualCondition: type === 'sample' ? sampleActual : 'Free from Damages / OK',
-        actionTaken: r.actionTaken || 'None'
-      };
-    }));
-    showToast?.('Checklist actual conditions pre-filled', 'info');
-  };
-
   // Save Record
   const handleSave = () => {
     const record = {
@@ -145,8 +111,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
       toolDescription,
       application,
       classification: tool.classification || 'Non-Critical',
-      checkedBy,
-      remarks,
       items: rows
     };
 
@@ -164,8 +128,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
     setNextDueDate(rec.nextDueDate || getNextDueDate());
     setToolDescription(rec.toolDescription || tool.description || '');
     setApplication(rec.application || tool.productName || '');
-    setCheckedBy(rec.checkedBy || 'Tool Room Inspector');
-    setRemarks(rec.remarks || '');
     if (Array.isArray(rec.items) && rec.items.length > 0) {
       setRows(rec.items);
     }
@@ -325,20 +287,15 @@ export default function PMChecklistSheet({ tool, showToast }) {
               borderRight: '1.5px solid #334155',
               backgroundColor: '#f8fafc'
             }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                border: '2px solid #0f172a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 900,
-                fontSize: '14px',
-                color: '#0f172a'
-              }}>
-                ⚡
-              </div>
+              <img
+                src="/inel-logo.png"
+                alt="INEL Logo"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  objectFit: 'contain'
+                }}
+              />
               <div style={{ lineHeight: '1.2' }}>
                 <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', letterSpacing: '0.5px' }}>INEL II</div>
                 <div style={{ fontSize: '10px', fontWeight: 600, color: '#475569', letterSpacing: '0.5px' }}>PUDUCHERRY</div>
@@ -640,46 +597,6 @@ export default function PMChecklistSheet({ tool, showToast }) {
             </table>
           </div>
 
-          {/* Row actions & Inspector Sign-off */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 14px',
-            backgroundColor: '#f8fafc',
-            borderTop: '1px solid #334155',
-            flexWrap: 'wrap',
-            gap: '10px'
-          }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={handleAddRow}
-              style={{ fontSize: '11.5px' }}
-            >
-              + Add Check Point Row
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontWeight: 700, color: '#334155' }}>Checked By:</span>
-                <input
-                  type="text"
-                  value={checkedBy}
-                  onChange={(e) => setCheckedBy(e.target.value)}
-                  placeholder="Inspector Name"
-                  style={{
-                    padding: '3px 8px',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    fontWeight: 600
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
         </div>
 
       </div>
@@ -725,7 +642,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   </button>
                 </div>
                 <div style={{ fontSize: '11.5px', color: 'var(--slate-600)' }}>
-                  Ref: {rec.refNo || 'MFG/FR/075'} • By: {rec.checkedBy || 'Inspector'}
+                  Ref: {rec.refNo || 'MFG/FR/075'}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--accent-700)', marginTop: '4px', fontWeight: 600 }}>
                   {rec.items?.length || 0} Points Inspected → Click to view

@@ -51,7 +51,7 @@ export default function AddEditToolModal({
       setFormData({
         applicationPartNo: '',
         productName: '',
-        toolNo: 'INE T ',
+        toolNo: '',
         description: '',
         toolIssuedOn: new Date().toISOString().slice(0, 10),
         lifetime: '',
