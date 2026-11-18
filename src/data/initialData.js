@@ -108,7 +108,7 @@ export const INITIAL_TOOLS = [
   {
     applicationPartNo: '003',
     productName: 'Engine Connecting Rod Line 2',
-    toolNumber: 'TOOL-002',
+    toolNumber: 'INE T 0002',
     toolDescription: 'Connecting Rod Trimming Die',
     issuedDate: '2019-01-15',
     lifeTime: 150000,
@@ -138,7 +138,7 @@ export const INITIAL_TOOLS = [
   {
     applicationPartNo: '004',
     productName: 'Chassis Mounting Flange Assembly',
-    toolNumber: 'TOOL-003',
+    toolNumber: 'INE T 0003',
     toolDescription: 'Flange Piercing & Blanking Tool',
     issuedDate: '2020-03-20',
     lifeTime: 250000,
@@ -168,7 +168,7 @@ export const INITIAL_TOOLS = [
   {
     applicationPartNo: '005',
     productName: 'EV Traction Motor Lamination',
-    toolNumber: 'TOOL-005',
+    toolNumber: 'INE T 0005',
     toolDescription: 'Rotor Core Progressive Stamping Die',
     issuedDate: '2021-02-05',
     lifeTime: 300000,
@@ -213,17 +213,17 @@ export const INITIAL_PRODUCTION = [
   { id: 'PRD-065202', toolNumber: 'INE T 0652', month: '2023-08', quantityMade: 65000 },
   { id: 'PRD-065203', toolNumber: 'INE T 0652', month: '2023-12', quantityMade: 55000 },
 
-  // TOOL-002 (Lifetime: 150,000, Cumulative: 154,200 -> Replacement Due, Cycle 1)
-  { id: 'PRD-0201', toolNumber: 'TOOL-002', month: '2020-03', quantityMade: 50000 },
-  { id: 'PRD-0202', toolNumber: 'TOOL-002', month: '2020-09', quantityMade: 52000 },
-  { id: 'PRD-0203', toolNumber: 'TOOL-002', month: '2021-04', quantityMade: 52200 },
+  // INE T 0002 (Lifetime: 150,000, Cumulative: 154,200 -> Replacement Due, Cycle 1)
+  { id: 'PRD-0201', toolNumber: 'INE T 0002', month: '2020-03', quantityMade: 50000 },
+  { id: 'PRD-0202', toolNumber: 'INE T 0002', month: '2020-09', quantityMade: 52000 },
+  { id: 'PRD-0203', toolNumber: 'INE T 0002', month: '2021-04', quantityMade: 52200 },
 
-  // TOOL-003 (Lifetime: 250,000, Cumulative: 120,500 -> Healthy, Cycle 0)
-  { id: 'PRD-0301', toolNumber: 'TOOL-003', month: '2020-08', quantityMade: 60000 },
-  { id: 'PRD-0302', toolNumber: 'TOOL-003', month: '2021-05', quantityMade: 60500 },
+  // INE T 0003 (Lifetime: 250,000, Cumulative: 120,500 -> Healthy, Cycle 0)
+  { id: 'PRD-0301', toolNumber: 'INE T 0003', month: '2020-08', quantityMade: 60000 },
+  { id: 'PRD-0302', toolNumber: 'INE T 0003', month: '2021-05', quantityMade: 60500 },
 
-  // TOOL-005 (Lifetime: 300,000, Cumulative: 306,400 -> Replacement Due, Cycle 1)
-  { id: 'PRD-0501', toolNumber: 'TOOL-005', month: '2021-08', quantityMade: 100000 },
-  { id: 'PRD-0502', toolNumber: 'TOOL-005', month: '2022-01', quantityMade: 105000 },
-  { id: 'PRD-0503', toolNumber: 'TOOL-005', month: '2022-06', quantityMade: 101400 }
+  // INE T 0005 (Lifetime: 300,000, Cumulative: 306,400 -> Replacement Due, Cycle 1)
+  { id: 'PRD-0501', toolNumber: 'INE T 0005', month: '2021-08', quantityMade: 100000 },
+  { id: 'PRD-0502', toolNumber: 'INE T 0005', month: '2022-01', quantityMade: 105000 },
+  { id: 'PRD-0503', toolNumber: 'INE T 0005', month: '2022-06', quantityMade: 101400 }
 ];

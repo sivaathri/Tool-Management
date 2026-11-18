@@ -1,8 +1,8 @@
 import { INITIAL_TOOLS, INITIAL_MACHINES, INITIAL_PRODUCTION } from './initialData';
 
 const STORAGE_KEYS = {
-  TOOLS: 'tms_tools_v3',
-  PRODUCTION: 'tms_production_v3',
+  TOOLS: 'tms_tools_v4',
+  PRODUCTION: 'tms_production_v4',
 };
 
 // Format numbers with commas (e.g. 200,000)
@@ -53,10 +53,21 @@ export function exportToolsToCSV(toolsList, filename = 'tools_master_list.csv') 
   document.body.removeChild(link);
 }
 
+// Helper to strictly enforce "INE T " prefix on all tool numbers
+export function formatToolNumber(val) {
+  if (!val) return 'INE T 0000';
+  let str = String(val).trim();
+  if (str.toUpperCase().startsWith('INE T')) {
+    return str.replace(/^INE\s*T\s*/i, 'INE T ');
+  }
+  const digits = str.replace(/[^0-9]/g, '');
+  return `INE T ${digits ? digits.padStart(4, '0') : str}`;
+}
+
 // Convert raw initial tools to standardized model
 function normalizeToolItem(raw, productionLogs = []) {
   const id = raw.id || `tool-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
-  const toolNo = String(raw.toolNo || raw.toolNumber || 'INE T 0000').trim();
+  const toolNo = formatToolNumber(raw.toolNo || raw.toolNumber);
   const applicationPartNo = String(raw.applicationPartNo || '001').trim();
   const productName = String(raw.productName || raw.application || '').trim();
   const description = String(raw.description || raw.toolDescription || '').trim();
@@ -124,7 +135,7 @@ function normalizeProductionItem(raw) {
   return {
     id: raw.id || `prd-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     toolId: raw.toolId || null,
-    toolNo: raw.toolNo || raw.toolNumber || '',
+    toolNo: formatToolNumber(raw.toolNo || raw.toolNumber),
     date: raw.date || raw.productionDate || new Date().toISOString().slice(0, 10),
     quantity: Number(raw.quantity || raw.quantityMade || 0),
     operator: raw.operator || 'Operator',
@@ -161,6 +172,7 @@ export function saveTool(toolData) {
   initStorage();
   const logs = getProductionLogs();
   const tools = getTools();
+  toolData.toolNo = formatToolNumber(toolData.toolNo || toolData.toolNumber);
   const normalized = normalizeToolItem(toolData, logs);
 
   const existingIdx = tools.findIndex(t => t.id === normalized.id || t.toolNo.toLowerCase() === normalized.toolNo.toLowerCase());
@@ -198,6 +210,7 @@ export function getProductionLogs() {
 export function addProductionLog(logData) {
   initStorage();
   const logs = getProductionLogs();
+  logData.toolNo = formatToolNumber(logData.toolNo || logData.toolNumber);
   const normalized = normalizeProductionItem(logData);
   logs.unshift(normalized);
   localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify(logs));
@@ -219,7 +232,7 @@ export function calculateMetrics(tools = [], logs = []) {
   const totalProduced = tools.reduce((sum, t) => sum + (t.cumulative || 0), 0);
   const criticalAlertsCount = tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun').length;
   const warningAlertsCount = tools.filter(t => t.status === 'Near Limit').length;
-  const activeCount = tools.filter(t => t.status === 'Active').length;
+  const activeCount = tools.filter(t => t.status === 'Active' || t.status === 'Healthy').length;
 
   return {
     totalTools,
@@ -248,5 +261,6 @@ export const TMSStorage = {
   calculateMetrics,
   resetToInitialData,
   formatNumber,
+  formatToolNumber,
   exportToolsToCSV
 };
