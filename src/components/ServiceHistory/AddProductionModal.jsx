@@ -64,7 +64,7 @@ export default function AddProductionModal({ tool, onClose, onSave }) {
             )}
 
             <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label" htmlFor="inpProdDate">Production Date *</label>
+              <label className="form-label" htmlFor="inpProdDate">Production Month / Date *</label>
               <input
                 type="date"
                 className="form-input"
@@ -76,13 +76,13 @@ export default function AddProductionModal({ tool, onClose, onSave }) {
             </div>
 
             <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label" htmlFor="inpProdQty">Quantity Produced (Strokes / Output) *</label>
+              <label className="form-label" htmlFor="inpProdQty">Quantity Made *</label>
               <input
                 type="number"
                 min="1"
                 className="form-input"
                 id="inpProdQty"
-                placeholder="e.g. 15000"
+                placeholder="e.g. 75995"
                 value={quantity}
                 onChange={(e) => {
                   setQuantity(e.target.value);
