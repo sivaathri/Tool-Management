@@ -176,12 +176,12 @@ export default function MasterList({
           <table className="enterprise-table">
             <thead>
               <tr>
-                <th>App Part No. (Parent)</th>
+                <th>App Part No</th>
                 <th>Tool No.</th>
                 <th>Product Name</th>
-                <th>Description</th>
+               
                 <th>Classification</th>
-                <th className="col-numeric">Tool Count</th>
+                <th style={{ textAlign: 'center' }}>Tool Count</th>
                 <th>Issued On</th>
                 <th className="col-numeric">Life Time</th>
                 <th className="col-numeric">Cumulative</th>
@@ -219,10 +219,7 @@ export default function MasterList({
                       <strong style={{ color: 'var(--slate-800)' }}>{tool.productName || '—'}</strong>
                     </td>
 
-                    {/* Description */}
-                    <td>
-                      <span style={{ color: 'var(--slate-600)' }}>{tool.description || '—'}</span>
-                    </td>
+                  
 
                     {/* Classification */}
                     <td>
@@ -243,7 +240,7 @@ export default function MasterList({
                     </td>
 
                     {/* Tool Count */}
-                    <td className="col-numeric">
+                    <td style={{ textAlign: 'center' }}>
                       <span style={{ fontWeight: 700, color: 'var(--accent-700)', fontFamily: 'var(--font-mono)' }}>
                         {tool.toolCount ?? 0}
                       </span>

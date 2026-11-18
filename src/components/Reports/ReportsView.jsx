@@ -130,7 +130,7 @@ export default function ReportsView({ tools, metrics, showToast }) {
                 <th>App Part No.</th>
                 <th>Product Name</th>
                 <th>Classification</th>
-                <th className="col-numeric">Tool Count</th>
+                <th style={{ textAlign: 'center' }}>Tool Count</th>
                 <th className="col-numeric">Life Time</th>
                 <th className="col-numeric">Cumulative</th>
                 <th className="col-numeric">Balance</th>
@@ -152,7 +152,7 @@ export default function ReportsView({ tools, metrics, showToast }) {
                   </td>
                   <td>{tool.productName}</td>
                   <td>{tool.classification || 'Non-Critical'}</td>
-                  <td className="col-numeric">
+                  <td style={{ textAlign: 'center' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                       {tool.toolCount ?? 0}
                     </span>
