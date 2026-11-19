@@ -145,8 +145,13 @@ export default function ProductionTrackingView({ tools, showToast }) {
             <tbody id="allProductionOverviewBody">
               {filteredTools.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '32px', color: 'var(--slate-500)' }}>
-                    No tools found matching criteria.
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: 'var(--slate-500)' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--slate-700)', marginBottom: '4px' }}>
+                      No production data available
+                    </div>
+                    <div style={{ fontSize: '12.5px', color: 'var(--slate-500)' }}>
+                      Register tools in the Master List to track production and stroke lifecycle.
+                    </div>
                   </td>
                 </tr>
               ) : (

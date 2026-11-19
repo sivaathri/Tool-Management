@@ -244,22 +244,14 @@ function normalizeToolItem(raw, productionLogs = []) {
 // Convert raw initial production to standardized model
 function normalizeProductionItem(raw) {
   let dateVal = raw.date || raw.productionDate;
-  if (raw.month && (!dateVal || dateVal.startsWith('2026-11'))) {
+  if (raw.month && !dateVal) {
     dateVal = String(raw.month).length === 7 ? `${raw.month}-01` : String(raw.month);
-  }
-  if ((!dateVal || dateVal.startsWith('2026-11')) && raw.id) {
-    const initMatch = (INITIAL_PRODUCTION || []).find(p => p.id === raw.id);
-    if (initMatch && initMatch.month) {
-      dateVal = `${initMatch.month}-01`;
-    }
   }
   if (!dateVal) {
     dateVal = new Date().toISOString().slice(0, 10);
   }
 
-  const cycleVal = raw.cycle !== undefined && raw.cycle !== null 
-    ? Number(raw.cycle) 
-    : (raw.toolNumber === 'INE T 0652' || raw.toolNumber === 'INE T 0002' || raw.toolNumber === 'INE T 0005' ? 1 : 0);
+  const cycleVal = Number(raw.cycle !== undefined && raw.cycle !== null ? raw.cycle : 0);
 
   return {
     id: raw.id || `prd-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -274,13 +266,24 @@ function normalizeProductionItem(raw) {
   };
 }
 
-// Initialize seed data if not present
+// Initialize real storage
 function initStorage() {
+  // Purge legacy mock data keys if present in browser localStorage
+  [
+    'tms_tools_v4', 'tms_production_v4', 'tms_tools_v3', 'tms_tools_v2', 'tms_tools_v1',
+    'tms_users_v1', 'tms_pm_records_mock'
+  ].forEach(k => {
+    try { localStorage.removeItem(k); } catch(e) {}
+  });
+
   if (!localStorage.getItem(STORAGE_KEYS.TOOLS)) {
-    const prods = (INITIAL_PRODUCTION || []).map(normalizeProductionItem);
-    const tools = (INITIAL_TOOLS || []).map(t => normalizeToolItem(t, prods));
-    localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
-    localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify(prods));
+    localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.PRODUCTION)) {
+    localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
   }
 }
 
@@ -290,7 +293,7 @@ export function getTools() {
   try {
     const logs = getProductionLogs();
     const rawData = localStorage.getItem(STORAGE_KEYS.TOOLS);
-    const tools = rawData ? JSON.parse(rawData) : INITIAL_TOOLS;
+    const tools = rawData ? JSON.parse(rawData) : [];
     return tools.map(t => normalizeToolItem(t, logs));
   } catch (err) {
     console.error('Error reading tools from storage', err);
@@ -322,7 +325,7 @@ export function replaceTool(toolId, replacementData = {}) {
   initStorage();
   const logs = getProductionLogs();
   const rawData = localStorage.getItem(STORAGE_KEYS.TOOLS);
-  const tools = rawData ? JSON.parse(rawData) : INITIAL_TOOLS;
+  const tools = rawData ? JSON.parse(rawData) : [];
   
   const existingIdx = tools.findIndex(t => t.id === toolId || formatToolNumber(t.toolNo || t.toolNumber).toLowerCase() === formatToolNumber(toolId).toLowerCase());
   if (existingIdx === -1) return null;
@@ -384,7 +387,7 @@ export function getProductionLogs() {
   initStorage();
   try {
     const rawData = localStorage.getItem(STORAGE_KEYS.PRODUCTION);
-    const logs = rawData ? JSON.parse(rawData) : INITIAL_PRODUCTION;
+    const logs = rawData ? JSON.parse(rawData) : [];
     return logs.map(normalizeProductionItem);
   } catch (err) {
     console.error('Error reading production logs from storage', err);

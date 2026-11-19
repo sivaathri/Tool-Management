@@ -139,7 +139,14 @@ export default function ReportsView({ tools, metrics, showToast }) {
               </tr>
             </thead>
             <tbody>
-              {displayedTools.map(tool => (
+              {displayedTools.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--slate-500)' }}>
+                    No tools recorded in the selected report criteria.
+                  </td>
+                </tr>
+              ) : (
+                displayedTools.map(tool => (
                 <tr key={tool.id}>
                   <td>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-600)' }}>
@@ -171,7 +178,7 @@ export default function ReportsView({ tools, metrics, showToast }) {
                   </td>
                   <td>{tool.status === 'Active' ? 'Healthy' : tool.status}</td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

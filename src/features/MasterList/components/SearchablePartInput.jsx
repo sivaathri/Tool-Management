@@ -18,12 +18,6 @@ export default function SearchablePartInput({
       const part = t.applicationPartNo ? String(t.applicationPartNo).trim() : '';
       if (part) parts.add(part);
     });
-    // Add default examples if empty
-    if (parts.size === 0) {
-      parts.add('001');
-      parts.add('002');
-      parts.add('003');
-    }
     return Array.from(parts).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [existingTools]);
 

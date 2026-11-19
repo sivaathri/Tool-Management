@@ -231,8 +231,15 @@ export default function MasterList({
             <tbody id="toolMasterTableBody">
               {paginatedTools.length === 0 ? (
                 <tr>
-                  <td colSpan="12" style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--slate-500)' }}>
-                    No tools found matching the current search criteria.
+                  <td colSpan="12" style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--slate-500)' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--slate-800)', marginBottom: '6px' }}>
+                      No tools registered in Master List
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--slate-500)' }}>
+                      {searchTerm || classificationFilter || statusFilter
+                        ? 'No tools matched your filter criteria.'
+                        : 'Click "+ Add New Tool" above to register real plant tooling.'}
+                    </div>
                   </td>
                 </tr>
               ) : (
