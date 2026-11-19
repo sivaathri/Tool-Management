@@ -373,9 +373,12 @@ export default function PMChecklistSheet({ tool, showToast }) {
                 Next due Date:
               </div>
               <div style={{ padding: '4px 8px' }}>
+                <span className="print-only-text" style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a' }}>
+                  {nextDueDate}
+                </span>
                 <input
                   type="date"
-                  className="pm-sheet-input"
+                  className="pm-sheet-input screen-only-input"
                   value={nextDueDate}
                   onChange={(e) => setNextDueDate(e.target.value)}
                   disabled={!isEditing}
@@ -418,7 +421,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
           {/* Checklist Table */}
           <div className="table-responsive" style={{ margin: 0 }}>
-            <table style={{
+            <table className="pm-sheet-table" style={{
               width: '100%',
               borderCollapse: 'collapse',
               fontSize: '12px'
@@ -432,22 +435,22 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   fontSize: '12px',
                   letterSpacing: '0.2px'
                 }}>
-                  <th style={{ width: '45px', textAlign: 'center', padding: '10px 4px', borderRight: '1px solid #334155' }}>
+                  <th className="pm-col-sno" style={{ width: '45px', textAlign: 'center', padding: '10px 4px', borderRight: '1px solid #334155' }}>
                     S.no
                   </th>
-                  <th style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px', borderRight: '1px solid #334155' }}>
+                  <th className="pm-col-point" style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px', borderRight: '1px solid #334155' }}>
                     Check points
                   </th>
-                  <th style={{ width: '130px', textAlign: 'center', padding: '10px 8px', borderRight: '1px solid #334155' }}>
+                  <th className="pm-col-method" style={{ width: '130px', textAlign: 'center', padding: '10px 8px', borderRight: '1px solid #334155' }}>
                     Checking Method
                   </th>
-                  <th style={{ minWidth: '200px', textAlign: 'left', padding: '10px 10px', borderRight: '1px solid #334155' }}>
+                  <th className="pm-col-spec" style={{ minWidth: '200px', textAlign: 'left', padding: '10px 10px', borderRight: '1px solid #334155' }}>
                     Specification
                   </th>
-                  <th style={{ minWidth: '280px', textAlign: 'left', padding: '10px 12px', borderRight: '1px solid #334155', backgroundColor: '#eff6ff' }}>
+                  <th className="pm-col-actual" style={{ minWidth: '280px', textAlign: 'left', padding: '10px 12px', borderRight: '1px solid #334155', backgroundColor: '#eff6ff' }}>
                     Actual condition *
                   </th>
-                  <th style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px' }}>
+                  <th className="pm-col-action" style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px' }}>
                     Action Taken
                   </th>
                 </tr>
@@ -492,7 +495,11 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       borderRight: '1px solid #cbd5e1',
                       verticalAlign: 'top'
                     }}>
+                      <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'center', fontWeight: 600 }}>
+                        {row.method || 'Visual'}
+                      </div>
                       <textarea
+                        className="screen-only-input"
                         rows={2}
                         value={row.method}
                         onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
@@ -524,7 +531,11 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       borderRight: '1px solid #cbd5e1',
                       verticalAlign: 'top'
                     }}>
+                      <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
+                        {row.specification || '—'}
+                      </div>
                       <textarea
+                        className="screen-only-input"
                         rows={2}
                         value={row.specification}
                         onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
@@ -556,7 +567,11 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       backgroundColor: '#f0f9ff',
                       verticalAlign: 'top'
                     }}>
+                      <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left', fontWeight: 600, color: '#0f172a' }}>
+                        {row.actualCondition || 'OK / Free from damage'}
+                      </div>
                       <textarea
+                        className="screen-only-input"
                         rows={2}
                         value={row.actualCondition}
                         onChange={(e) => handleRowChange(idx, 'actualCondition', e.target.value)}
@@ -584,7 +599,11 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
                     {/* Action Taken (Multi-line Textarea for comfortable long text) */}
                     <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>
+                      <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
+                        {row.actionTaken || 'None required'}
+                      </div>
                       <textarea
+                        className="screen-only-input"
                         rows={2}
                         value={row.actionTaken}
                         onChange={(e) => handleRowChange(idx, 'actionTaken', e.target.value)}

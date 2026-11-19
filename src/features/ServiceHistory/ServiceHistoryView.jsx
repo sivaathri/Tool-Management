@@ -319,9 +319,14 @@ export default function ServiceHistoryView({
   };
 
   const handleExportPDF = () => {
-    showToast?.('Opening Print view to save as PDF...', 'info');
+    showToast?.('Generating clear PM report for download/print...', 'info');
+    const oldTitle = document.title;
+    const safeToolNo = (selectedTool?.toolNo || 'TOOL').replace(/\s+/g, '_');
+    const safePartNo = (selectedTool?.applicationPartNo || '').replace(/\s+/g, '_');
+    document.title = `PM_Report_${safeToolNo}${safePartNo ? '_' + safePartNo : ''}_${new Date().toISOString().slice(0, 10)}`;
     setTimeout(() => {
       window.print();
+      document.title = oldTitle;
     }, 250);
   };
 
@@ -483,27 +488,29 @@ export default function ServiceHistoryView({
       {selectedTool ? (
         <>
           {/* Printable Official Header - Visible exclusively in Print / PDF view */}
-          <div className="print-only-header" style={{ display: 'none' }}>
+          <div className="print-only-header print-only">
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              borderBottom: '2.5px solid #0f172a',
-              paddingBottom: '10px',
-              marginBottom: '12px'
+              paddingBottom: '8px',
+              marginBottom: '8px'
             }}>
-              <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0, textTransform: 'uppercase', color: '#0f172a', letterSpacing: '0.5px' }}>
-                  TOOLS HISTORY MANAGEMENT SYSTEM
-                </h2>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e40af', marginTop: '2px' }}>
-                  PREVENTIVE MAINTENANCE & LIFECYCLE SERVICE REPORT
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <img src="/inel-logo.png" alt="INEL" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+                <div>
+                  <h2 style={{ fontSize: '17px', fontWeight: 900, margin: 0, textTransform: 'uppercase', color: '#0f172a', letterSpacing: '0.5px' }}>
+                    TOOLS HISTORY MANAGEMENT SYSTEM
+                  </h2>
+                  <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e40af', marginTop: '2px' }}>
+                    PREVENTIVE MAINTENANCE & LIFECYCLE SERVICE REPORT (INEL II PUDUCHERRY)
+                  </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right', fontSize: '11px', color: '#475569', lineHeight: 1.5 }}>
+              <div style={{ textAlign: 'right', fontSize: '11px', color: '#475569', lineHeight: 1.45 }}>
                 <div><strong>DOC REF:</strong> MFG/FR/075</div>
                 <div><strong>TOOL NO:</strong> {selectedTool.toolNo}</div>
-                <div><strong>PRINTED:</strong> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</div>
+                <div><strong>DATE PRINTED:</strong> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</div>
               </div>
             </div>
           </div>
@@ -1281,7 +1288,7 @@ export default function ServiceHistoryView({
       )}
 
       {/* Printable Official Sign-off Footer - Visible exclusively in Print / PDF view */}
-      <div className="print-only-footer" style={{ display: 'none' }}>
+      <div className="print-only-footer print-only">
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',

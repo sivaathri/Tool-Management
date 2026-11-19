@@ -179,7 +179,7 @@ export default function ExportReportModal({ isOpen = true, onClose, onExportExce
                   backgroundColor: '#fecaca',
                   color: '#991b1b'
                 }}>
-                  Print / Save PDF
+                  Download / Save PDF
                 </span>
               </div>
               <div style={{ fontSize: '12.5px', color: '#334155', lineHeight: 1.45 }}>
@@ -240,7 +240,7 @@ export default function ExportReportModal({ isOpen = true, onClose, onExportExce
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
                   <rect x="6" y="14" width="12" height="8"></rect>
                 </svg>
-                <span>Open PDF / Print</span>
+                <span>Download / Save PDF</span>
               </>
             )}
           </button>
