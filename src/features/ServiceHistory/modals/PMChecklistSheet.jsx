@@ -326,9 +326,12 @@ export default function PMChecklistSheet({ tool, showToast }) {
                 Date of check:
               </div>
               <div style={{ padding: '4px 8px', borderRight: '1px solid #334155' }}>
+                <span className="print-only-text" style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a' }}>
+                  {checkDate}
+                </span>
                 <input
                   type="date"
-                  className="pm-sheet-input"
+                  className="pm-sheet-input screen-only-input"
                   value={checkDate}
                   onChange={(e) => setCheckDate(e.target.value)}
                   disabled={!isEditing}

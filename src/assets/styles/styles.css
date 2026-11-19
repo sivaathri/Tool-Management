@@ -1850,26 +1850,14 @@ body {
 }
 
 /* ==========================================================================
-   Print Styles for Reports
+   Print Visibility Helpers (Screen vs Print)
    ========================================================================== */
-@media print {
-  .app-sidebar, .top-header, .header-actions, .filter-card, .btn, .modal-backdrop {
-    display: none !important;
-  }
-  .main-wrapper {
-    margin-left: 0 !important;
-  }
-  .app-content {
-    padding: 0 !important;
-  }
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #000 !important;
-  }
-  body {
-    background-color: #fff !important;
-    color: #000 !important;
-  }
+.print-only {
+  display: none !important;
+}
+
+.print-only-text {
+  display: none !important;
 }
 
 /* ==========================================================================
@@ -2520,8 +2508,8 @@ body {
    ========================================================================== */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 10mm 8mm;
+    size: A4 landscape;
+    margin: 8mm 6mm;
   }
 
   /* Hide app navigation and interactive controls */
@@ -2532,6 +2520,7 @@ body {
   .pm-action-toolbar,
   .btn,
   .btn-export-pill,
+  .btn-action-icon,
   .btn-trash-outline,
   .btn-trash,
   .btn-edit,
@@ -2543,14 +2532,27 @@ body {
   #quantityProducedCard .card-header button,
   #quantityProducedCard > div:nth-child(2) /* cycle selector buttons */,
   .alert-banner,
-  .filter-card {
+  .filter-card,
+  .screen-only-input {
     display: none !important;
+  }
+
+  /* Force display of print elements */
+  .print-only {
+    display: block !important;
+  }
+
+  .print-only-text {
+    display: block !important;
+    color: #0f172a !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
   }
 
   body {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    font-size: 11pt !important;
+    font-size: 10.5pt !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -2559,27 +2561,33 @@ body {
     margin-left: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
   .app-content {
     padding: 0 !important;
     margin: 0 !important;
+    max-width: 100% !important;
   }
 
   .view-section {
     padding: 0 !important;
+    margin: 0 !important;
   }
 
   /* Printable Header & Sign-off footer */
   .print-only-header {
     display: block !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 10px !important;
+    border-bottom: 2px solid #0f172a !important;
+    padding-bottom: 8px !important;
   }
 
   .print-only-footer {
     display: block !important;
-    margin-top: 18px !important;
+    margin-top: 14px !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Tool Summary Card in PDF/Print */
@@ -2589,13 +2597,14 @@ body {
     border: 1.5px solid #0f172a !important;
     border-radius: 4px !important;
     background: #ffffff !important;
-    padding: 12px 14px !important;
-    margin-bottom: 14px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 12px !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .tool-summary-top {
-    margin-bottom: 8px !important;
+    margin-bottom: 6px !important;
   }
 
   .tool-summary-top .btn, 
@@ -2605,14 +2614,49 @@ body {
 
   .tool-summary-meta-grid {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
     gap: 8px !important;
     border-top: 1px solid #cbd5e1 !important;
     padding-top: 8px !important;
   }
 
+  .tool-summary-meta-grid .meta-item {
+    font-size: 11px !important;
+  }
+
+  .tool-summary-meta-grid .meta-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    text-transform: uppercase !important;
+  }
+
+  .tool-summary-meta-grid .meta-val {
+    font-size: 12px !important;
+    color: #0f172a !important;
+  }
+
+  /* Tool Life Utilization shown clearly in print */
   .tool-summary-progress {
-    display: none !important;
+    display: block !important;
+    margin-top: 8px !important;
+    padding-top: 6px !important;
+    border-top: 1px dashed #cbd5e1 !important;
+  }
+
+  .tool-summary-progress .progress-info-row {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-bottom: 4px !important;
+  }
+
+  .tool-summary-progress .progress-bar-wrap {
+    height: 8px !important;
+    background-color: #e2e8f0 !important;
+    border: 1px solid #94a3b8 !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
   }
 
   /* PM Official Form Sheet */
@@ -2621,62 +2665,107 @@ body {
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    page-break-inside: avoid !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 
   .pm-official-sheet-wrapper {
     padding: 0 !important;
     margin: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
   }
 
   .pm-form-sheet {
-    border: 2px solid #0f172a !important;
-    page-break-inside: avoid !important;
+    border: 1.5px solid #0f172a !important;
     background: #ffffff !important;
     width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 
-  .pm-table {
-    border-collapse: collapse !important;
-    border-color: #0f172a !important;
+  .pm-sheet-table {
     width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
   }
 
-  .pm-table th, .pm-table td {
-    border-color: #0f172a !important;
+  .pm-sheet-table th,
+  .pm-sheet-table td {
+    border: 1px solid #0f172a !important;
     color: #000000 !important;
-    padding: 5px 8px !important;
+    padding: 5px 6px !important;
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    vertical-align: top !important;
   }
 
-  .pm-table th {
+  .pm-sheet-table th {
     background-color: #f1f5f9 !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    font-size: 10.5px !important;
+    letter-spacing: 0.3px !important;
   }
 
-  /* Inputs and Textareas in print appear as clean static text */
-  .pm-textarea,
-  .pm-input,
-  textarea,
-  input[type="text"],
-  input[type="date"] {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    resize: none !important;
-    overflow: visible !important;
-    height: auto !important;
-    padding: 0 !important;
-    color: #000000 !important;
-    font-size: 11px !important;
-    font-family: inherit !important;
+  .pm-col-sno {
+    width: 5% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+  }
+
+  .pm-col-point {
+    width: 27% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  .pm-col-method {
+    width: 14% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+  }
+
+  .pm-col-spec {
+    width: 18% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  .pm-col-actual {
+    width: 20% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+    background-color: #f8fafc !important;
+  }
+
+  .pm-col-action {
+    width: 16% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  .pm-sheet-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .pm-sheet-table thead {
+    display: table-header-group !important;
   }
 
   /* Quantity Produced Table in Print */
   #quantityProducedCard {
-    margin-top: 14px !important;
+    display: block !important;
+    margin-top: 12px !important;
     box-shadow: none !important;
     border: 1.5px solid #0f172a !important;
-    page-break-inside: avoid !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 
   #quantityProducedCard .card-header {
@@ -2693,6 +2782,7 @@ body {
   .enterprise-table {
     border-collapse: collapse !important;
     width: 100% !important;
+    table-layout: fixed !important;
   }
 
   .enterprise-table th,
@@ -2700,16 +2790,26 @@ body {
     border: 1px solid #0f172a !important;
     color: #000000 !important;
     padding: 5px 8px !important;
+    font-size: 11px !important;
   }
 
   .enterprise-table th {
     background-color: #f1f5f9 !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
+  }
+
+  .enterprise-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .enterprise-table thead {
+    display: table-header-group !important;
   }
 
   .card {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 }
 
