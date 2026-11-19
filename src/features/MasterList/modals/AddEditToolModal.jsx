@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import SearchablePartInput from './SearchablePartInput';
-import CheckPointsTable from './CheckPointsTable';
+import SearchablePartInput from '../components/SearchablePartInput';
+import CheckPointsTable from '../components/CheckPointsTable';
 
 export default function AddEditToolModal({
   isOpen = true,

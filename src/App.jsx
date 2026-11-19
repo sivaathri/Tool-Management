@@ -1,57 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
+
+// Layout & Common Components
+import MainLayout from './layouts/MainLayout';
 import ToastContainer from './components/common/Toast';
 import ConfirmModal from './components/common/ConfirmModal';
 
-import DashboardView from './components/Dashboard/DashboardView';
-import MasterList from './components/MasterList/MasterList';
-import AddEditToolModal from './components/MasterList/AddEditToolModal';
-import ToolDossierModal from './components/MasterList/ToolDossierModal';
-import ServiceHistoryView from './components/ServiceHistory/ServiceHistoryView';
-import ProductionTrackingView from './components/ProductionTracking/ProductionTrackingView';
-import ReplacementAlertsView from './components/ReplacementAlerts/ReplacementAlertsView';
-import ReportsView from './components/Reports/ReportsView';
-import UserManagementView from './components/UserManagement/UserManagementView';
-import LoginScreen from './components/Auth/LoginScreen';
+// Features
+import LoginScreen from './features/Auth/LoginScreen';
+import DashboardView from './features/Dashboard/DashboardView';
+import MasterListView from './features/MasterList/MasterListView';
+import AddEditToolModal from './features/MasterList/modals/AddEditToolModal';
+import ToolDossierModal from './features/MasterList/modals/ToolDossierModal';
+import ServiceHistoryView from './features/ServiceHistory/ServiceHistoryView';
+import ProductionTrackingView from './features/ProductionTracking/ProductionTrackingView';
+import ReplacementAlertsView from './features/ReplacementAlerts/ReplacementAlertsView';
+import ReportsView from './features/Reports/ReportsView';
+import UserManagementView from './features/UserManagement/UserManagementView';
 
+// Constants & Services
+import { STORAGE_KEYS } from './constants/storageKeys';
 import {
+  toolService,
   getTools,
   saveTool,
   replaceTool,
   deleteTool,
   getProductionLogs,
   addProductionLog,
-  deleteProductionLog,
+  deleteProductionLog
+} from './services/toolService';
+import {
+  authService,
   getUsers,
   saveUser,
-  deleteUser,
-  calculateMetrics,
-  resetToInitialData
-} from './data/storage';
+  deleteUser
+} from './services/authService';
+import { calculateMetrics } from './services/reportService';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tms_auth_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
+    return authService.getCurrentUser();
   });
 
   const handleLogin = (user, remember = true) => {
-    setCurrentUser(user);
-    if (remember) {
-      try {
-        localStorage.setItem('tms_auth_user', JSON.stringify(user));
-      } catch (e) {}
-    }
+    const loggedUser = authService.login(user, remember);
+    setCurrentUser(loggedUser);
   };
 
   const [currentView, setCurrentView] = useState(() => {
     try {
-      return localStorage.getItem('tms_current_view') || 'master-list';
+      return localStorage.getItem(STORAGE_KEYS.CURRENT_VIEW) || 'master-list';
     } catch (e) {
       return 'master-list';
     }
@@ -81,19 +79,16 @@ export default function App() {
   // Persist view across browser refresh
   useEffect(() => {
     try {
-      localStorage.setItem('tms_current_view', currentView);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_VIEW, currentView);
     } catch (e) {}
   }, [currentView]);
 
-  // Clear any legacy saved PM tool so refreshing on Preventive Maintenance always starts with a blank/cleared number
+  // Clear any legacy saved PM tool so refreshing on Preventive Maintenance always starts with a blank number
   useEffect(() => {
     try {
-      localStorage.removeItem('tms_selected_pm_tool');
+      localStorage.removeItem(STORAGE_KEYS.SELECTED_PM_TOOL);
     } catch (e) {}
   }, []);
-
-  // Mobile sidebar
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -112,7 +107,7 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Reload data from local storage & recalculate metrics
+  // Reload data from storage & recalculate metrics
   const reloadData = () => {
     const t = getTools();
     const l = getProductionLogs();
@@ -169,12 +164,7 @@ export default function App() {
     reloadData();
     setIsAddEditOpen(false);
     setEditingTool(null);
-    addToast(
-      editingTool 
-        ? `Tool ${toolData.toolNo} updated successfully` 
-        : `New Tool ${toolData.toolNo} created under Part #${toolData.applicationPartNo}`, 
-      'success'
-    );
+    addToast(editingTool ? 'Tool updated successfully' : 'New tool registered', 'success');
   };
 
   const handleDeleteToolClick = (tool) => {
@@ -182,19 +172,17 @@ export default function App() {
   };
 
   const handleConfirmDeleteTool = () => {
-    if (toolToDelete) {
-      deleteTool(toolToDelete.id);
-      reloadData();
-      addToast(`Tool ${toolToDelete.toolNo} deleted`, 'info');
-      setToolToDelete(null);
-    }
+    if (!toolToDelete) return;
+    deleteTool(toolToDelete.id);
+    reloadData();
+    addToast(`Tool ${toolToDelete.toolNo} deleted successfully`, 'info');
+    setToolToDelete(null);
   };
 
-  // Tool Lifecycle Replacement Handler (Starts Fresh Cycle, Preserves History)
   const handleReplaceTool = (toolId, replacementData) => {
     const updated = replaceTool(toolId, replacementData);
     reloadData();
-    addToast(`Tool ${updated?.toolNo || toolId} replaced! Fresh Cycle ${updated?.toolCount || ''} started with limit ${updated?.lifetime?.toLocaleString() || ''} strokes. Cumulative reset to 0.`, 'success');
+    addToast(`Tool ${updated?.toolNo || 'record'} reset for Cycle ${updated?.toolCount || 'new'}! Balance restored to 100%.`, 'success');
   };
 
   // Production Log Handlers
@@ -243,10 +231,8 @@ export default function App() {
   // Logout
   const handleConfirmLogout = () => {
     setIsLogoutConfirmOpen(false);
+    authService.logout();
     setCurrentUser(null);
-    try {
-      localStorage.removeItem('tms_auth_user');
-    } catch (e) {}
     addToast('You have been logged out successfully.', 'info');
   };
 
@@ -258,16 +244,17 @@ export default function App() {
     setCurrentView('service-history');
   };
 
+  // Unauthenticated view: Login Screen
   if (!currentUser) {
     return (
       <LoginScreen onLogin={handleLogin} users={users} showToast={addToast} />
     );
   }
 
+  // Authenticated view: Enterprise Main Layout
   return (
-    <div className="app-layout">
-      {/* Sidebar Navigation */}
-      <Sidebar
+    <>
+      <MainLayout
         currentUser={currentUser}
         currentView={currentView}
         onNavigate={(view) => {
@@ -275,102 +262,86 @@ export default function App() {
             setSelectedServiceToolId(null);
           }
           setCurrentView(view);
-          setIsMobileSidebarOpen(false);
         }}
         toolCount={tools.length}
         userCount={users.length}
         urgentAlertCount={metrics.criticalAlertsCount}
         warningAlertCount={metrics.warningAlertsCount}
         onLogout={() => setIsLogoutConfirmOpen(true)}
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-      />
+      >
+        {currentView === 'dashboard' && (
+          <DashboardView
+            tools={tools}
+            metrics={metrics}
+            onNavigate={setCurrentView}
+            onViewDossier={setDossierTool}
+            onViewServiceHistory={handleViewServiceHistory}
+            onAddTool={handleOpenAddTool}
+            onRefresh={reloadData}
+          />
+        )}
 
-      {/* Main Viewport */}
-      <div className="main-wrapper">
-        {/* Top Header */}
-        <Header
-          onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          onOpenAlerts={() => setCurrentView('notifications')}
-          alertCount={metrics.criticalAlertsCount + metrics.warningAlertsCount}
-        />
+        {currentView === 'master-list' && (
+          <MasterListView
+            tools={tools}
+            onAddTool={handleOpenAddTool}
+            onEditTool={handleOpenEditTool}
+            onDeleteTool={handleDeleteToolClick}
+            onViewDossier={setDossierTool}
+            onViewServiceHistory={handleViewServiceHistory}
+            showToast={addToast}
+          />
+        )}
 
-        {/* Content Views */}
-        <main className="app-content">
-          {currentView === 'dashboard' && (
-            <DashboardView
-              tools={tools}
-              metrics={metrics}
-              onNavigate={setCurrentView}
-              onViewDossier={setDossierTool}
-              onViewServiceHistory={handleViewServiceHistory}
-              onAddTool={handleOpenAddTool}
-              onRefresh={reloadData}
-            />
-          )}
+        {currentView === 'service-history' && (
+          <ServiceHistoryView
+            tools={tools}
+            productionLogs={productionLogs}
+            selectedToolId={selectedServiceToolId}
+            onSelectToolId={setSelectedServiceToolId}
+            onBackToMaster={() => setCurrentView('master-list')}
+            onAddProductionLog={handleAddProductionLog}
+            onDeleteProductionLog={handleDeleteProductionLog}
+            onReplaceTool={handleReplaceTool}
+            showToast={addToast}
+          />
+        )}
 
-          {currentView === 'master-list' && (
-            <MasterList
-              tools={tools}
-              onAddTool={handleOpenAddTool}
-              onEditTool={handleOpenEditTool}
-              onDeleteTool={handleDeleteToolClick}
-              onViewDossier={setDossierTool}
-              onViewServiceHistory={handleViewServiceHistory}
-              showToast={addToast}
-            />
-          )}
+        {currentView === 'production-tracking' && (
+          <ProductionTrackingView
+            tools={tools}
+            showToast={addToast}
+          />
+        )}
 
-          {currentView === 'service-history' && (
-            <ServiceHistoryView
-              tools={tools}
-              productionLogs={productionLogs}
-              selectedToolId={selectedServiceToolId}
-              onSelectToolId={setSelectedServiceToolId}
-              onBackToMaster={() => setCurrentView('master-list')}
-              onAddProductionLog={handleAddProductionLog}
-              onDeleteProductionLog={handleDeleteProductionLog}
-              onReplaceTool={handleReplaceTool}
-              showToast={addToast}
-            />
-          )}
+        {(currentView === 'notifications' || currentView === 'replacement-alerts') && (
+          <ReplacementAlertsView
+            tools={tools}
+            onViewDossier={setDossierTool}
+            onViewServiceHistory={handleViewServiceHistory}
+            onNavigate={setCurrentView}
+            onReplaceTool={handleReplaceTool}
+            showToast={addToast}
+          />
+        )}
 
-          {currentView === 'production-tracking' && (
-            <ProductionTrackingView
-              tools={tools}
-              showToast={addToast}
-            />
-          )}
+        {currentView === 'reports' && (
+          <ReportsView
+            tools={tools}
+            metrics={metrics}
+            showToast={addToast}
+          />
+        )}
 
-          {(currentView === 'notifications' || currentView === 'replacement-alerts') && (
-            <ReplacementAlertsView
-              tools={tools}
-              onViewDossier={setDossierTool}
-              onViewServiceHistory={handleViewServiceHistory}
-              onNavigate={setCurrentView}
-              onReplaceTool={handleReplaceTool}
-              showToast={addToast}
-            />
-          )}
-
-          {currentView === 'reports' && (
-            <ReportsView
-              tools={tools}
-              metrics={metrics}
-              showToast={addToast}
-            />
-          )}
-
-          {currentView === 'user-management' && (
-            <UserManagementView
-              users={users}
-              onSaveUser={handleSaveUser}
-              onDeleteUser={handleDeleteUser}
-              showToast={addToast}
-            />
-          )}
-        </main>
-      </div>
+        {currentView === 'user-management' && (
+          <UserManagementView
+            users={users}
+            onSaveUser={handleSaveUser}
+            onDeleteUser={handleDeleteUser}
+            showToast={addToast}
+          />
+        )}
+      </MainLayout>
 
       {/* Modals */}
       {isAddEditOpen && (
@@ -419,6 +390,6 @@ export default function App() {
 
       {/* Floating Toasts */}
       <ToastContainer toasts={toasts} onCloseToast={removeToast} />
-    </div>
+    </>
   );
 }

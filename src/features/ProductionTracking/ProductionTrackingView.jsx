@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { formatNumber, exportToolsToCSV } from '../../data/storage';
+import { formatNumber } from '../../utils/formatters';
+import { exportToolsToCSV } from '../../services/reportService';
 
 export default function ProductionTrackingView({ tools, showToast }) {
   const [searchTerm, setSearchTerm] = useState('');

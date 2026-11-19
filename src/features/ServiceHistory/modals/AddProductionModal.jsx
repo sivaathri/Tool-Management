@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { formatNumber } from '../../data/storage';
+import { formatNumber } from '../../../utils/formatters';
 
 function formatMonthName(monthStr) {
   if (!monthStr) return '';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatNumber } from '../../data/storage';
+import { formatNumber } from '../../../utils/formatters';
 
 export default function ToolReplacementModal({ tool, isOpen = true, onClose, onConfirm }) {
   if (!isOpen || !tool) return null;

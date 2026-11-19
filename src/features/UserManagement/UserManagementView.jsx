@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import UserModal from './UserModal';
+import UserModal from './modals/UserModal';
 
 export default function UserManagementView({
   users = [],

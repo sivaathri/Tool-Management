@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { formatNumber, exportToolsToCSV } from '../../data/storage';
-import ToolReplacementModal from '../ServiceHistory/ToolReplacementModal';
+import { formatNumber } from '../../utils/formatters';
+import { exportToolsToCSV } from '../../services/reportService';
+import ToolReplacementModal from '../ServiceHistory/modals/ToolReplacementModal';
 
 export default function ReplacementAlertsView({ tools, onViewDossier, onViewServiceHistory, onNavigate, onReplaceTool, showToast }) {
   const [filterType, setFilterType] = useState('ALL');

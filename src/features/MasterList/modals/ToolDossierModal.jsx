@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatNumber } from '../../data/storage';
+import { formatNumber } from '../../../utils/formatters';
 
 export default function ToolDossierModal({ tool, onClose }) {
   if (!tool) return null;
