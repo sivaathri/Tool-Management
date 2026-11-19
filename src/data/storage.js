@@ -43,7 +43,7 @@ export function exportToolsToCSV(toolsList, filename = 'tools_master_list.csv') 
     t.lifetime || 0,
     t.cumulative || 0,
     t.balance || 0,
-    `"${(t.status || 'Active').replace(/"/g, '""')}"`
+    `"${(t.status || 'Healthy').replace(/"/g, '""')}"`
   ]);
 
   const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -94,7 +94,7 @@ export function exportPMReportToCSV(tool, logs = []) {
   lines.push(`Current Cumulative Produced (Strokes),${tool.cumulative || 0}`);
   lines.push(`Remaining Balance (Strokes),${tool.balance || 0}`);
   lines.push(`Life Utilization,${pct}%`);
-  lines.push(`Tool Status,"${tool.status || 'Active'}"`);
+  lines.push(`Tool Status,"${tool.status || 'Healthy'}"`);
   lines.push('');
 
   lines.push('2. PREVENTIVE MAINTENANCE CHECK POINTS & INSPECTION RECORD');
@@ -212,7 +212,7 @@ function normalizeToolItem(raw, productionLogs = []) {
   const balance = rawBalance < 0 ? 0 : rawBalance;
 
   // Lifecycle status for current active cycle
-  let status = 'Active';
+  let status = 'Healthy';
   if (lifetime > 0) {
     const wearPct = (cumulative / lifetime) * 100;
     if (wearPct >= 100) {

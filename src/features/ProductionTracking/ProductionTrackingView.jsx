@@ -38,7 +38,7 @@ export default function ProductionTrackingView({ tools, showToast }) {
       return (
         <span className="badge badge-healthy">
           <span className="badge-dot"></span>
-          <span>Active</span>
+          <span>Healthy</span>
         </span>
       );
     }

@@ -21,7 +21,7 @@ export default function DashboardView({
       return (
         <span className="badge badge-healthy">
           <span className="badge-dot"></span>
-          <span>Active</span>
+          <span>Healthy</span>
         </span>
       );
     }
@@ -77,7 +77,7 @@ export default function DashboardView({
 
         <div className="kpi-card kpi-green">
           <div className="kpi-header">
-            <span className="kpi-label">Active / Healthy</span>
+            <span className="kpi-label">Healthy Tools</span>
             <div className="kpi-icon-wrap">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -139,7 +139,7 @@ export default function DashboardView({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px 0' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  <span>Active & Healthy ({healthyCount})</span>
+                  <span>Healthy ({healthyCount})</span>
                   <span>{tools.length ? Math.round((healthyCount / tools.length) * 100) : 0}%</span>
                 </div>
                 <div style={{ height: '8px', background: 'var(--slate-100)', borderRadius: '4px', overflow: 'hidden' }}>

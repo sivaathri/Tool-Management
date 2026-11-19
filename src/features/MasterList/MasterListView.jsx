@@ -106,7 +106,7 @@ export default function MasterList({
       return (
         <span className="badge badge-healthy">
           <span className="badge-dot"></span>
-          <span>Active</span>
+          <span>Healthy</span>
         </span>
       );
     }

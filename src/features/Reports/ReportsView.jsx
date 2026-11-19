@@ -169,7 +169,7 @@ export default function ReportsView({ tools, metrics, showToast }) {
                       {formatNumber(tool.balance)}
                     </span>
                   </td>
-                  <td>{tool.status}</td>
+                  <td>{tool.status === 'Active' ? 'Healthy' : tool.status}</td>
                 </tr>
               ))}
             </tbody>

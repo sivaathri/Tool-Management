@@ -446,7 +446,7 @@ export default function ServiceHistoryView({
                               color: t.status === 'Active' || t.status === 'Healthy' ? '#15803d' : t.status === 'Near Limit' ? '#b45309' : '#b91c1c'
                             }}
                           >
-                            {t.status || 'Active'}
+                            {t.status === 'Active' ? 'Healthy' : (t.status || 'Healthy')}
                           </span>
                           <span style={{ fontSize: '11px', color: 'var(--accent-600)', fontWeight: 600 }}>
                             Select ↵
@@ -522,7 +522,7 @@ export default function ServiceHistoryView({
                 </h2>
                 <span className={`badge ${isHealthy ? 'badge-healthy' : isNear ? 'badge-warning' : 'badge-danger'}`} id="shToolStatusBadge">
                   <span className="badge-dot"></span>
-                  <span>{selectedTool.status}</span>
+                  <span>{selectedTool.status === 'Active' ? 'Healthy' : selectedTool.status}</span>
                 </span>
               </div>
               <div style={{ fontSize: '14px', color: 'var(--slate-600)', marginTop: '2px' }} id="shToolDescription">
