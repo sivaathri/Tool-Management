@@ -494,7 +494,7 @@ export default function ServiceHistoryView({
             }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0, textTransform: 'uppercase', color: '#0f172a', letterSpacing: '0.5px' }}>
-                  TOOL MANAGEMENT SYSTEM
+                  TOOLS HISTORY MANAGEMENT SYSTEM
                 </h2>
                 <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e40af', marginTop: '2px' }}>
                   PREVENTIVE MAINTENANCE & LIFECYCLE SERVICE REPORT

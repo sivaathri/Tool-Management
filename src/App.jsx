@@ -380,7 +380,7 @@ export default function App() {
         <ConfirmModal
           isOpen={true}
           title="Log Out"
-          message="Are you sure you want to log out of the Tool Management System?"
+          message="Are you sure you want to log out of the Tools History Management System?"
           confirmLabel="Log Out"
           confirmVariant="danger"
           onConfirm={handleConfirmLogout}

@@ -35,7 +35,7 @@ export default function Sidebar({
             <img src="/inel-logo.png" alt="INEL Logo" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
           </div>
           <div>
-            <div className="brand-title">Tool Management</div>
+            <div className="brand-title">Tools History Management</div>
          
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function Sidebar({
             type="button"
             className="btn-sidebar-logout"
             onClick={onLogout}
-            title="Log out of Tool Management System"
+            title="Log out of Tools History Management System"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

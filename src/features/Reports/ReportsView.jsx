@@ -90,7 +90,7 @@ export default function ReportsView({ tools, metrics, showToast }) {
                   : 'Plant Tool Master List & Fleet Health Report'}
               </h2>
               <div style={{ fontSize: '12px', color: 'var(--slate-500)', marginTop: '2px' }}>
-                Generated on: {new Date().toLocaleDateString()} • System: Tool Management System
+                Generated on: {new Date().toLocaleDateString()} • System: Tools History Management System
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
