@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { formatNumber } from '../../utils/formatters';
 import { exportToolsToCSV, exportPMReportToCSV, exportPMReportToPDF } from '../../services/reportService';
+import { getPMRecords } from '../../services/toolService';
 import AddProductionModal from './modals/AddProductionModal';
 import PMChecklistSheet from './modals/PMChecklistSheet';
 import ToolReplacementModal from './modals/ToolReplacementModal';
@@ -322,7 +323,12 @@ export default function ServiceHistoryView({
     if (!selectedTool) return;
     showToast?.(`Generating PDF download for ${selectedTool.toolNo}...`, 'info');
     try {
-      await exportPMReportToPDF(selectedTool, displayedLogs);
+      const pmRecords = getPMRecords();
+      const savedPM = pmRecords.find(r => 
+        (selectedTool.id && r.toolId === selectedTool.id) || 
+        (r.toolNo && selectedTool.toolNo && r.toolNo.toLowerCase().trim() === selectedTool.toolNo.toLowerCase().trim())
+      );
+      await exportPMReportToPDF(selectedTool, displayedLogs, savedPM);
       showToast?.(`PM Report for ${selectedTool.toolNo} downloaded successfully!`, 'success');
     } catch (err) {
       console.error('Error generating PDF download', err);

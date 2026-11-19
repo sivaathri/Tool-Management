@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { savePMRecord } from '../../../services/toolService';
+import { savePMRecord, getPMRecords } from '../../../services/toolService';
 
 export default function PMChecklistSheet({ tool, showToast }) {
   if (!tool) return null;
@@ -19,23 +19,23 @@ export default function PMChecklistSheet({ tool, showToast }) {
     const p = (pointText || '').toUpperCase();
     if (p.includes('COIL LOCATOR') || p.includes('COUPLER LOCATOR') || p.includes('WIRE GUIDE')) {
       if (p.includes('PLAY')) {
-        return { method: 'Visual', specification: 'Free from play', sampleActual: 'Locator OK' };
+        return { method: 'Visual', specification: 'Free from play' };
       }
-      return { method: 'Visual', specification: 'Free from chip off and damages', sampleActual: 'Free from Damages' };
+      return { method: 'Visual', specification: 'Free from chip off and damages' };
     }
     if (p.includes('IDENTIFICATION NUMBER') || p.includes('TOOL NUMBER') || p.includes('PUNCH') || p.includes('DIE NUMBER')) {
-      return { method: 'Visual', specification: 'As per Master List', sampleActual: tool.toolNo };
+      return { method: 'Visual', specification: 'As per Master List' };
     }
     if (p.includes('BURR') || p.includes('SHARPNESS') || p.includes('CUTTING EDGE')) {
-      return { method: 'Visual / Gauge', specification: 'Burr < 0.05mm / Sharp', sampleActual: 'Burr within 0.03mm' };
+      return { method: 'Visual / Gauge', specification: 'Burr < 0.05mm / Sharp' };
     }
     if (p.includes('CLEARANCE') || p.includes('GAP')) {
-      return { method: 'Feeler Gauge', specification: 'As per tool drawing', sampleActual: 'Gap OK' };
+      return { method: 'Feeler Gauge', specification: 'As per tool drawing' };
     }
-    return { method: 'Visual', specification: 'Free from chip off and damages', sampleActual: 'Free from Damage' };
+    return { method: 'Visual', specification: 'Free from chip off and damages' };
   };
 
-  // Default rows derived directly from tool checkPoints created in Master List
+  // Default rows derived directly from tool checkPoints created in Master List (Default empty text boxes)
   const createDefaultRows = () => {
     let rawPoints = [];
     if (Array.isArray(tool.checkPoints) && tool.checkPoints.length > 0) {
@@ -56,8 +56,8 @@ export default function PMChecklistSheet({ tool, showToast }) {
       return {
         sno: idx + 1,
         checkPoint: text,
-        method: method,
-        specification: specification,
+        method: method || 'Visual',
+        specification: specification || 'Free from chip off and damages',
         actualCondition: '',
         actionTaken: ''
       };
@@ -72,19 +72,59 @@ export default function PMChecklistSheet({ tool, showToast }) {
   const [nextDueDate, setNextDueDate] = useState(getNextDueDate());
   const [rows, setRows] = useState([]);
   const [activeRecordId, setActiveRecordId] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+
+  // Helper to load or initialize PM Checklist data for current tool from storage
+  const loadPMDataForTool = () => {
+    const defaultRows = createDefaultRows();
+    const pmList = getPMRecords();
+    const saved = pmList.find(p => 
+      (tool.id && p.toolId === tool.id) ||
+      (tool.toolNo && p.toolNo && p.toolNo.toLowerCase().trim() === tool.toolNo.toLowerCase().trim())
+    );
+
+    if (saved && Array.isArray(saved.items) && saved.items.length > 0) {
+      const mergedRows = defaultRows.map((dRow, idx) => {
+        const match = saved.items.find(s => 
+          s.checkPoint && dRow.checkPoint &&
+          s.checkPoint.trim().toLowerCase() === dRow.checkPoint.trim().toLowerCase()
+        ) || saved.items[idx];
+
+        if (match) {
+          return {
+            ...dRow,
+            method: match.method !== undefined ? match.method : dRow.method,
+            specification: match.specification !== undefined ? match.specification : dRow.specification,
+            actualCondition: match.actualCondition !== undefined ? match.actualCondition : '',
+            actionTaken: match.actionTaken !== undefined ? match.actionTaken : ''
+          };
+        }
+        return dRow;
+      });
+
+      const extraItems = saved.items.filter(s =>
+        !defaultRows.some(d => (d.checkPoint || '').trim().toLowerCase() === (s.checkPoint || '').trim().toLowerCase())
+      );
+
+      setRows([...mergedRows, ...extraItems]);
+      if (saved.checkDate) setCheckDate(saved.checkDate);
+      if (saved.nextDueDate) setNextDueDate(saved.nextDueDate);
+      setActiveRecordId(saved.id);
+    } else {
+      // Show empty text boxes by default ready for entering inspection data
+      setRows(defaultRows);
+      setCheckDate(getTodayDate());
+      setNextDueDate(getNextDueDate());
+      setActiveRecordId(null);
+    }
+  };
 
   // Sync rows whenever tool changes or tool checkPoints change
+  const checkPointsKey = JSON.stringify(tool.checkPoints || []);
   useEffect(() => {
-    setCheckDate(getTodayDate());
-    setNextDueDate(getNextDueDate());
-    setRows(createDefaultRows());
-    setActiveRecordId(null);
-    setIsEditing(false);
-  }, [tool.id, tool.toolNo, tool.checkPoints]);
+    loadPMDataForTool();
+  }, [tool.id, tool.toolNo, checkPointsKey]);
 
   const handleRowChange = (index, field, value) => {
-    if (!isEditing) return;
     setRows(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -94,8 +134,9 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
   // Save Record
   const handleSave = () => {
+    const recordId = activeRecordId || `pm_${tool.id || tool.toolNo.replace(/\s+/g, '_')}`;
     const record = {
-      id: activeRecordId || 'pm_' + Date.now(),
+      id: recordId,
       toolId: tool.id,
       toolNo: tool.toolNo,
       refNo,
@@ -104,13 +145,18 @@ export default function PMChecklistSheet({ tool, showToast }) {
       toolDescription,
       application,
       classification: tool.classification || 'Non-Critical',
-      items: rows
+      items: rows,
+      rows: rows
     };
 
     savePMRecord(record);
-    setActiveRecordId(record.id);
-    setIsEditing(false);
+    setActiveRecordId(recordId);
     showToast?.(`Preventive Maintenance check saved for ${tool.toolNo}`, 'success');
+  };
+
+  const handleClear = () => {
+    setRows(prev => prev.map(r => ({ ...r, actualCondition: '', actionTaken: '' })));
+    showToast?.('Inspection text boxes cleared', 'info');
   };
 
   const isCritical = tool.classification === 'Critical';
@@ -131,10 +177,26 @@ export default function PMChecklistSheet({ tool, showToast }) {
         gap: '10px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isEditing ? (
+          {activeRecordId ? (
             <span style={{
               fontSize: '11.5px',
-              padding: '3px 10px',
+              padding: '4px 12px',
+              backgroundColor: '#dcfce7',
+              color: '#15803d',
+              borderRadius: '12px',
+              fontWeight: 700,
+              border: '1px solid #86efac',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16a34a' }}></span>
+              Saved Record Active (Last Check: {checkDate})
+            </span>
+          ) : (
+            <span style={{
+              fontSize: '11.5px',
+              padding: '4px 12px',
               backgroundColor: '#eff6ff',
               color: '#1d4ed8',
               borderRadius: '12px',
@@ -142,100 +204,53 @@ export default function PMChecklistSheet({ tool, showToast }) {
               border: '1px solid #bfdbfe',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px'
+              gap: '6px'
             }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
-              Edit Mode Active — Make your updates below
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
+              Ready to Enter & Save Inspection Data
             </span>
-          ) : activeRecordId ? (
-            <span style={{
-              fontSize: '11px',
-              padding: '2px 8px',
-              backgroundColor: '#dcfce7',
-              color: '#15803d',
-              borderRadius: '10px',
-              fontWeight: 700
-            }}>
-              Saved Record Active
-            </span>
-          ) : null}
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-          {isEditing ? (
-            <>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setIsEditing(false);
-                  showToast?.('Exited edit mode', 'info');
-                }}
-                style={{
-                  padding: '9px 16px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  borderRadius: '6px'
-                }}
-              >
-                Cancel
-              </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleClear}
+            title="Clear all Actual Condition and Action Taken text boxes"
+            style={{
+              padding: '9px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              borderRadius: '6px',
+              backgroundColor: '#ffffff',
+              border: '1.5px solid #cbd5e1'
+            }}
+          >
+            Clear Fields
+          </button>
 
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleSave}
-                style={{
-                  backgroundColor: '#059669',
-                  padding: '9px 20px',
-                  fontSize: '13.5px',
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '7px',
-                  boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
-                  borderRadius: '6px'
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Save PM Record</span>
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setIsEditing(true);
-                showToast?.('Edit mode activated. You can now edit the checklist details.', 'info');
-              }}
-              style={{
-                backgroundColor: '#059669',
-                padding: '9px 20px',
-                fontSize: '13.5px',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '7px',
-                boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
-                borderRadius: '6px'
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12.5 3.5H6A3.5 3.5 0 0 0 2.5 7v10A3.5 3.5 0 0 0 6 20.5h10a3.5 3.5 0 0 0 3.5-3.5v-6.5" />
-                <path d="M16.5 6.5L18.3 4.7C19.1 3.9 20.4 3.9 21.2 4.7C22.0 5.5 22.0 6.8 21.2 7.6L19.4 9.4" />
-                <line x1="16.5" y1="6.5" x2="9.8" y2="13.2" />
-                <line x1="19.4" y1="9.4" x2="12.7" y2="16.1" />
-                <line x1="16.5" y1="6.5" x2="19.4" y2="9.4" />
-                <line x1="9.8" y1="13.2" x2="12.7" y2="16.1" />
-                <path d="M9.8 13.2L7.8 18.1L12.7 16.1" />
-                <polygon points="7.8,18.1 8.8,15.6 10.3,17.1" fill="currentColor" stroke="none" />
-              </svg>
-              <span>Click Edit</span>
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+            style={{
+              backgroundColor: '#059669',
+              padding: '9px 22px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+              borderRadius: '6px'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Save PM Record</span>
+          </button>
         </div>
       </div>
 
@@ -334,16 +349,16 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   className="pm-sheet-input screen-only-input"
                   value={checkDate}
                   onChange={(e) => setCheckDate(e.target.value)}
-                  disabled={!isEditing}
                   style={{
                     width: '100%',
-                    border: 'none',
-                    background: isEditing ? '#f0f9ff' : 'transparent',
+                    border: '1.5px solid #cbd5e1',
+                    background: '#ffffff',
                     fontWeight: 700,
                     color: '#0f172a',
-                    cursor: isEditing ? 'pointer' : 'default',
-                    padding: '2px 4px',
-                    borderRadius: '3px'
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                    borderRadius: '4px',
+                    fontSize: '12px'
                   }}
                 />
               </div>
@@ -381,8 +396,18 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   className="pm-sheet-input screen-only-input"
                   value={nextDueDate}
                   onChange={(e) => setNextDueDate(e.target.value)}
-                  disabled={!isEditing}
                   style={{
+                    width: '100%',
+                    border: '1.5px solid #cbd5e1',
+                    background: '#ffffff',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                  }}
+                />
                     width: '100%',
                     border: 'none',
                     background: isEditing ? '#f0f9ff' : 'transparent',
@@ -503,22 +528,20 @@ export default function PMChecklistSheet({ tool, showToast }) {
                         rows={2}
                         value={row.method}
                         onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "e.g. Visual" : ""}
+                        placeholder="e.g. Visual"
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 8px',
                           borderRadius: '4px',
-                          border: isEditing ? '1px solid #cbd5e1' : '1px solid transparent',
-                          backgroundColor: isEditing ? '#ffffff' : 'transparent',
+                          border: '1.5px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
                           textAlign: 'center',
                           fontSize: '12px',
                           lineHeight: 1.45,
-                          color: '#334155',
+                          color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: 'vertical',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -539,21 +562,19 @@ export default function PMChecklistSheet({ tool, showToast }) {
                         rows={2}
                         value={row.specification}
                         onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Specification standard..." : ""}
+                        placeholder="Specification standard..."
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: isEditing ? '1px solid #cbd5e1' : '1px solid transparent',
-                          backgroundColor: isEditing ? '#ffffff' : 'transparent',
+                          border: '1.5px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
                           fontSize: '12px',
                           lineHeight: 1.45,
-                          color: '#334155',
+                          color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: 'vertical',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -568,29 +589,27 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       verticalAlign: 'top'
                     }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left', fontWeight: 600, color: '#0f172a' }}>
-                        {row.actualCondition || 'OK / Free from damage'}
+                        {row.actualCondition || '—'}
                       </div>
                       <textarea
                         className="screen-only-input"
                         rows={2}
                         value={row.actualCondition}
                         onChange={(e) => handleRowChange(idx, 'actualCondition', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "e.g. Locator Free from Damage / OK" : "—"}
+                        placeholder="Enter actual condition / observation..."
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: isEditing ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
-                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
+                          border: '1.5px solid #93c5fd',
+                          backgroundColor: '#ffffff',
                           fontWeight: 600,
                           fontSize: '12.5px',
                           lineHeight: 1.45,
-                          color: '#1e3a8a',
+                          color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: 'vertical',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -600,28 +619,26 @@ export default function PMChecklistSheet({ tool, showToast }) {
                     {/* Action Taken (Multi-line Textarea for comfortable long text) */}
                     <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
-                        {row.actionTaken || 'None required'}
+                        {row.actionTaken || '—'}
                       </div>
                       <textarea
                         className="screen-only-input"
                         rows={2}
                         value={row.actionTaken}
                         onChange={(e) => handleRowChange(idx, 'actionTaken', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Action taken if any..." : "—"}
+                        placeholder="Enter action taken..."
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: isEditing ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
-                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
+                          border: '1.5px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
                           fontSize: '12px',
                           lineHeight: 1.45,
-                          color: '#334155',
+                          color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: 'vertical',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}

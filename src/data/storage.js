@@ -1,10 +1,5 @@
 import { INITIAL_TOOLS, INITIAL_MACHINES, INITIAL_PRODUCTION, INITIAL_USERS } from './initialData';
-
-const STORAGE_KEYS = {
-  TOOLS: 'tms_tools_v4',
-  PRODUCTION: 'tms_production_v4',
-  USERS: 'tms_users_v1'
-};
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 // Format numbers with commas (e.g. 200,000)
 export function formatNumber(val) {
@@ -69,10 +64,18 @@ export function exportPMReportToCSV(tool, logs = []) {
     const rawPM = localStorage.getItem('tms_pm_records');
     if (rawPM) {
       const pmList = JSON.parse(rawPM);
-      const toolPM = pmList.find(p => p.toolId === tool.id || (p.toolNo && p.toolNo.toLowerCase() === tool.toolNo.toLowerCase()));
-      if (toolPM && toolPM.rows) {
-        savedRows = toolPM.rows;
-        if (toolPM.date) pmDate = toolPM.date;
+      const toolPM = pmList.find(p => 
+        p.toolId === tool.id || 
+        (p.toolNo && tool.toolNo && p.toolNo.toLowerCase().trim() === tool.toolNo.toLowerCase().trim())
+      );
+      if (toolPM) {
+        if (Array.isArray(toolPM.items) && toolPM.items.length > 0) {
+          savedRows = toolPM.items;
+        } else if (Array.isArray(toolPM.rows) && toolPM.rows.length > 0) {
+          savedRows = toolPM.rows;
+        }
+        if (toolPM.checkDate) pmDate = toolPM.checkDate;
+        else if (toolPM.date) pmDate = toolPM.date;
       }
     }
   } catch (e) {}
@@ -268,13 +271,19 @@ function normalizeProductionItem(raw) {
 
 // Initialize real storage
 function initStorage() {
-  // Purge legacy mock data keys if present in browser localStorage
-  [
-    'tms_tools_v4', 'tms_production_v4', 'tms_tools_v3', 'tms_tools_v2', 'tms_tools_v1',
-    'tms_users_v1', 'tms_pm_records_mock'
-  ].forEach(k => {
-    try { localStorage.removeItem(k); } catch(e) {}
-  });
+  // Purge legacy mock data keys once on upgrade, avoiding current active keys
+  try {
+    const isCleaned = localStorage.getItem('tms_mock_purged_flag_v2');
+    if (!isCleaned) {
+      [
+        'tms_tools_v4', 'tms_production_v4', 'tms_tools_v3', 'tms_tools_v2', 'tms_tools_v1',
+        'tms_users_v1', 'tms_pm_records_mock'
+      ].forEach(k => {
+        try { localStorage.removeItem(k); } catch(e) {}
+      });
+      localStorage.setItem('tms_mock_purged_flag_v2', 'true');
+    }
+  } catch (e) {}
 
   if (!localStorage.getItem(STORAGE_KEYS.TOOLS)) {
     localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify([]));
@@ -305,11 +314,15 @@ export function getTools() {
 export function saveTool(toolData) {
   initStorage();
   const logs = getProductionLogs();
-  const tools = getTools();
+  const rawData = localStorage.getItem(STORAGE_KEYS.TOOLS);
+  const tools = rawData ? JSON.parse(rawData) : [];
   toolData.toolNo = formatToolNumber(toolData.toolNo || toolData.toolNumber);
   const normalized = normalizeToolItem(toolData, logs);
 
-  const existingIdx = tools.findIndex(t => t.id === normalized.id || t.toolNo.toLowerCase() === normalized.toolNo.toLowerCase());
+  const existingIdx = tools.findIndex(t => 
+    t.id === normalized.id || 
+    (t.toolNo && normalized.toolNo && t.toolNo.toLowerCase().trim() === normalized.toolNo.toLowerCase().trim())
+  );
   if (existingIdx >= 0) {
     tools[existingIdx] = normalized;
   } else {
@@ -378,8 +391,10 @@ export function replaceTool(toolId, replacementData = {}) {
 // Delete a tool
 export function deleteTool(toolId) {
   initStorage();
-  const tools = getTools().filter(t => t.id !== toolId);
-  localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
+  const rawData = localStorage.getItem(STORAGE_KEYS.TOOLS);
+  const tools = rawData ? JSON.parse(rawData) : [];
+  const filtered = tools.filter(t => t.id !== toolId && t.toolNo !== toolId);
+  localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(filtered));
 }
 
 // Get all production logs
@@ -454,15 +469,34 @@ export function getPMRecords() {
 export function savePMRecord(record) {
   try {
     const existing = getPMRecords();
-    const idx = existing.findIndex(r => r.id === record.id);
+    const cleanToolNo = (record.toolNo || '').toLowerCase().trim();
+    const idx = existing.findIndex(r => 
+      (record.id && r.id === record.id) ||
+      (record.toolId && r.toolId === record.toolId) ||
+      (cleanToolNo && r.toolNo && r.toolNo.toLowerCase().trim() === cleanToolNo)
+    );
+
+    const normalizedRecord = {
+      ...record,
+      items: record.items || record.rows || [],
+      rows: record.rows || record.items || [],
+      checkDate: record.checkDate || record.date || new Date().toISOString().slice(0, 10),
+      date: record.checkDate || record.date || new Date().toISOString().slice(0, 10)
+    };
+
     let updated;
     if (idx >= 0) {
       updated = [...existing];
-      updated[idx] = { ...record, updatedAt: new Date().toISOString() };
+      updated[idx] = { 
+        ...existing[idx], 
+        ...normalizedRecord, 
+        id: existing[idx].id || normalizedRecord.id, 
+        updatedAt: new Date().toISOString() 
+      };
     } else {
       const newRec = {
-        ...record,
-        id: record.id || 'pm_' + Date.now(),
+        ...normalizedRecord,
+        id: normalizedRecord.id || ('pm_' + (record.toolId || (record.toolNo ? record.toolNo.replace(/\s+/g, '_') : Date.now()))),
         createdAt: new Date().toISOString()
       };
       updated = [newRec, ...existing];
