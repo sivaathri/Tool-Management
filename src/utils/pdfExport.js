@@ -22,20 +22,14 @@ export async function exportPMReportToPDF(tool, logs = [], pmRecord = null) {
       return {
         sno: idx + 1,
         checkPoint: text,
-        method: (typeof cp === 'object' && cp.method) ? cp.method : 'Visual',
-        specification: (typeof cp === 'object' && cp.spec) ? cp.spec : 'Free from damage and chip off',
-        actualCondition: 'OK / Free from damage',
-        actionTaken: 'None required'
+        method: (typeof cp === 'object' && cp.method) ? cp.method : '—',
+        specification: (typeof cp === 'object' && (cp.spec || cp.specification)) ? (cp.spec || cp.specification) : '—',
+        actualCondition: '—',
+        actionTaken: '—'
       };
     });
   } else {
-    checkItems = [
-      { sno: 1, checkPoint: 'CHECK COIL LOCATOR FOR ANY DAMAGES', method: 'Visual', specification: 'Free from chip off and damages', actualCondition: 'Free from Damages', actionTaken: 'None required' },
-      { sno: 2, checkPoint: 'CHECK COUPLER LOCATOR FOR ANY DAMAGES', method: 'Visual', specification: 'Free from chip off and damages', actualCondition: 'OK', actionTaken: 'None required' },
-      { sno: 3, checkPoint: 'CHECK COUPLER LOCATOR ANY PLAY', method: 'Visual', specification: 'Free from play', actualCondition: 'Locator OK', actionTaken: 'None required' },
-      { sno: 4, checkPoint: 'CHECK WIRE GUIDE FOR ANY DAMAGES', method: 'Visual', specification: 'Free from chip off and damages', actualCondition: 'OK', actionTaken: 'None required' },
-      { sno: 5, checkPoint: 'ENSURE TOOL IDENTIFICATION NUMBER', method: 'Visual', specification: 'As per Master List', actualCondition: tool.toolNo, actionTaken: 'Verified OK' }
-    ];
+    checkItems = [];
   }
 
   // Create an off-screen container styled exactly for A4 landscape PDF

@@ -105,14 +105,14 @@ export function exportPMReportToCSV(tool, logs = []) {
   
   if (savedRows.length > 0) {
     savedRows.forEach((r, idx) => {
-      lines.push(`${idx + 1},"${(r.checkPoint || '').replace(/"/g, '""')}","${(r.method || 'Visual').replace(/"/g, '""')}","${(r.specification || '').replace(/"/g, '""')}","${(r.actualCondition || 'OK / Free from damage').replace(/"/g, '""')}","${(r.actionTaken || 'None required').replace(/"/g, '""')}"`);
+      lines.push(`${idx + 1},"${(r.checkPoint || '').replace(/"/g, '""')}","${(r.method || '').replace(/"/g, '""')}","${(r.specification || '').replace(/"/g, '""')}","${(r.actualCondition || '').replace(/"/g, '""')}","${(r.actionTaken || '').replace(/"/g, '""')}"`);
     });
   } else {
     (tool.checkPoints || []).forEach((cp, idx) => {
       const pointText = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || '') : String(cp || '');
-      const method = typeof cp === 'object' && cp !== null && cp.method ? cp.method : 'Visual';
-      const spec = typeof cp === 'object' && cp !== null && cp.spec ? cp.spec : (typeof cp === 'object' && cp !== null && cp.specification ? cp.specification : 'Free from damage and chip off');
-      lines.push(`${idx + 1},"${pointText.replace(/"/g, '""')}","${method.replace(/"/g, '""')}","${spec.replace(/"/g, '""')}","Free from Damage / OK","Checked & Cleaned"`);
+      const method = typeof cp === 'object' && cp !== null && cp.method ? cp.method : '';
+      const spec = typeof cp === 'object' && cp !== null && (cp.spec || cp.specification) ? (cp.spec || cp.specification) : '';
+      lines.push(`${idx + 1},"${pointText.replace(/"/g, '""')}","${method.replace(/"/g, '""')}","${spec.replace(/"/g, '""')}","",""`);
     });
   }
   lines.push('');

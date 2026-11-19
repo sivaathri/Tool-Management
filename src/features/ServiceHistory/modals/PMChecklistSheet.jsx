@@ -14,28 +14,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
     return d.toISOString().slice(0, 10);
   };
 
-  // Helper to provide standard checking method and specification based on checkpoint description
-  const getMethodAndSpec = (pointText) => {
-    const p = (pointText || '').toUpperCase();
-    if (p.includes('COIL LOCATOR') || p.includes('COUPLER LOCATOR') || p.includes('WIRE GUIDE')) {
-      if (p.includes('PLAY')) {
-        return { method: 'Visual', specification: 'Free from play' };
-      }
-      return { method: 'Visual', specification: 'Free from chip off and damages' };
-    }
-    if (p.includes('IDENTIFICATION NUMBER') || p.includes('TOOL NUMBER') || p.includes('PUNCH') || p.includes('DIE NUMBER')) {
-      return { method: 'Visual', specification: 'As per Master List' };
-    }
-    if (p.includes('BURR') || p.includes('SHARPNESS') || p.includes('CUTTING EDGE')) {
-      return { method: 'Visual / Gauge', specification: 'Burr < 0.05mm / Sharp' };
-    }
-    if (p.includes('CLEARANCE') || p.includes('GAP')) {
-      return { method: 'Feeler Gauge', specification: 'As per tool drawing' };
-    }
-    return { method: 'Visual', specification: 'Free from chip off and damages' };
-  };
-
-  // Default rows derived directly from tool checkPoints created in Master List (Default empty text boxes)
+  // Default rows derived directly from tool checkPoints created in Master List (All text boxes empty by default)
   const createDefaultRows = () => {
     let rawPoints = [];
     if (Array.isArray(tool.checkPoints) && tool.checkPoints.length > 0) {
@@ -52,12 +31,13 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
     return rawPoints.map((cp, idx) => {
       const text = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || '') : String(cp || '');
-      const { method, specification } = getMethodAndSpec(text);
+      const method = (typeof cp === 'object' && cp !== null && cp.method) ? cp.method : '';
+      const specification = (typeof cp === 'object' && cp !== null && (cp.spec || cp.specification)) ? (cp.spec || cp.specification) : '';
       return {
         sno: idx + 1,
         checkPoint: text,
-        method: method || 'Visual',
-        specification: specification || 'Free from chip off and damages',
+        method: method,
+        specification: specification,
         actualCondition: '',
         actionTaken: ''
       };
@@ -72,6 +52,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
   const [nextDueDate, setNextDueDate] = useState(getNextDueDate());
   const [rows, setRows] = useState([]);
   const [activeRecordId, setActiveRecordId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Helper to load or initialize PM Checklist data for current tool from storage
   const loadPMDataForTool = () => {
@@ -92,8 +73,8 @@ export default function PMChecklistSheet({ tool, showToast }) {
         if (match) {
           return {
             ...dRow,
-            method: match.method !== undefined ? match.method : dRow.method,
-            specification: match.specification !== undefined ? match.specification : dRow.specification,
+            method: match.method !== undefined ? match.method : '',
+            specification: match.specification !== undefined ? match.specification : '',
             actualCondition: match.actualCondition !== undefined ? match.actualCondition : '',
             actionTaken: match.actionTaken !== undefined ? match.actionTaken : ''
           };
@@ -122,9 +103,11 @@ export default function PMChecklistSheet({ tool, showToast }) {
   const checkPointsKey = JSON.stringify(tool.checkPoints || []);
   useEffect(() => {
     loadPMDataForTool();
+    setIsEditing(false);
   }, [tool.id, tool.toolNo, checkPointsKey]);
 
   const handleRowChange = (index, field, value) => {
+    if (!isEditing) return;
     setRows(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -151,12 +134,14 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
     savePMRecord(record);
     setActiveRecordId(recordId);
+    setIsEditing(false);
     showToast?.(`Preventive Maintenance check saved for ${tool.toolNo}`, 'success');
   };
 
-  const handleClear = () => {
-    setRows(prev => prev.map(r => ({ ...r, actualCondition: '', actionTaken: '' })));
-    showToast?.('Inspection text boxes cleared', 'info');
+  const handleCancel = () => {
+    loadPMDataForTool();
+    setIsEditing(false);
+    showToast?.('Exited edit mode', 'info');
   };
 
   const isCritical = tool.classification === 'Critical';
@@ -177,7 +162,23 @@ export default function PMChecklistSheet({ tool, showToast }) {
         gap: '10px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {activeRecordId ? (
+          {isEditing ? (
+            <span style={{
+              fontSize: '11.5px',
+              padding: '4px 12px',
+              backgroundColor: '#eff6ff',
+              color: '#1d4ed8',
+              borderRadius: '12px',
+              fontWeight: 700,
+              border: '1px solid #bfdbfe',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
+              Edit Mode Active — Enter inspection details below
+            </span>
+          ) : activeRecordId ? (
             <span style={{
               fontSize: '11.5px',
               padding: '4px 12px',
@@ -197,60 +198,94 @@ export default function PMChecklistSheet({ tool, showToast }) {
             <span style={{
               fontSize: '11.5px',
               padding: '4px 12px',
-              backgroundColor: '#eff6ff',
-              color: '#1d4ed8',
+              backgroundColor: '#f1f5f9',
+              color: '#475569',
               borderRadius: '12px',
-              fontWeight: 700,
-              border: '1px solid #bfdbfe',
+              fontWeight: 600,
+              border: '1px solid #cbd5e1',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px'
             }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
-              Ready to Enter & Save Inspection Data
+              Click Edit to enter inspection data
             </span>
           )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleClear}
-            title="Clear all Actual Condition and Action Taken text boxes"
-            style={{
-              padding: '9px 16px',
-              fontSize: '13px',
-              fontWeight: 600,
-              borderRadius: '6px',
-              backgroundColor: '#ffffff',
-              border: '1.5px solid #cbd5e1'
-            }}
-          >
-            Clear Fields
-          </button>
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                style={{
+                  padding: '9px 18px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  backgroundColor: '#ffffff',
+                  border: '1.5px solid #cbd5e1'
+                }}
+              >
+                Cancel
+              </button>
 
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleSave}
-            style={{
-              backgroundColor: '#059669',
-              padding: '9px 22px',
-              fontSize: '13.5px',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '7px',
-              boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
-              borderRadius: '6px'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>Save PM Record</span>
-          </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSave}
+                style={{
+                  backgroundColor: '#059669',
+                  padding: '9px 22px',
+                  fontSize: '13.5px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+                  borderRadius: '6px'
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Save PM Record</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                setIsEditing(true);
+                showToast?.('Edit mode activated. You can now enter the inspection details.', 'info');
+              }}
+              style={{
+                backgroundColor: '#2563eb',
+                padding: '9px 22px',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                borderRadius: '6px'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.5 3.5H6A3.5 3.5 0 0 0 2.5 7v10A3.5 3.5 0 0 0 6 20.5h10a3.5 3.5 0 0 0 3.5-3.5v-6.5" />
+                <path d="M16.5 6.5L18.3 4.7C19.1 3.9 20.4 3.9 21.2 4.7C22.0 5.5 22.0 6.8 21.2 7.6L19.4 9.4" />
+                <line x1="16.5" y1="6.5" x2="9.8" y2="13.2" />
+                <line x1="19.4" y1="9.4" x2="12.7" y2="16.1" />
+                <line x1="16.5" y1="6.5" x2="19.4" y2="9.4" />
+                <line x1="9.8" y1="13.2" x2="12.7" y2="16.1" />
+                <path d="M9.8 13.2L7.8 18.1L12.7 16.1" />
+                <polygon points="7.8,18.1 8.8,15.6 10.3,17.1" fill="currentColor" stroke="none" />
+              </svg>
+              <span>Click Edit</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -349,13 +384,14 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   className="pm-sheet-input screen-only-input"
                   value={checkDate}
                   onChange={(e) => setCheckDate(e.target.value)}
+                  disabled={!isEditing}
                   style={{
                     width: '100%',
-                    border: '1.5px solid #cbd5e1',
-                    background: '#ffffff',
+                    border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                    background: isEditing ? '#ffffff' : '#f8fafc',
                     fontWeight: 700,
                     color: '#0f172a',
-                    cursor: 'pointer',
+                    cursor: isEditing ? 'pointer' : 'default',
                     padding: '4px 6px',
                     borderRadius: '4px',
                     fontSize: '12px'
@@ -396,26 +432,17 @@ export default function PMChecklistSheet({ tool, showToast }) {
                   className="pm-sheet-input screen-only-input"
                   value={nextDueDate}
                   onChange={(e) => setNextDueDate(e.target.value)}
+                  disabled={!isEditing}
                   style={{
                     width: '100%',
-                    border: '1.5px solid #cbd5e1',
-                    background: '#ffffff',
-                    fontWeight: 700,
-                    color: '#0f172a',
-                    cursor: 'pointer',
-                    padding: '4px 6px',
-                    borderRadius: '4px',
-                    fontSize: '12px'
-                  }}
-                />
-                    width: '100%',
-                    border: 'none',
-                    background: isEditing ? '#f0f9ff' : 'transparent',
+                    border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                    background: isEditing ? '#ffffff' : '#f8fafc',
                     fontWeight: 700,
                     color: '#0f172a',
                     cursor: isEditing ? 'pointer' : 'default',
-                    padding: '2px 4px',
-                    borderRadius: '3px'
+                    padding: '4px 6px',
+                    borderRadius: '4px',
+                    fontSize: '12px'
                   }}
                 />
               </div>
@@ -521,27 +548,29 @@ export default function PMChecklistSheet({ tool, showToast }) {
                       verticalAlign: 'top'
                     }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'center', fontWeight: 600 }}>
-                        {row.method || 'Visual'}
+                        {row.method || '—'}
                       </div>
                       <textarea
                         className="screen-only-input"
                         rows={2}
                         value={row.method}
                         onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
-                        placeholder="e.g. Visual"
+                        readOnly={!isEditing}
+                        placeholder={isEditing ? "Enter method..." : "—"}
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 8px',
                           borderRadius: '4px',
-                          border: '1.5px solid #cbd5e1',
-                          backgroundColor: '#ffffff',
+                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
                           textAlign: 'center',
                           fontSize: '12px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: 'vertical',
+                          resize: isEditing ? 'vertical' : 'none',
+                          cursor: isEditing ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -562,19 +591,21 @@ export default function PMChecklistSheet({ tool, showToast }) {
                         rows={2}
                         value={row.specification}
                         onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
-                        placeholder="Specification standard..."
+                        readOnly={!isEditing}
+                        placeholder={isEditing ? "Specification standard..." : "—"}
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: '1.5px solid #cbd5e1',
-                          backgroundColor: '#ffffff',
+                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
                           fontSize: '12px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: 'vertical',
+                          resize: isEditing ? 'vertical' : 'none',
+                          cursor: isEditing ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -596,20 +627,22 @@ export default function PMChecklistSheet({ tool, showToast }) {
                         rows={2}
                         value={row.actualCondition}
                         onChange={(e) => handleRowChange(idx, 'actualCondition', e.target.value)}
-                        placeholder="Enter actual condition / observation..."
+                        readOnly={!isEditing}
+                        placeholder={isEditing ? "Enter actual condition / observation..." : "—"}
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: '1.5px solid #93c5fd',
-                          backgroundColor: '#ffffff',
+                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
                           fontWeight: 600,
                           fontSize: '12.5px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: 'vertical',
+                          resize: isEditing ? 'vertical' : 'none',
+                          cursor: isEditing ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -626,19 +659,21 @@ export default function PMChecklistSheet({ tool, showToast }) {
                         rows={2}
                         value={row.actionTaken}
                         onChange={(e) => handleRowChange(idx, 'actionTaken', e.target.value)}
-                        placeholder="Enter action taken..."
+                        readOnly={!isEditing}
+                        placeholder={isEditing ? "Enter action taken..." : "—"}
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: '1.5px solid #cbd5e1',
-                          backgroundColor: '#ffffff',
+                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
                           fontSize: '12px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: 'vertical',
+                          resize: isEditing ? 'vertical' : 'none',
+                          cursor: isEditing ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
