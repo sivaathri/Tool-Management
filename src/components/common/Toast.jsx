@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 
 function ToastItem({ toast, onDismiss }) {
   useEffect(() => {
@@ -16,7 +16,7 @@ function ToastItem({ toast, onDismiss }) {
 
   return (
     <div
-      className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold animate-fade-in transition-all ${
+      className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold animate-fade-in transition-all ${
         isSuccess
           ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
           : isDanger
@@ -33,13 +33,6 @@ function ToastItem({ toast, onDismiss }) {
         {!isSuccess && !isDanger && !isWarning && <Info className="w-4 h-4 text-blue-400 shrink-0" />}
         <span>{toast.message}</span>
       </div>
-      <button
-        onClick={() => onDismiss(toast.id)}
-        className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition"
-        title="Dismiss notification"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
     </div>
   );
 }
