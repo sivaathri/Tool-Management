@@ -1084,8 +1084,8 @@ body {
 
 .tool-summary-meta-grid {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .pm-official-sheet-wrapper {
@@ -1342,8 +1342,8 @@ body {
 
 .tool-summary-meta-grid {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 14px;
   margin-bottom: 18px;
 }
 

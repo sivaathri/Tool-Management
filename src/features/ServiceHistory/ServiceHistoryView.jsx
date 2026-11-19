@@ -581,6 +581,13 @@ export default function ServiceHistoryView({
           </div>
 
           <div className="meta-item">
+            <span className="meta-label">Tool Description</span>
+            <span className="meta-val" id="shToolDescVal" style={{ textAlign: 'left', fontWeight: 600 }}>
+              {selectedTool.description || '—'}
+            </span>
+          </div>
+
+          <div className="meta-item">
             <span className="meta-label">Classification</span>
             <span className="meta-val" id="shClassificationVal" style={{ textAlign: 'left' }}>{selectedTool.classification || 'Non-Critical'}</span>
           </div>
