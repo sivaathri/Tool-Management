@@ -176,10 +176,10 @@ export default function ExportReportModal({ isOpen = true, onClose, onExportExce
                   fontWeight: 700,
                   padding: '2px 8px',
                   borderRadius: '10px',
-                  backgroundColor: '#fecaca',
+                  backgroundColor: '#fee2e2',
                   color: '#991b1b'
                 }}>
-                  Download / Save PDF
+                  Instant Download
                 </span>
               </div>
               <div style={{ fontSize: '12.5px', color: '#334155', lineHeight: 1.45 }}>
@@ -236,11 +236,11 @@ export default function ExportReportModal({ isOpen = true, onClose, onExportExce
             ) : (
               <>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                  <rect x="6" y="14" width="12" height="8"></rect>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Download / Save PDF</span>
+                <span>Download PDF File</span>
               </>
             )}
           </button>

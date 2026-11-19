@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { formatNumber } from '../../utils/formatters';
-import { exportToolsToCSV, exportPMReportToCSV } from '../../services/reportService';
+import { exportToolsToCSV, exportPMReportToCSV, exportPMReportToPDF } from '../../services/reportService';
 import AddProductionModal from './modals/AddProductionModal';
 import PMChecklistSheet from './modals/PMChecklistSheet';
 import ToolReplacementModal from './modals/ToolReplacementModal';
@@ -318,16 +318,24 @@ export default function ServiceHistoryView({
     }
   };
 
-  const handleExportPDF = () => {
-    showToast?.('Generating clear PM report for download/print...', 'info');
-    const oldTitle = document.title;
-    const safeToolNo = (selectedTool?.toolNo || 'TOOL').replace(/\s+/g, '_');
-    const safePartNo = (selectedTool?.applicationPartNo || '').replace(/\s+/g, '_');
-    document.title = `PM_Report_${safeToolNo}${safePartNo ? '_' + safePartNo : ''}_${new Date().toISOString().slice(0, 10)}`;
-    setTimeout(() => {
-      window.print();
-      document.title = oldTitle;
-    }, 250);
+  const handleExportPDF = async () => {
+    if (!selectedTool) return;
+    showToast?.(`Generating PDF download for ${selectedTool.toolNo}...`, 'info');
+    try {
+      await exportPMReportToPDF(selectedTool, displayedLogs);
+      showToast?.(`PM Report for ${selectedTool.toolNo} downloaded successfully!`, 'success');
+    } catch (err) {
+      console.error('Error generating PDF download', err);
+      showToast?.('Direct download encountered an issue, opening print view...', 'warning');
+      const oldTitle = document.title;
+      const safeToolNo = (selectedTool?.toolNo || 'TOOL').replace(/\s+/g, '_');
+      const safePartNo = (selectedTool?.applicationPartNo || '').replace(/\s+/g, '_');
+      document.title = `PM_Report_${safeToolNo}${safePartNo ? '_' + safePartNo : ''}_${new Date().toISOString().slice(0, 10)}`;
+      setTimeout(() => {
+        window.print();
+        document.title = oldTitle;
+      }, 250);
+    }
   };
 
   const pct = selectedTool ? Math.min(100, Math.round((selectedTool.cumulative / (selectedTool.lifetime || 1)) * 100)) : 0;
