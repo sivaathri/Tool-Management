@@ -144,11 +144,8 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
       <div className="page-header" style={{ marginBottom: '20px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>Management Authorization (Approved By)</span>
+            <span>Approved By</span>
           </h1>
-          <p className="page-subtitle" style={{ color: 'var(--slate-500)', fontSize: '13px', marginTop: '4px' }}>
-            Plant Incharge & Tool Room Lead approval queue for production tool release and lifecycle clearance
-          </p>
         </div>
       </div>
 
