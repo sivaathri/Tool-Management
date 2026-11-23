@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { savePMRecord, getPMRecords } from '../../../services/toolService';
 import { authService } from '../../../services/authService';
+import PMExportModal from './PMExportModal';
 
 export default function PMChecklistSheet({ tool, currentUser, showToast }) {
   if (!tool) return null;
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Format today's date (YYYY-MM-DD)
   const getTodayDate = () => new Date().toISOString().slice(0, 10);
@@ -309,9 +312,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                 borderRadius: '50%',
                 backgroundColor: checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved' ? '#16a34a' : '#2563eb'
               }}></span>
-              {checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved'
-                ? `PM Active (Verified & Approved • ${checkDate})`
-                : `PM Active (Awaiting QA / Management Verification)`}
+              PM Active
             </span>
           ) : (
             <span style={{
@@ -327,24 +328,6 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               gap: '6px'
             }}>
               Click Edit to enter inspection data
-            </span>
-          )}
-
-          {displayPreparedBy && (
-            <span style={{
-              fontSize: '11.5px',
-              padding: '4px 12px',
-              backgroundColor: '#f8fafc',
-              color: '#0f172a',
-              borderRadius: '12px',
-              fontWeight: 700,
-              border: '1px solid #cbd5e1',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <span style={{ color: '#64748b', fontWeight: 600 }}>Prepared by:</span>
-              <strong style={{ color: '#1e40af' }}>{displayPreparedBy}</strong>
             </span>
           )}
 
@@ -424,56 +407,88 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                 <span>Save PM Record</span>
               </button>
             </>
-          ) : isHistorical ? (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setSelectedRevisionIndex(-1)}
-              style={{
-                padding: '8px 18px',
-                fontSize: '13px',
-                fontWeight: 700,
-                borderRadius: '6px',
-                backgroundColor: '#ffffff',
-                border: '1.5px solid #d97706',
-                color: '#92400e',
-                cursor: 'pointer'
-              }}
-            >
-              ← Back to Active PM
-            </button>
           ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setIsEditing(true);
-                showToast?.('Edit mode activated. You can now enter the inspection details.', 'info');
-              }}
-              style={{
-                backgroundColor: '#2563eb',
-                padding: '9px 22px',
-                fontSize: '13.5px',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '7px',
-                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
-                borderRadius: '6px'
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12.5 3.5H6A3.5 3.5 0 0 0 2.5 7v10A3.5 3.5 0 0 0 6 20.5h10a3.5 3.5 0 0 0 3.5-3.5v-6.5" />
-                <path d="M16.5 6.5L18.3 4.7C19.1 3.9 20.4 3.9 21.2 4.7C22.0 5.5 22.0 6.8 21.2 7.6L19.4 9.4" />
-                <line x1="16.5" y1="6.5" x2="9.8" y2="13.2" />
-                <line x1="19.4" y1="9.4" x2="12.7" y2="16.1" />
-                <line x1="16.5" y1="6.5" x2="19.4" y2="9.4" />
-                <line x1="9.8" y1="13.2" x2="12.7" y2="16.1" />
-                <path d="M9.8 13.2L7.8 18.1L12.7 16.1" />
-                <polygon points="7.8,18.1 8.8,15.6 10.3,17.1" fill="currentColor" stroke="none" />
-              </svg>
-              <span>Click Edit</span>
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsExportModalOpen(true)}
+                style={{
+                  backgroundColor: '#ffffff',
+                  color: '#334155',
+                  border: '1.5px solid #cbd5e1',
+                  padding: '9px 18px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                }}
+                title="Export Preventive Maintenance Checklist (Excel or PDF)"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export</span>
+              </button>
+
+              {isHistorical ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSelectedRevisionIndex(-1)}
+                  style={{
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    backgroundColor: '#ffffff',
+                    border: '1.5px solid #d97706',
+                    color: '#92400e',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ← Back to Active PM
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setIsEditing(true);
+                    showToast?.('Edit mode activated. You can now enter the inspection details.', 'info');
+                  }}
+                  style={{
+                    backgroundColor: '#2563eb',
+                    padding: '9px 22px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '7px',
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                    borderRadius: '6px'
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12.5 3.5H6A3.5 3.5 0 0 0 2.5 7v10A3.5 3.5 0 0 0 6 20.5h10a3.5 3.5 0 0 0 3.5-3.5v-6.5" />
+                    <path d="M16.5 6.5L18.3 4.7C19.1 3.9 20.4 3.9 21.2 4.7C22.0 5.5 22.0 6.8 21.2 7.6L19.4 9.4" />
+                    <line x1="16.5" y1="6.5" x2="9.8" y2="13.2" />
+                    <line x1="19.4" y1="9.4" x2="12.7" y2="16.1" />
+                    <line x1="16.5" y1="6.5" x2="19.4" y2="9.4" />
+                    <line x1="9.8" y1="13.2" x2="12.7" y2="16.1" />
+                    <path d="M9.8 13.2L7.8 18.1L12.7 16.1" />
+                    <polygon points="7.8,18.1 8.8,15.6 10.3,17.1" fill="currentColor" stroke="none" />
+                  </svg>
+                  <span>Click Edit</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1110,6 +1125,32 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
         </div>
 
       </div>
+
+      {/* Export Modal for ONLY PREVENTIVE MAINTENANCE CHECK LIST */}
+      {isExportModalOpen && (
+        <PMExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          tool={tool}
+          currentPMRecord={{
+            id: activeRecordId,
+            toolId: tool.id,
+            toolNo: tool.toolNo,
+            refNo,
+            checkDate: displayCheckDate,
+            nextDueDate,
+            toolDescription,
+            application,
+            classification: tool.classification,
+            items: displayRows,
+            preparedBy: displayPreparedBy,
+            checkedBy: displayCheckedBy,
+            approvedBy: displayApprovedBy,
+            history: historyList
+          }}
+          showToast={showToast}
+        />
+      )}
 
     </div>
   );
