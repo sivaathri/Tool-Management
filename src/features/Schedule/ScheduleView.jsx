@@ -20,6 +20,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
   const [fiscalYear, setFiscalYear] = useState(() => getCurrentFiscalYear());
   const [yearlyPlans, setYearlyPlans] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [selectedPartNo, setSelectedPartNo] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [classificationFilter, setClassificationFilter] = useState('');
@@ -52,11 +53,21 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
     return getDueYearlyPMSchedules(fiscalYear);
   }, [yearlyPlans, fiscalYear]);
 
-  // Filtered yearly plans
+  // Check if user has explicitly searched or selected an Application Part No
+  const hasActiveSearchOrSelect = Boolean(selectedPartNo || searchTerm.trim());
+
+  // Filtered yearly plans: "without search no need to show the data"
   const filteredPlans = useMemo(() => {
+    if (!hasActiveSearchOrSelect) {
+      return [];
+    }
+
     return yearlyPlans.filter(p => {
+      if (selectedPartNo) {
+        return (p.applicationPartNo || '').toLowerCase().trim() === selectedPartNo.toLowerCase().trim();
+      }
       const q = searchTerm.toLowerCase().trim();
-      const matchSearch = !q ||
+      const matchSearch =
         (p.applicationPartNo && p.applicationPartNo.toLowerCase().includes(q)) ||
         (p.productName && p.productName.toLowerCase().includes(q)) ||
         (p.toolNos && p.toolNos.some(no => no.toLowerCase().includes(q)));
@@ -64,7 +75,18 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
       const matchClass = !classificationFilter || p.classification === classificationFilter;
       return matchSearch && matchClass;
     });
-  }, [yearlyPlans, searchTerm, classificationFilter]);
+  }, [yearlyPlans, selectedPartNo, searchTerm, classificationFilter, hasActiveSearchOrSelect]);
+
+  // The active selected plan (if single part is selected or filtered)
+  const activeSelectedPlan = useMemo(() => {
+    if (selectedPartNo) {
+      return yearlyPlans.find(p => (p.applicationPartNo || '').toLowerCase().trim() === selectedPartNo.toLowerCase().trim());
+    }
+    if (filteredPlans.length === 1) {
+      return filteredPlans[0];
+    }
+    return null;
+  }, [yearlyPlans, selectedPartNo, filteredPlans]);
 
   // KPI Calculations
   const metrics = useMemo(() => {
@@ -397,16 +419,68 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
           </button>
         </div>
 
-        {/* Search & Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Search Part No, Tool No, Product..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '260px', height: '36px', fontSize: '12.5px' }}
-          />
+        {/* Search & Filter - 1st Search, Select App Part No */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Part Dropdown Selector */}
+          <select
+            className="form-select"
+            value={selectedPartNo}
+            onChange={(e) => {
+              setSelectedPartNo(e.target.value);
+              setSearchTerm('');
+            }}
+            style={{
+              height: '36px',
+              fontSize: '12.5px',
+              fontWeight: selectedPartNo ? 700 : 500,
+              minWidth: '230px',
+              borderColor: selectedPartNo ? '#3b82f6' : '#cbd5e1',
+              backgroundColor: selectedPartNo ? '#eff6ff' : '#ffffff'
+            }}
+          >
+            <option value="">— 🔍 1st: Select Application Part No —</option>
+            {yearlyPlans.map(p => (
+              <option key={p.applicationPartNo} value={p.applicationPartNo}>
+                Part #{p.applicationPartNo} - {p.productName || 'Tool'} ({(p.toolNos || []).length} Tools)
+              </option>
+            ))}
+          </select>
+
+          {/* Text Search Input */}
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Or Search Part No, Tool No..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setSelectedPartNo('');
+              }}
+              style={{ width: '220px', height: '36px', fontSize: '12.5px', paddingRight: searchTerm ? '28px' : '10px' }}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '6px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '14px',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '2px 6px'
+                }}
+                title="Clear Search"
+              >
+                &times;
+              </button>
+            )}
+          </div>
 
           <select
             className="form-select"
@@ -418,8 +492,179 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
             <option value="Critical">Critical</option>
             <option value="Non-Critical">Non-Critical</option>
           </select>
+
+          {hasActiveSearchOrSelect && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setSelectedPartNo('');
+                setSearchTerm('');
+              }}
+              style={{ height: '36px', fontSize: '12px', padding: '0 12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              title="Reset Search and Selection"
+            >
+              <span>✕ Reset</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* 2. Selected Application Part Planning Bar (When user searched & selected) */}
+      {viewMode === 'matrix' && activeSelectedPlan && (
+        <div style={{
+          backgroundColor: '#ffffff',
+          border: '1.5px solid #3b82f6',
+          borderRadius: '10px',
+          padding: '14px 20px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 2px 10px rgba(59, 130, 246, 0.12)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <div style={{
+              backgroundColor: '#eff6ff',
+              border: '1.5px solid #3b82f6',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontFamily: 'var(--font-mono, monospace)',
+              fontWeight: 900,
+              fontSize: '16px',
+              color: '#1d4ed8',
+              letterSpacing: '0.5px'
+            }}>
+              Part #{activeSelectedPlan.applicationPartNo}
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#0f172a' }}>
+                  {activeSelectedPlan.productName || 'Manufacturing Line'}
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  backgroundColor: activeSelectedPlan.classification === 'Critical' ? '#fee2e2' : '#f1f5f9',
+                  color: activeSelectedPlan.classification === 'Critical' ? '#dc2626' : '#475569'
+                }}>
+                  {activeSelectedPlan.classification || 'Non-Critical'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
+                  Dependent Tool Numbers ({(activeSelectedPlan.toolNos || []).length}):
+                </span>
+                {(activeSelectedPlan.toolNos || []).map(tNo => (
+                  <span
+                    key={tNo}
+                    style={{
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      backgroundColor: '#e0f2fe',
+                      color: '#0369a1',
+                      padding: '1px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid #bae6fd'
+                    }}
+                  >
+                    {tNo}
+                  </span>
+                ))}
+                <span style={{
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  color: '#059669',
+                  backgroundColor: '#ecfdf5',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  border: '1px solid #a7f3d0'
+                }}>
+                  ★ {(activeSelectedPlan.plannedWeeks || []).length} Planned Week(s) in FY {fiscalYear}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => handleOpenPlanModal(activeSelectedPlan)}
+              style={{
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '13px',
+                padding: '9px 18px',
+                borderRadius: '6px',
+                border: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
+              }}
+              title="Open Month & Week Multi-Select Modal"
+            >
+              <span>🛠 Select Month & Week (Plan)</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                saveYearlyPMPlan(fiscalYear, activeSelectedPlan);
+                loadData();
+                onRefresh?.();
+                showToast?.(`Yearly PM Schedule plan saved for Part #${activeSelectedPlan.applicationPartNo} (${(activeSelectedPlan.plannedWeeks || []).length} weeks)`, 'success');
+              }}
+              style={{
+                backgroundColor: '#059669',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '13px',
+                padding: '9px 18px',
+                borderRadius: '6px',
+                border: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+              }}
+              title="Save PM Schedule to Database"
+            >
+              <span>💾 Save Plan</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setSelectedPartNo('');
+                setSearchTerm('');
+              }}
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                padding: '9px 12px',
+                borderRadius: '6px'
+              }}
+              title="Clear selection to search another part"
+            >
+              <span>✕ Clear</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* VIEW MODE 1: THE YEARLY SCHEDULE MATRIX (48-WEEK INDUSTRIAL GRID) */}
       {viewMode === 'matrix' && (
@@ -444,7 +689,13 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
               </span>
             </div>
             <div>
-              <span>Showing <strong>{filteredPlans.length}</strong> Application Part Lines</span>
+              {hasActiveSearchOrSelect ? (
+                <span>Showing <strong>{filteredPlans.length}</strong> Application Part Line{filteredPlans.length === 1 ? '' : 's'}</span>
+              ) : (
+                <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '12px' }}>
+                  🔍 Search or select an Application Part No to load schedule
+                </span>
+              )}
             </div>
           </div>
 
@@ -578,14 +829,53 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
               </thead>
 
               <tbody>
-                {filteredPlans.length === 0 ? (
+                {!hasActiveSearchOrSelect ? (
                   <tr>
-                    <td colSpan={52} style={{ textAlign: 'center', padding: '45px 20px', color: '#64748b' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>
-                        No Application Part Numbers Found
+                    <td colSpan={52} style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#ffffff' }}>
+                      <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '50%',
+                          backgroundColor: '#eff6ff',
+                          color: '#2563eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '30px',
+                          marginBottom: '16px',
+                          border: '2px solid #bfdbfe',
+                          boxShadow: '0 4px 12px rgba(37, 99, 235, 0.1)'
+                        }}>
+                          🔍
+                        </div>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                          1st: Search & Select Application Part No to Plan Schedule
+                        </div>
+                        <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0, lineHeight: 1.6 }}>
+                          Without search, no schedule data is displayed. Please select or search an Application Part Number in the search bar above to view its dependent tool numbers, plan inspection weeks, and save.
+                        </p>
                       </div>
-                      <div style={{ fontSize: '13px', marginTop: '6px' }}>
-                        Register tools in Master List with an Application Part No to auto-generate the yearly PM schedule.
+                    </td>
+                  </tr>
+                ) : filteredPlans.length === 0 ? (
+                  <tr>
+                    <td colSpan={52} style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#334155' }}>
+                        No Application Part Numbers match "{searchTerm}"
+                      </div>
+                      <div style={{ marginTop: '12px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedPartNo('');
+                          }}
+                          style={{ fontSize: '12.5px', padding: '6px 16px' }}
+                        >
+                          Clear Search
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -730,6 +1020,29 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                             </button>
                             <button
                               type="button"
+                              className="btn"
+                              onClick={() => {
+                                saveYearlyPMPlan(fiscalYear, item);
+                                loadData();
+                                onRefresh?.();
+                                showToast?.(`Yearly PM Schedule saved for Part #${item.applicationPartNo}`, 'success');
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                backgroundColor: '#059669',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                              title="Save PM Schedule to Database"
+                            >
+                              💾 Save
+                            </button>
+                            <button
+                              type="button"
                               className="btn btn-primary"
                               onClick={() => onNavigateToPM?.(firstTool)}
                               style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 700, backgroundColor: '#2563eb' }}
@@ -748,34 +1061,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
             </table>
           </div>
 
-          {/* Footer Legend */}
-          <div style={{
-            padding: '10px 18px',
-            backgroundColor: '#f8fafc',
-            borderTop: '1px solid #e2e8f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '12px',
-            color: '#475569',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>*</span>
-                <span><strong>* Planned Inspection Week</strong> (Click cell to toggle)</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '12px', height: '12px', backgroundColor: '#eff6ff', border: '1.5px solid #3b82f6', borderRadius: '2px' }}></span>
-                <span><strong>Active Week Column</strong> (Today: {currentSlot.label})</span>
-              </div>
-            </div>
-
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#1e3a5f' }}>
-              INEL II PUDUCHERRY &bull; ANNUAL PREVENTIVE MAINTENANCE SCHEDULE
-            </div>
-          </div>
         </div>
       )}
 
