@@ -769,31 +769,15 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                     zIndex: 20,
                     backgroundColor: '#132847',
                     color: '#fde047',
-                    padding: '8px 12px',
-                    fontWeight: 900,
-                    fontSize: '11.5px',
-                    letterSpacing: '0.5px',
-                    borderRight: '1px solid #23416d',
-                    minWidth: '130px',
-                    textAlign: 'left'
-                  }}>
-                    APPLICATION PART NO
-                  </th>
-                  <th style={{
-                    position: 'sticky',
-                    left: '130px',
-                    zIndex: 20,
-                    backgroundColor: '#132847',
-                    color: '#fde047',
-                    padding: '8px 12px',
+                    padding: '8px 14px',
                     fontWeight: 900,
                     fontSize: '11.5px',
                     letterSpacing: '0.5px',
                     borderRight: '2px solid #3b82f6',
-                    minWidth: '170px',
+                    minWidth: '150px',
                     textAlign: 'left'
                   }}>
-                    APPLICATION / PRODUCT
+                    APPLICATION PART NO
                   </th>
 
                   {/* 12 Month Headers (4 columns per month) */}
@@ -815,23 +799,11 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                       {m.label}
                     </th>
                   ))}
-
-                  <th style={{
-                    backgroundColor: '#132847',
-                    color: '#fde047',
-                    padding: '8px 12px',
-                    fontWeight: 900,
-                    fontSize: '11px',
-                    minWidth: '110px'
-                  }}>
-                    ACTIONS
-                  </th>
                 </tr>
 
                 {/* Row 2: WEEK (1, 2, 3, 4 under each month) */}
                 <tr style={{ backgroundColor: '#0f2038', color: '#94a3b8' }}>
-                  <th style={{ position: 'sticky', left: 0, zIndex: 19, backgroundColor: '#0f2038', borderRight: '1px solid #1e3a5f', padding: '4px' }}></th>
-                  <th style={{ position: 'sticky', left: '130px', zIndex: 19, backgroundColor: '#0f2038', borderRight: '2px solid #3b82f6', padding: '4px' }}></th>
+                  <th style={{ position: 'sticky', left: 0, zIndex: 19, backgroundColor: '#0f2038', borderRight: '2px solid #3b82f6', padding: '4px' }}></th>
 
                   {months.map(m => (
                     <React.Fragment key={`week-group-${m.key}`}>
@@ -859,15 +831,13 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                       })}
                     </React.Fragment>
                   ))}
-
-                  <th style={{ backgroundColor: '#0f2038', padding: '4px' }}></th>
                 </tr>
               </thead>
 
               <tbody>
                 {!hasActiveSearchOrSelect ? (
                   <tr>
-                    <td colSpan={52} style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#ffffff' }}>
+                    <td colSpan={49} style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#ffffff' }}>
                       <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{
                           width: '64px',
@@ -896,7 +866,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                   </tr>
                 ) : filteredPlans.length === 0 ? (
                   <tr>
-                    <td colSpan={52} style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+                    <td colSpan={49} style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
                       <div style={{ fontSize: '16px', fontWeight: 700, color: '#334155' }}>
                         No Application Part Numbers match "{searchTerm}"
                       </div>
@@ -918,10 +888,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                 ) : (
                   filteredPlans.map((item, pIdx) => {
                     const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    const firstTool = tools.find(t =>
-                      (item.toolNos || []).some(no => no && t.toolNo && t.toolNo.toLowerCase().trim() === no.toLowerCase().trim()) ||
-                      (t.applicationPartNo && t.applicationPartNo.toLowerCase().trim() === (item.applicationPartNo || '').toLowerCase().trim())
-                    ) || { id: item.toolNos?.[0] || item.applicationPartNo, toolNo: item.toolNos?.[0] || 'Tool' };
 
                     return (
                       <tr key={item.id || item.applicationPartNo || pIdx} style={{ backgroundColor: rowBg, borderBottom: '1px solid #e2e8f0' }}>
@@ -932,35 +898,14 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                           left: 0,
                           zIndex: 10,
                           backgroundColor: rowBg,
-                          padding: '8px 12px',
+                          padding: '8px 14px',
                           fontWeight: 800,
                           fontFamily: 'var(--font-mono, monospace)',
                           color: '#0f172a',
-                          borderRight: '1px solid #cbd5e1',
+                          borderRight: '2px solid #3b82f6',
                           textAlign: 'left'
                         }}>
                           {item.applicationPartNo}
-                        </td>
-
-                        {/* Sticky Left: Product Name */}
-                        <td style={{
-                          position: 'sticky',
-                          left: '130px',
-                          zIndex: 10,
-                          backgroundColor: rowBg,
-                          padding: '8px 12px',
-                          fontWeight: 700,
-                          color: '#334155',
-                          borderRight: '2px solid #3b82f6',
-                          textAlign: 'left',
-                          fontSize: '11px'
-                        }}>
-                          <div>{item.productName || '—'}</div>
-                          {item.classification && (
-                            <div style={{ fontSize: '10px', color: item.classification === 'Critical' ? '#dc2626' : '#64748b', marginTop: '2px' }}>
-                              {item.classification}
-                            </div>
-                          )}
                         </td>
 
                         {/* 48 Week Slots Grid */}
@@ -1010,30 +955,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                             })}
                           </React.Fragment>
                         ))}
-
-                        {/* Actions */}
-                        <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => handleOpenPlanModal(item)}
-                              style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, backgroundColor: '#ffffff' }}
-                              title="Plan / Edit scheduled weeks for this part"
-                            >
-                              ✏ Plan
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-primary"
-                              onClick={() => onNavigateToPM?.(firstTool)}
-                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 700, backgroundColor: '#2563eb' }}
-                              title="Open Preventive Maintenance Checklist"
-                            >
-                              PM
-                            </button>
-                          </div>
-                        </td>
 
                       </tr>
                     );
