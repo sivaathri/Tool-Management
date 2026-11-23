@@ -332,17 +332,19 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {dueSchedules.map((d, idx) => {
-              const firstTool = tools.find(t =>
+              const pendingToolNo = d.pendingToolNos?.[0] || d.toolNos?.[0];
+              const targetTool = tools.find(t =>
+                (pendingToolNo && t.toolNo && t.toolNo.toLowerCase().trim() === pendingToolNo.toLowerCase().trim()) ||
                 (d.toolNos || []).some(no => no && t.toolNo && t.toolNo.toLowerCase().trim() === no.toLowerCase().trim()) ||
                 (t.applicationPartNo && t.applicationPartNo.toLowerCase().trim() === (d.applicationPartNo || '').toLowerCase().trim())
-              ) || { id: d.toolNos?.[0] || d.applicationPartNo, toolNo: d.toolNos?.[0] || 'Tool' };
+              ) || { id: pendingToolNo || d.applicationPartNo, toolNo: pendingToolNo || 'Tool' };
 
               return (
                 <button
                   key={idx}
                   type="button"
                   className="btn"
-                  onClick={() => onNavigateToPM?.(firstTool)}
+                  onClick={() => onNavigateToPM?.(targetTool)}
                   style={{
                     backgroundColor: '#2563eb',
                     color: '#ffffff',
@@ -353,12 +355,17 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                     border: 'none',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     cursor: 'pointer'
                   }}
-                  title={`Start PM inspection for Part #${d.applicationPartNo}`}
+                  title={`Start PM inspection for Part #${d.applicationPartNo} (${targetTool.toolNo})`}
                 >
                   <span>Start PM: Part #{d.applicationPartNo}</span>
+                  {pendingToolNo && (
+                    <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '1px 5px', borderRadius: '3px', fontSize: '11px', fontFamily: 'monospace' }}>
+                      {pendingToolNo}
+                    </span>
+                  )}
                   <span>&rarr;</span>
                 </button>
               );

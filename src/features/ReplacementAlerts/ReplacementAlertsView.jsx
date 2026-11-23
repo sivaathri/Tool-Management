@@ -324,16 +324,23 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {dueYearlyPlans.map((plan, idx) => {
+              // Target the first pending tool that still needs PM inspection
+              const targetPendingToolNo = plan.pendingToolNos?.[0] || plan.toolNos?.[0];
               const matchedTool = tools.find(t => 
+                (targetPendingToolNo && t.toolNo && t.toolNo.toLowerCase().trim() === targetPendingToolNo.toLowerCase().trim()) ||
                 (t.applicationPartNo && t.applicationPartNo.toLowerCase().trim() === (plan.applicationPartNo || '').toLowerCase().trim()) ||
                 (plan.toolNos && plan.toolNos.some(tn => tn.toLowerCase().trim() === (t.toolNo || '').toLowerCase().trim()))
               ) || {
                 id: `tool-${plan.applicationPartNo}`,
-                toolNo: plan.toolNos?.[0] || 'INE T 0000',
+                toolNo: targetPendingToolNo || 'INE T 0000',
                 applicationPartNo: plan.applicationPartNo,
                 productName: plan.productName,
-                classification: 'Non-Critical'
+                classification: plan.classification || 'Non-Critical'
               };
+
+              const totalTools = plan.totalToolsCount ?? (plan.toolNos?.length || 0);
+              const completedTools = plan.completedCount ?? 0;
+              const pendingTools = plan.pendingCount ?? (plan.pendingToolNos?.length || totalTools);
 
               return (
                 <div
@@ -378,29 +385,49 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
                       }}>
                         Target: {plan.currentSlot?.monthLabel || 'Current Month'} - Week {plan.currentSlot?.weekNumber || 1}
                       </span>
+                      <span style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: completedTools > 0 ? '#15803d' : '#b45309',
+                        backgroundColor: completedTools > 0 ? '#dcfce7' : '#fef3c7',
+                        border: completedTools > 0 ? '1px solid #86efac' : '1px solid #fde68a',
+                        padding: '2px 8px',
+                        borderRadius: '12px'
+                      }}>
+                        Tools Status: {completedTools} / {totalTools} Completed ({pendingTools} Pending)
+                      </span>
                     </div>
 
                     <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
-                        Dependent Tools ({plan.toolNos?.length || 0}):
+                        Dependent Tools ({totalTools}):
                       </span>
-                      {(plan.toolNos || []).map(tNo => (
-                        <span
-                          key={tNo}
-                          style={{
-                            fontFamily: 'var(--font-mono, monospace)',
-                            fontSize: '11.5px',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            backgroundColor: '#f1f5f9',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
-                            color: '#1e293b'
-                          }}
-                        >
-                          {tNo}
-                        </span>
-                      ))}
+                      {(plan.toolNos || []).map(tNo => {
+                        const isDone = Array.isArray(plan.completedToolNos) && plan.completedToolNos.includes(tNo);
+                        return (
+                          <span
+                            key={tNo}
+                            style={{
+                              fontFamily: 'var(--font-mono, monospace)',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              backgroundColor: isDone ? '#f0fdf4' : '#fffbeb',
+                              border: isDone ? '1px solid #86efac' : '1px solid #fde68a',
+                              borderRadius: '4px',
+                              color: isDone ? '#166534' : '#92400e',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title={isDone ? `PM inspection completed for ${tNo}` : `PM inspection pending for ${tNo}`}
+                          >
+                            <span>{isDone ? '✓' : '⏳'}</span>
+                            <span>{tNo}</span>
+                            {!isDone && <span style={{ fontSize: '10px', opacity: 0.85 }}>(Pending)</span>}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -424,9 +451,20 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
                         boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
                         whiteSpace: 'nowrap'
                       }}
-                      title="Open Preventive Maintenance Checklist for this tool"
+                      title={`Open Preventive Maintenance Checklist for ${matchedTool.toolNo || 'tool'}`}
                     >
                       <span>🛠 Start PM Checklist</span>
+                      {targetPendingToolNo && (
+                        <span style={{
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontFamily: 'var(--font-mono, monospace)'
+                        }}>
+                          {targetPendingToolNo}
+                        </span>
+                      )}
                       <span>&rarr;</span>
                     </button>
                   </div>

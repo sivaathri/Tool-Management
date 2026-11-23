@@ -822,6 +822,75 @@ export function getDueYearlyPMSchedules(fiscalYear = '2026-2027') {
     const currentMonthIso = now.toISOString().slice(0, 7); // e.g. "2026-11"
     const currentMonthNumStr = String(currentMonth0 + 1).padStart(2, '0'); // e.g. "11"
 
+    // Helper: checks whether a PM record is valid, completed/updated in the current month, and not rejected
+    const isPMRecordCompletedInCurrentMonth = (pm) => {
+      if (!pm) return false;
+
+      // If rejected by Management or Revision Requested by QA, inspection rework is pending
+      const isRejected = pm.approvedBy?.status === 'Rejected' || pm.checkedBy?.status === 'Revision Requested';
+      if (isRejected) return false;
+
+      // Check if inspection has been prepared/inspected/updated or approved
+      const hasContentOrPrepared = Boolean(
+        pm.preparedBy ||
+        pm.inspectedBy ||
+        pm.checkedBy?.status === 'Verified' ||
+        pm.approvedBy?.status === 'Approved' ||
+        (Array.isArray(pm.items) && pm.items.length > 0)
+      );
+      if (!hasContentOrPrepared) return false;
+
+      // Check date of inspection
+      const pmDateStr = pm.checkDate || pm.lastModifiedAt || pm.updatedAt || pm.date || '';
+      let isThisMonth = false;
+
+      if (pmDateStr) {
+        if (pmDateStr.includes(currentMonthIso)) {
+          isThisMonth = true;
+        } else {
+          // Parse formats like MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD
+          const parts = pmDateStr.split(/[\/\-]/);
+          if (parts.length === 3) {
+            const p0 = parseInt(parts[0], 10);
+            const p1 = parseInt(parts[1], 10);
+            const yearPart = parts[2];
+            // MM/DD/YYYY check
+            if (p0 === (currentMonth0 + 1) && (yearPart.includes(String(currentYear)) || yearPart.length === 4)) {
+              isThisMonth = true;
+            }
+            // DD/MM/YYYY check
+            else if (p1 === (currentMonth0 + 1) && (yearPart.includes(String(currentYear)) || yearPart.length === 4)) {
+              isThisMonth = true;
+            }
+            // YYYY-MM-DD check
+            else if (parts[0] === String(currentYear) && p1 === (currentMonth0 + 1)) {
+              isThisMonth = true;
+            }
+          }
+
+          if (!isThisMonth) {
+            const parsed = new Date(pmDateStr);
+            if (!isNaN(parsed.getTime())) {
+              isThisMonth = parsed.getFullYear() === currentYear && parsed.getMonth() === currentMonth0;
+            }
+          }
+        }
+      }
+
+      // Also check revision history in case an inspection was saved this month
+      if (!isThisMonth && Array.isArray(pm.history)) {
+        isThisMonth = pm.history.some(h => {
+          const hDate = h.checkDate || h.archivedAt || h.savedAt || '';
+          if (!hDate) return false;
+          if (hDate.includes(currentMonthIso)) return true;
+          const d = new Date(hDate);
+          return !isNaN(d.getTime()) && d.getFullYear() === currentYear && d.getMonth() === currentMonth0;
+        });
+      }
+
+      return isThisMonth;
+    };
+
     plans.forEach(plan => {
       const weeks = Array.isArray(plan.plannedWeeks) ? plan.plannedWeeks : [];
       // Check if current week slot is planned
@@ -830,76 +899,52 @@ export function getDueYearlyPMSchedules(fiscalYear = '2026-2027') {
       const isDueThisMonth = weeks.some(w => w.startsWith(`${currentSlot.monthKey}_`));
 
       if (isDueThisWeek || isDueThisMonth) {
-        // Check if inspection was already conducted/updated/saved for tools of this part in this month
-        const hasCompletedPMInMonth = (plan.toolNos || []).some(tNo => {
-          const cleanNo = tNo.toLowerCase().trim();
-          const cleanPart = (plan.applicationPartNo || '').toLowerCase().trim();
+        const allTools = Array.isArray(plan.toolNos) ? plan.toolNos.filter(t => t && String(t).trim()) : [];
+        if (allTools.length === 0) return;
 
-          return pmRecords.some(pm => {
+        const completedToolNos = [];
+        const pendingToolNos = [];
+
+        allTools.forEach(tNo => {
+          const cleanToolNo = String(tNo).toLowerCase().trim();
+          
+          // Check if this specific tool has a completed PM record for this month
+          const isToolDone = pmRecords.some(pm => {
             const pmToolNo = (pm.toolNo || '').toLowerCase().trim();
-            const pmPartNo = (pm.applicationPartNo || '').toLowerCase().trim();
-            const pmApp = (pm.application || '').toLowerCase().trim();
+            if (pmToolNo !== cleanToolNo) return false;
 
-            const matchTool = pmToolNo === cleanNo || 
-              (cleanPart && pmPartNo === cleanPart) ||
-              pmApp.includes(cleanNo) ||
-              (cleanPart && pmApp.includes(cleanPart));
-
-            if (!matchTool) return false;
-
-            // If the PM is currently marked Rejected by Management or Revision Requested, rework is pending
-            const isRejected = pm.approvedBy?.status === 'Rejected' || pm.checkedBy?.status === 'Revision Requested';
-            if (isRejected) return false;
-
-            // Check if inspection has been conducted/prepared/updated or verified
-            const isCheckedOrUpdated = Boolean(
-              pm.preparedBy || 
-              pm.inspectedBy || 
-              pm.checkedBy?.status === 'Verified' || 
-              pm.approvedBy?.status === 'Approved' ||
-              (Array.isArray(pm.items) && pm.items.length > 0)
-            );
-
-            // Safe month date comparison supporting ISO (2026-11-23), Locale (11/23/2026), etc.
-            const pmDateStr = pm.checkDate || pm.lastModifiedAt || '';
-            let isThisMonth = false;
-
-            if (pmDateStr) {
-              if (pmDateStr.includes(currentMonthIso)) {
-                isThisMonth = true;
-              } else if (pmDateStr.startsWith(`${currentMonthNumStr}/`) || pmDateStr.startsWith(`${currentMonth0 + 1}/`)) {
-                isThisMonth = true;
-              } else {
-                const parsed = new Date(pmDateStr);
-                if (!isNaN(parsed.getTime())) {
-                  isThisMonth = parsed.getFullYear() === currentYear && parsed.getMonth() === currentMonth0;
-                }
-              }
-            }
-
-            // Also check if latest revision history has an inspection from this month
-            if (!isThisMonth && Array.isArray(pm.history)) {
-              isThisMonth = pm.history.some(h => {
-                const hDate = h.checkDate || h.archivedAt || '';
-                return hDate.includes(currentMonthIso) || 
-                  hDate.startsWith(`${currentMonthNumStr}/`) ||
-                  (!isNaN(new Date(hDate).getTime()) && new Date(hDate).getMonth() === currentMonth0 && new Date(hDate).getFullYear() === currentYear);
-              });
-            }
-
-            return isCheckedOrUpdated && isThisMonth;
+            return isPMRecordCompletedInCurrentMonth(pm);
           });
+
+          if (isToolDone) {
+            completedToolNos.push(tNo);
+          } else {
+            pendingToolNos.push(tNo);
+          }
         });
 
-        if (!hasCompletedPMInMonth) {
+        // User requirement:
+        // "all the tool no updated the PM of all Tool then only clear the notofication"
+        // An application part no can have between 1 and 50+ tools.
+        // The notification will ONLY clear when ALL dependent tools have completed PM!
+        const allToolsCompleted = allTools.length > 0 && pendingToolNos.length === 0;
+
+        if (!allToolsCompleted) {
           dueList.push({
             plan,
             applicationPartNo: plan.applicationPartNo,
             productName: plan.productName,
-            toolNos: plan.toolNos || [],
+            classification: plan.classification,
+            toolNos: allTools,
+            completedToolNos,
+            pendingToolNos,
+            totalToolsCount: allTools.length,
+            completedCount: completedToolNos.length,
+            pendingCount: pendingToolNos.length,
             isDueThisWeek,
             currentSlotKey: currentSlot.slotKey,
-            currentSlotLabel: currentSlot.label
+            currentSlotLabel: currentSlot.label,
+            currentSlot
           });
         }
       }
