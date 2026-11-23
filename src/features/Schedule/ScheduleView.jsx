@@ -669,36 +669,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
       {/* VIEW MODE 1: THE YEARLY SCHEDULE MATRIX (48-WEEK INDUSTRIAL GRID) */}
       {viewMode === 'matrix' && (
         <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          
-          {/* Table Header Note */}
-          <div style={{
-            padding: '10px 16px',
-            backgroundColor: '#f8fafc',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '12px',
-            color: '#475569'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span><strong>Instructions:</strong> Click any week cell in the grid to instantly toggle planned inspection (<strong>*</strong>).</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ display: 'inline-block', width: '12px', height: '12px', backgroundColor: '#eff6ff', border: '1.5px solid #3b82f6', borderRadius: '2px' }}></span>
-                <span>Current Active Week ({currentSlot.label})</span>
-              </span>
-            </div>
-            <div>
-              {hasActiveSearchOrSelect ? (
-                <span>Showing <strong>{filteredPlans.length}</strong> Application Part Line{filteredPlans.length === 1 ? '' : 's'}</span>
-              ) : (
-                <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '12px' }}>
-                  🔍 Search or select an Application Part No to load schedule
-                </span>
-              )}
-            </div>
-          </div>
-
           <div className="table-responsive" style={{ margin: 0, maxHeight: '68vh', overflowX: 'auto', overflowY: 'auto' }}>
             <table style={{
               width: '100%',
