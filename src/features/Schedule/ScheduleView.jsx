@@ -22,6 +22,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
   const [schedules, setSchedules] = useState([]);
   const [selectedPartNo, setSelectedPartNo] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [classificationFilter, setClassificationFilter] = useState('');
 
@@ -87,6 +88,17 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
     }
     return null;
   }, [yearlyPlans, selectedPartNo, filteredPlans]);
+
+  // Suggestions for the search autocomplete dropdown
+  const partSuggestions = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return yearlyPlans;
+    return yearlyPlans.filter(p =>
+      (p.applicationPartNo && p.applicationPartNo.toLowerCase().includes(q)) ||
+      (p.productName && p.productName.toLowerCase().includes(q)) ||
+      (p.toolNos && p.toolNos.some(no => no.toLowerCase().includes(q)))
+    );
+  }, [yearlyPlans, searchTerm]);
 
   // KPI Calculations
   const metrics = useMemo(() => {
@@ -173,7 +185,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
   return (
     <section className="view-section active" id="view-schedule">
-      
+
       {/* Top Header */}
       <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
@@ -181,20 +193,9 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
             <h1 className="page-title" style={{ margin: 0 }}>
               Preventive Maintenance Schedule
             </h1>
-            <span style={{
-              backgroundColor: '#1e3a5f',
-              color: '#fde047',
-              padding: '3px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 800,
-              fontFamily: 'var(--font-mono)'
-            }}>
-              FY {fiscalYear}
-            </span>
           </div>
           <p className="page-subtitle" style={{ color: 'var(--slate-500)', fontSize: '13px', marginTop: '4px' }}>
-            Yearly PM inspection plan (48-week matrix by Application Part No & dependent tool catalog)
+
           </p>
         </div>
 
@@ -329,7 +330,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {dueSchedules.map((d, idx) => {
-              const firstTool = tools.find(t => 
+              const firstTool = tools.find(t =>
                 (d.toolNos || []).some(no => no && t.toolNo && t.toolNo.toLowerCase().trim() === no.toLowerCase().trim()) ||
                 (t.applicationPartNo && t.applicationPartNo.toLowerCase().trim() === (d.applicationPartNo || '').toLowerCase().trim())
               ) || { id: d.toolNos?.[0] || d.applicationPartNo, toolNo: d.toolNos?.[0] || 'Tool' };
@@ -419,66 +420,174 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
           </button>
         </div>
 
-        {/* Search & Filter - 1st Search, Select App Part No */}
+        {/* Search & Filter: Search Part No -> Dropdown Appears -> Select */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Part Dropdown Selector */}
-          <select
-            className="form-select"
-            value={selectedPartNo}
-            onChange={(e) => {
-              setSelectedPartNo(e.target.value);
-              setSearchTerm('');
-            }}
-            style={{
+          
+          {/* Autocomplete Search Input with Live Dropdown */}
+          <div style={{ position: 'relative', width: '310px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: '#ffffff',
+              border: `1.5px solid ${isSearchDropdownOpen ? '#2563eb' : '#cbd5e1'}`,
+              borderRadius: '6px',
+              padding: '0 10px',
               height: '36px',
-              fontSize: '12.5px',
-              fontWeight: selectedPartNo ? 700 : 500,
-              minWidth: '230px',
-              borderColor: selectedPartNo ? '#3b82f6' : '#cbd5e1',
-              backgroundColor: selectedPartNo ? '#eff6ff' : '#ffffff'
-            }}
-          >
-            <option value="">— 🔍 1st: Select Application Part No —</option>
-            {yearlyPlans.map(p => (
-              <option key={p.applicationPartNo} value={p.applicationPartNo}>
-                Part #{p.applicationPartNo} - {p.productName || 'Tool'} ({(p.toolNos || []).length} Tools)
-              </option>
-            ))}
-          </select>
-
-          {/* Text Search Input */}
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Or Search Part No, Tool No..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setSelectedPartNo('');
-              }}
-              style={{ width: '220px', height: '36px', fontSize: '12.5px', paddingRight: searchTerm ? '28px' : '10px' }}
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                style={{
-                  position: 'absolute',
-                  right: '6px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '14px',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  padding: '2px 6px'
+              boxShadow: isSearchDropdownOpen ? '0 0 0 3px rgba(37, 99, 235, 0.15)' : 'none',
+              transition: 'all 0.15s ease'
+            }}>
+              <span style={{ color: '#64748b', fontSize: '13px', marginRight: '8px' }}>🔍</span>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Search Application Part No (e.g. NSR-1122)..."
+                value={searchTerm || (selectedPartNo ? `Part #${selectedPartNo}` : '')}
+                onFocus={() => {
+                  if (selectedPartNo && !searchTerm) {
+                    setSearchTerm('');
+                  }
+                  setIsSearchDropdownOpen(true);
                 }}
-                title="Clear Search"
-              >
-                &times;
-              </button>
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setSelectedPartNo('');
+                  setIsSearchDropdownOpen(true);
+                }}
+                onBlur={() => {
+                  // Delay closing slightly so clicking dropdown item triggers first
+                  setTimeout(() => setIsSearchDropdownOpen(false), 200);
+                }}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  boxShadow: 'none',
+                  width: '100%',
+                  height: '100%',
+                  padding: 0,
+                  fontSize: '12.5px',
+                  fontWeight: selectedPartNo && !searchTerm ? 700 : 500,
+                  color: selectedPartNo && !searchTerm ? '#1d4ed8' : '#0f172a',
+                  backgroundColor: 'transparent'
+                }}
+              />
+              {(searchTerm || selectedPartNo) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedPartNo('');
+                    setIsSearchDropdownOpen(false);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '15px',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    lineHeight: 1
+                  }}
+                  title="Clear Search"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown Menu - Opens as user searches / clicks */}
+            {isSearchDropdownOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '42px',
+                left: 0,
+                right: 0,
+                backgroundColor: '#ffffff',
+                border: '1.5px solid #3b82f6',
+                borderRadius: '8px',
+                boxShadow: '0 12px 28px rgba(0,0,0,0.18), 0 4px 10px rgba(0,0,0,0.08)',
+                zIndex: 100,
+                maxHeight: '270px',
+                overflowY: 'auto',
+                padding: '4px'
+              }}>
+                <div style={{
+                  padding: '6px 10px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  color: '#64748b',
+                  letterSpacing: '0.4px',
+                  borderBottom: '1px solid #f1f5f9'
+                }}>
+                  {searchTerm ? `Search Results (${partSuggestions.length})` : `Select Part No (${partSuggestions.length})`}
+                </div>
+
+                {partSuggestions.length === 0 ? (
+                  <div style={{ padding: '14px', textAlign: 'center', fontSize: '12.5px', color: '#64748b' }}>
+                    No matching Application Part Numbers found
+                  </div>
+                ) : (
+                  partSuggestions.map(p => {
+                    const isSelected = selectedPartNo === p.applicationPartNo;
+                    return (
+                      <div
+                        key={p.applicationPartNo}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setSelectedPartNo(p.applicationPartNo);
+                          setSearchTerm('');
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        style={{
+                          padding: '9px 12px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: isSelected ? '#eff6ff' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '10px',
+                          transition: 'background-color 0.12s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : '#f8fafc'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#eff6ff' : 'transparent'}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{
+                              fontFamily: 'var(--font-mono, monospace)',
+                              fontWeight: 800,
+                              fontSize: '13px',
+                              color: '#1d4ed8'
+                            }}>
+                              Part #{p.applicationPartNo}
+                            </span>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
+                              &bull; {p.productName || 'Tool'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                            Tools: {(p.toolNos || []).join(', ') || 'None'}
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: p.classification === 'Critical' ? '#fee2e2' : '#f1f5f9',
+                            color: p.classification === 'Critical' ? '#dc2626' : '#475569'
+                          }}>
+                            {(p.toolNos || []).length} tool(s)
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             )}
           </div>
 
@@ -852,14 +961,14 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                 ) : (
                   filteredPlans.map((item, pIdx) => {
                     const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    const firstTool = tools.find(t => 
+                    const firstTool = tools.find(t =>
                       (item.toolNos || []).some(no => no && t.toolNo && t.toolNo.toLowerCase().trim() === no.toLowerCase().trim()) ||
                       (t.applicationPartNo && t.applicationPartNo.toLowerCase().trim() === (item.applicationPartNo || '').toLowerCase().trim())
                     ) || { id: item.toolNos?.[0] || item.applicationPartNo, toolNo: item.toolNos?.[0] || 'Tool' };
 
                     return (
                       <tr key={item.id || item.applicationPartNo || pIdx} style={{ backgroundColor: rowBg, borderBottom: '1px solid #e2e8f0' }}>
-                        
+
                         {/* Sticky Left: Part No */}
                         <td style={{
                           position: 'sticky',
@@ -1190,7 +1299,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
             <form onSubmit={handleSavePlanModal}>
               <div className="modal-body" style={{ padding: '22px 24px' }}>
-                
+
                 {/* Part & Tool Overview Info Bar */}
                 <div style={{
                   backgroundColor: '#f8fafc',
@@ -1406,7 +1515,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
-                                    onChange={() => {}}
+                                    onChange={() => { }}
                                     style={{ cursor: 'pointer', width: '14px', height: '14px' }}
                                   />
                                   <span>Week {w}</span>
