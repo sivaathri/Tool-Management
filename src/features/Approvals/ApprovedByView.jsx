@@ -733,10 +733,10 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
       {/* Rejection Remarks Modal */}
       {rejectingItem && (
         <div className="modal-backdrop show" style={{ zIndex: 1250 }}>
-          <div className="modal-card" style={{ maxWidth: '520px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-            <div className="modal-header" style={{ borderBottom: '1.5px solid #fee2e2', backgroundColor: '#fef2f2' }}>
-              <div className="modal-title" style={{ color: '#991b1b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>✕</span>
+          <div className="modal-card" style={{ maxWidth: '720px', width: '92%', boxShadow: '0 25px 35px -5px rgba(0, 0, 0, 0.25), 0 15px 15px -5px rgba(0, 0, 0, 0.05)', borderRadius: '12px' }}>
+            <div className="modal-header" style={{ borderBottom: '1.5px solid #fee2e2', backgroundColor: '#fef2f2', padding: '16px 24px' }}>
+              <div className="modal-title" style={{ color: '#991b1b', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', fontWeight: 800 }}>
+                <span style={{ fontSize: '20px' }}>✕</span>
                 <span>Reject PM Checklist: {rejectingItem.tool?.toolNo}</span>
               </div>
               <button
@@ -769,56 +769,74 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               setRejectRemarks('');
               showToast?.(`PM for ${rejectingItem.tool?.toolNo} REJECTED and returned for rework. Rejection notification dispatched!`, 'danger');
             }}>
-              <div className="modal-body" style={{ padding: '20px' }}>
+              <div className="modal-body" style={{ padding: '24px' }}>
                 <div style={{
                   backgroundColor: '#fff1f2',
                   border: '1px solid #fecdd3',
-                  borderRadius: '6px',
-                  padding: '10px 14px',
-                  marginBottom: '16px',
-                  fontSize: '12.5px',
-                  color: '#9f1239'
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  marginBottom: '18px',
+                  fontSize: '13px',
+                  color: '#9f1239',
+                  lineHeight: '1.5'
                 }}>
-                  Rejecting this checklist will notify the maintenance technician and QA with your instructions to perform rework before re-submitting.
+                  Rejecting this checklist will return it to the maintenance technician and QA with your instructions to perform rework before re-submitting.
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" style={{ fontWeight: 700, color: '#0f172a' }}>
-                    Rejection Reason / Specific Rework Instructions <span style={{ color: '#dc2626' }}>*</span>
+                <div className="form-group" style={{ marginBottom: '18px' }}>
+                  <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>REJECTION REASON / SPECIFIC REWORK INSTRUCTIONS</span>
+                    <span style={{ color: '#dc2626', fontSize: '15px' }}>*</span>
                   </label>
                   <textarea
-                    className="form-input"
-                    rows="4"
+                    className="form-textarea"
+                    rows={7}
                     placeholder="Enter detailed reason for rejection (e.g. Check point #2 condition is out of specification tolerance. Re-calibrate and re-inspect before releasing)..."
                     value={rejectRemarks}
                     onChange={(e) => setRejectRemarks(e.target.value)}
                     required
                     autoFocus
-                    style={{ width: '100%', resize: 'vertical', fontSize: '13px' }}
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      minHeight: '180px',
+                      padding: '14px 16px',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      borderRadius: '8px',
+                      border: '1.5px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                      color: '#0f172a',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                      fontFamily: 'inherit'
+                    }}
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                   <div>
                     <label className="form-label" style={{ fontSize: '11px', color: '#64748b' }}>Rejected By</label>
-                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a' }}>
                       {currentUser?.name || currentUser?.username || 'Plant Incharge'}
                     </div>
                   </div>
                   <div>
                     <label className="form-label" style={{ fontSize: '11px', color: '#64748b' }}>Rejection Date</label>
-                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a' }}>
                       {new Date().toISOString().slice(0, 10)}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <div className="modal-footer" style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setRejectingItem(null)}
+                  style={{ padding: '10px 20px', fontSize: '13.5px', fontWeight: 600 }}
                 >
                   Cancel
                 </button>
@@ -830,9 +848,10 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                     color: '#ffffff',
                     fontWeight: 700,
                     border: 'none',
-                    padding: '8px 18px',
+                    padding: '10px 24px',
+                    fontSize: '13.5px',
                     borderRadius: '6px',
-                    boxShadow: '0 2px 5px rgba(220, 38, 38, 0.3)',
+                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)',
                     cursor: 'pointer'
                   }}
                 >
