@@ -42,7 +42,8 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
     const list = getSchedules();
     setSchedules(list);
     const plans = getYearlyPMPlans(fiscalYear);
-    setYearlyPlans(plans);
+    const validPlans = (plans || []).filter(p => p && p.applicationPartNo && p.applicationPartNo.trim() && p.applicationPartNo.trim() !== '—' && (p.toolNos || []).length > 0);
+    setYearlyPlans(validPlans);
   };
 
   useEffect(() => {
@@ -91,9 +92,10 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
   // Suggestions for the search autocomplete dropdown
   const partSuggestions = useMemo(() => {
+    const validPlans = yearlyPlans.filter(p => p && p.applicationPartNo && p.applicationPartNo.trim() && p.applicationPartNo.trim() !== '—' && (p.toolNos || []).length > 0);
     const q = searchTerm.toLowerCase().trim();
-    if (!q) return yearlyPlans;
-    return yearlyPlans.filter(p =>
+    if (!q) return validPlans;
+    return validPlans.filter(p =>
       (p.applicationPartNo && p.applicationPartNo.toLowerCase().includes(q)) ||
       (p.productName && p.productName.toLowerCase().includes(q)) ||
       (p.toolNos && p.toolNos.some(no => no.toLowerCase().includes(q)))

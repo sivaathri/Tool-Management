@@ -650,21 +650,26 @@ export function getYearlyPMPlans(fiscalYear = '2026-2027') {
     const raw = localStorage.getItem(YEARLY_PLANS_KEY);
     let plans = raw ? JSON.parse(raw) : [];
 
-    // Group active tools by applicationPartNo
+    // Filter out any invalid or empty plans
+    plans = Array.isArray(plans) ? plans.filter(p => p && typeof p.applicationPartNo === 'string' && p.applicationPartNo.trim() !== '' && p.applicationPartNo.trim() !== '—') : [];
+
+    // Group active tools by valid applicationPartNo only
     const tools = getTools();
     const partMap = {};
     tools.forEach(t => {
-      const partNo = (t.applicationPartNo || t.toolNo || 'Unknown-Part').trim();
-      if (!partMap[partNo]) {
-        partMap[partNo] = {
-          applicationPartNo: partNo,
+      const rawPart = (t.applicationPartNo || '').trim();
+      if (!rawPart || rawPart === '—') return; // Skip tools without a valid application part number
+
+      if (!partMap[rawPart]) {
+        partMap[rawPart] = {
+          applicationPartNo: rawPart,
           productName: t.productName || t.application || 'Tool',
           classification: t.classification || 'Non-Critical',
           description: t.description || '',
           tools: []
         };
       }
-      partMap[partNo].tools.push(t);
+      partMap[rawPart].tools.push(t);
     });
 
     let modified = false;
@@ -715,11 +720,17 @@ export function getYearlyPMPlans(fiscalYear = '2026-2027') {
       }
     });
 
-    if (modified) {
-      localStorage.setItem(YEARLY_PLANS_KEY, JSON.stringify(plans));
-    }
+    // Save cleaned plans to localStorage
+    localStorage.setItem(YEARLY_PLANS_KEY, JSON.stringify(plans));
 
-    return plans.filter(p => p.fiscalYear === fiscalYear);
+    return plans.filter(p => 
+      p.fiscalYear === fiscalYear && 
+      p.applicationPartNo && 
+      p.applicationPartNo.trim() !== '' && 
+      p.applicationPartNo.trim() !== '—' &&
+      Array.isArray(p.toolNos) &&
+      p.toolNos.length > 0
+    );
   } catch (e) {
     console.error('Error getting yearly PM plans', e);
     return [];
