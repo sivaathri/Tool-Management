@@ -494,6 +494,67 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
         </div>
       </div>
 
+      {/* Rejection Alert Banner if rejected by Management */}
+      {displayApprovedBy?.status === 'Rejected' && !isHistorical && (
+        <div style={{
+          backgroundColor: '#fff1f2',
+          borderBottom: '1.5px solid #fecdd3',
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: 'inset 0 1px 3px rgba(225, 29, 72, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <span style={{ fontSize: '24px', lineHeight: 1 }}>🚨</span>
+            <div>
+              <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#9f1239', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>PM Checklist Rejected by Management</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#be123c', textTransform: 'none' }}>
+                  ({displayApprovedBy?.name || 'Plant Incharge'} &bull; {displayApprovedBy?.date})
+                </span>
+              </div>
+              <div style={{ fontSize: '13px', color: '#881337', marginTop: '4px', fontWeight: 600, backgroundColor: '#ffffff', padding: '6px 12px', borderRadius: '5px', border: '1px solid #fda4af' }}>
+                <strong>Rejection Reason / Rework Instructions:</strong> "{displayApprovedBy?.remarks || 'Inspection rejected. Please rework and re-submit.'}"
+              </div>
+              <div style={{ fontSize: '11.5px', color: '#be123c', marginTop: '4px' }}>
+                Please update the check points / actual condition below and click <strong>Save PM Record</strong> to re-submit for QA & Management authorization.
+              </div>
+            </div>
+          </div>
+          {!isEditing && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setIsEditing(true);
+                showToast?.('Rework mode activated. Update the inspection details and save.', 'info');
+              }}
+              style={{
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '13px',
+                padding: '8px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                boxShadow: '0 2px 5px rgba(220, 38, 38, 0.25)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <span>🛠</span>
+              <span>Click to Rework PM Checklist</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Historical Revision Alert Banner */}
       {isHistorical && (
         <div style={{
@@ -1092,7 +1153,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               flexDirection: 'column',
               justifyContent: 'center',
               minHeight: '75px',
-              backgroundColor: displayApprovedBy?.status === 'Approved' ? '#eff6ff' : displayApprovedBy?.status === 'Hold' ? '#fef2f2' : '#fafafa'
+              backgroundColor: displayApprovedBy?.status === 'Approved' ? '#eff6ff' : displayApprovedBy?.status === 'Rejected' ? '#fff1f2' : displayApprovedBy?.status === 'Hold' ? '#fef2f2' : '#fafafa'
             }}>
               <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px', marginBottom: '6px' }}>
                 Approved By
@@ -1108,11 +1169,16 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                       alignItems: 'center',
                       gap: '5px'
                     }}>
-                      {displayApprovedBy.status === 'Approved' ? '✓' : '⚠'} {displayApprovedBy.name}
+                      {displayApprovedBy.status === 'Approved' ? '✓' : '✕'} {displayApprovedBy.name}
                     </span>
                     <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
                       {displayApprovedBy.status} &bull; {displayApprovedBy.date || ''}
                     </span>
+                    {displayApprovedBy.status === 'Rejected' && displayApprovedBy.remarks && (
+                      <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 600, marginTop: '2px', textAlign: 'center', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={displayApprovedBy.remarks}>
+                        Reason: {displayApprovedBy.remarks}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span style={{ fontSize: '12px', fontStyle: 'italic', color: '#94a3b8' }}>

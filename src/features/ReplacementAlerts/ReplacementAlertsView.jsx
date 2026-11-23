@@ -1,11 +1,43 @@
 import React, { useState, useMemo } from 'react';
 import { formatNumber } from '../../utils/formatters';
 import { exportToolsToCSV } from '../../services/reportService';
+import { getPMRecords } from '../../services/toolService';
 import ToolReplacementModal from '../ServiceHistory/modals/ToolReplacementModal';
 
 export default function ReplacementAlertsView({ tools, onViewDossier, onViewServiceHistory, onNavigate, onReplaceTool, showToast }) {
   const [filterType, setFilterType] = useState('ALL');
   const [replacingTool, setReplacingTool] = useState(null);
+
+  // Rejected PMs requiring technician rework
+  const rejectedPMs = useMemo(() => {
+    const records = getPMRecords();
+    if (!Array.isArray(records)) return [];
+    return records
+      .filter(p => p.approvedBy?.status === 'Rejected' || p.checkedBy?.status === 'Revision Requested')
+      .map(p => {
+        const cleanToolNo = (p.toolNo || '').toLowerCase().trim();
+        const found = tools.find(t => 
+          (p.toolId && t.id === p.toolId) || 
+          (t.toolNo && t.toolNo.toLowerCase().trim() === cleanToolNo)
+        );
+        const toolObj = found || {
+          id: p.toolId || `tool-${p.toolNo}`,
+          toolNo: p.toolNo || 'INE T 0000',
+          applicationPartNo: p.applicationPartNo || '—',
+          productName: p.productName || p.application || 'Tool',
+          classification: p.classification || 'Non-Critical'
+        };
+        const isMgmt = p.approvedBy?.status === 'Rejected';
+        return {
+          pm: p,
+          tool: toolObj,
+          isMgmt,
+          signer: isMgmt ? p.approvedBy : p.checkedBy,
+          badgeLabel: isMgmt ? 'Rejected by Management' : 'QA Revision Requested',
+          remarks: (isMgmt ? p.approvedBy?.remarks : p.checkedBy?.remarks) || 'Rework required'
+        };
+      });
+  }, [tools]);
 
   const dueTools = useMemo(() => {
     return tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun');
@@ -68,10 +100,44 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
       {/* KPI Overview Summary */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
         gap: '14px',
         marginBottom: '18px'
       }}>
+        {/* PM Rejections Requiring Rework */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '10px',
+          border: '1.5px solid #fda4af',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          boxShadow: '0 2px 6px rgba(225, 29, 72, 0.06)'
+        }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: '#ffe4e6',
+            color: '#e11d48',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px'
+          }}>
+            🛠
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#e11d48', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              PM Rejections (Rework)
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: '#be123c', marginTop: '2px' }}>
+              {rejectedPMs.length}
+            </div>
+          </div>
+        </div>
+
         <div style={{
           backgroundColor: '#ffffff',
           borderRadius: '10px',
@@ -162,14 +228,111 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
           </div>
           <div>
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-              Total Alerts Requiring Action
+              Total Action Alerts
             </div>
             <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--slate-800)', marginTop: '2px' }}>
-              {allAttention.length}
+              {allAttention.length + rejectedPMs.length}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Rejected PM Inspections & Rework Required Alert Banner */}
+      {rejectedPMs.length > 0 && (
+        <div style={{
+          backgroundColor: '#fff1f2',
+          border: '1.5px solid #fda4af',
+          borderRadius: '10px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          boxShadow: '0 4px 12px rgba(225, 29, 72, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '24px' }}>🚨</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#9f1239' }}>
+                  PM Inspection Rejections & Rework Notifications ({rejectedPMs.length})
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '12.5px', color: '#be123c' }}>
+                  These Preventive Maintenance checklists were rejected during review. Click to rework the checklist and resubmit.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {rejectedPMs.map((item, idx) => (
+              <div
+                key={item.pm.id || idx}
+                style={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #fecdd3',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      backgroundColor: '#dc2626',
+                      color: '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      {item.badgeLabel}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono, monospace)', fontWeight: 800, fontSize: '14px', color: '#0f172a' }}>
+                      {item.tool.toolNo}
+                    </span>
+                    <span style={{ color: '#64748b', fontSize: '12.5px' }}>
+                      &bull; {item.tool.productName} (Part #{item.tool.applicationPartNo})
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '6px', fontSize: '12.5px', color: '#991b1b', backgroundColor: '#fff5f5', padding: '6px 10px', borderRadius: '4px', borderLeft: '3px solid #dc2626' }}>
+                    <strong>Rejection Remarks:</strong> "{item.remarks}"
+                    <span style={{ color: '#64748b', fontSize: '11px', marginLeft: '8px' }}>
+                      &mdash; By {item.signer?.name || 'Reviewer'} on {item.signer?.date || '—'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => onViewServiceHistory(item.tool)}
+                  style={{
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '12.5px',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(220, 38, 38, 0.25)',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Click to open Preventive Maintenance and rework checklist"
+                >
+                  <span>🛠 Rework PM Checklist</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Immediate Alert Banner if replacement due */}
       {dueTools.length > 0 && (

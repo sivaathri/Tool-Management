@@ -53,8 +53,12 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
 
       if (!result.some(r => r.tool.id === toolObj.id || r.tool.toolNo.toLowerCase().trim() === toolObj.toolNo.toLowerCase().trim())) {
         const checkedBy = pm.checkedBy || null;
+        const approvedBy = pm.approvedBy || null;
+        const isRejectedByMgmt = approvedBy?.status === 'Rejected';
         let checkStatus = 'Pending Check';
-        if (checkedBy?.status === 'Verified') {
+        if (isRejectedByMgmt) {
+          checkStatus = 'Rejected by Mgmt';
+        } else if (checkedBy?.status === 'Verified') {
           checkStatus = 'Verified';
         } else if (checkedBy?.status === 'Revision Requested') {
           checkStatus = 'Revision Requested';
@@ -65,6 +69,9 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
           pmRecord: pm,
           checkStatus,
           checkedBy,
+          approvedBy,
+          isRejectedByMgmt,
+          mgmtRemarks: approvedBy?.remarks || '',
           sentToApprovedBy: Boolean(pm.sentToApprovedBy),
           sentToApprovedAt: pm.sentToApprovedAt || null,
           checkDate: pm.checkDate || pm.date || '—',
@@ -488,7 +495,18 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                         {item.nextDueDate}
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        {isSent ? (
+                        {item.isRejectedByMgmt ? (
+                          <div>
+                            <span className="badge badge-danger" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700, backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', whiteSpace: 'nowrap' }}>
+                              &bull; Rejected by Mgmt
+                            </span>
+                            {item.mgmtRemarks && (
+                              <div style={{ fontSize: '10.5px', color: '#b91c1c', marginTop: '3px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.mgmtRemarks}>
+                                Rework: "{item.mgmtRemarks}"
+                              </div>
+                            )}
+                          </div>
+                        ) : isSent ? (
                           <span className="badge" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700, backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', whiteSpace: 'nowrap' }}>
                             &bull; Sent to Approved By
                           </span>

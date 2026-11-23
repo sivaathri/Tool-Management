@@ -434,7 +434,9 @@ export function calculateMetrics(tools = [], logs = []) {
   const uniqueParts = new Set(tools.map(t => t.applicationPartNo).filter(Boolean));
   const uniquePartsCount = uniqueParts.size;
   const totalProduced = tools.reduce((sum, t) => sum + (t.cumulative || 0), 0);
-  const criticalAlertsCount = tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun').length;
+  const pmRecords = getPMRecords();
+  const rejectedPMCount = Array.isArray(pmRecords) ? pmRecords.filter(p => p.approvedBy?.status === 'Rejected' || p.checkedBy?.status === 'Revision Requested').length : 0;
+  const criticalAlertsCount = tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun').length + rejectedPMCount;
   const warningAlertsCount = tools.filter(t => t.status === 'Near Limit').length;
   const activeCount = tools.filter(t => t.status === 'Active' || t.status === 'Healthy').length;
 
@@ -444,7 +446,8 @@ export function calculateMetrics(tools = [], logs = []) {
     totalProduced,
     criticalAlertsCount,
     warningAlertsCount,
-    activeCount
+    activeCount,
+    rejectedPMCount
   };
 }
 
@@ -725,6 +728,9 @@ export function updateApprovedBySignOff(toolIdOrNo, signOffData) {
 
     if (pm) {
       pm.approvedBy = approvedObj;
+      if (approvedObj.status === 'Rejected') {
+        pm.sentToApprovedBy = false;
+      }
       savePMRecord(pm);
       return pm;
     } else {

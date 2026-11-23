@@ -10,6 +10,8 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
   const pageSize = 15;
   const [approvingItem, setApprovingItem] = useState(null);
   const [viewingTool, setViewingTool] = useState(null);
+  const [rejectingItem, setRejectingItem] = useState(null);
+  const [rejectRemarks, setRejectRemarks] = useState('');
   const [approvalForm, setApprovalForm] = useState({
     name: '',
     date: new Date().toISOString().slice(0, 10),
@@ -40,12 +42,14 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
 
       const checkedBy = pm?.checkedBy || null;
       const approvedBy = pm?.approvedBy || null;
-      const isSentForApproval = Boolean(pm?.sentToApprovedBy || approvedBy?.status === 'Approved' || approvedBy?.status === 'Hold');
+      const isSentForApproval = Boolean(pm?.sentToApprovedBy || approvedBy?.status === 'Approved' || approvedBy?.status === 'Rejected' || approvedBy?.status === 'Hold');
 
       if (isSentForApproval) {
         let approvalStatus = 'Pending Approval';
         if (approvedBy?.status === 'Approved') {
           approvalStatus = 'Approved';
+        } else if (approvedBy?.status === 'Rejected') {
+          approvalStatus = 'Rejected';
         } else if (approvedBy?.status === 'Hold') {
           approvalStatus = 'Hold';
         }
@@ -67,7 +71,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
 
     // Also include any PM records marked sentToApprovedBy whose tool might not be in tools prop
     pmRecords.forEach(pm => {
-      const isSent = Boolean(pm.sentToApprovedBy || pm.approvedBy?.status === 'Approved' || pm.approvedBy?.status === 'Hold');
+      const isSent = Boolean(pm.sentToApprovedBy || pm.approvedBy?.status === 'Approved' || pm.approvedBy?.status === 'Rejected' || pm.approvedBy?.status === 'Hold');
       if (isSent) {
         const cleanPmNo = (pm.toolNo || '').toLowerCase().trim();
         const alreadyInList = list.some(item => 
@@ -91,6 +95,8 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
           let approvalStatus = 'Pending Approval';
           if (pm.approvedBy?.status === 'Approved') {
             approvalStatus = 'Approved';
+          } else if (pm.approvedBy?.status === 'Rejected') {
+            approvalStatus = 'Rejected';
           } else if (pm.approvedBy?.status === 'Hold') {
             approvalStatus = 'Hold';
           }
@@ -117,8 +123,9 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
     const total = queueItems.length;
     const pending = queueItems.filter(q => q.approvalStatus === 'Pending Approval').length;
     const approved = queueItems.filter(q => q.approvalStatus === 'Approved').length;
+    const rejected = queueItems.filter(q => q.approvalStatus === 'Rejected').length;
     const hold = queueItems.filter(q => q.approvalStatus === 'Hold').length;
-    return { total, pending, approved, hold };
+    return { total, pending, approved, rejected, hold };
   }, [queueItems]);
 
   // Filter
@@ -236,29 +243,29 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
           </div>
         </div>
 
-        {/* On Hold */}
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #ef4444' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: metrics.hold > 0 ? '#b91c1c' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Hold / Overhaul Needed
+        {/* Rejected (Needs Rework) */}
+        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #ef4444', backgroundColor: metrics.rejected > 0 ? '#fef2f2' : '#ffffff' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: metrics.rejected > 0 ? '#b91c1c' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Rejected (Rework Required)
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: metrics.hold > 0 ? '#dc2626' : '#0f172a', marginTop: '6px' }}>
-            {metrics.hold}
+          <div style={{ fontSize: '28px', fontWeight: 800, color: metrics.rejected > 0 ? '#dc2626' : '#0f172a', marginTop: '6px' }}>
+            {metrics.rejected}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            Tool restricted from running
+            Returned to technician for rework
           </div>
         </div>
 
-        {/* Total Tooling */}
+        {/* Total in Authorization */}
         <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #3b82f6' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Total Plant Tooling
+            Total in Authorization
           </div>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
             {metrics.total}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            Managed tool catalog
+            Tools sent for management review
           </div>
         </div>
       </div>
@@ -293,6 +300,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               <option value="">All Approval Statuses</option>
               <option value="Pending Approval">Pending Approval</option>
               <option value="Approved">Approved & Released</option>
+              <option value="Rejected">Rejected (Rework Required)</option>
               <option value="Hold">On Hold / Overhaul Needed</option>
             </select>
           </div>
@@ -348,6 +356,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               ) : (
                 paginatedItems.map((item, idx) => {
                   const isApproved = item.approvalStatus === 'Approved';
+                  const isRejected = item.approvalStatus === 'Rejected';
                   const isHold = item.approvalStatus === 'Hold';
                   const isPending = item.approvalStatus === 'Pending Approval';
                   const isQAVerified = item.checkedBy?.status === 'Verified';
@@ -405,6 +414,10 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                           <span className="badge badge-healthy">
                             <span className="badge-dot"></span>
                             Approved & Released
+                          </span>
+                        ) : isRejected ? (
+                          <span className="badge badge-danger" style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 700, padding: '3px 9px', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                            &bull; Rejected (Rework)
                           </span>
                         ) : isHold ? (
                           <span className="badge badge-danger">
@@ -620,7 +633,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               />
             </div>
 
-            <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -635,42 +648,198 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                 );
                 const isAlreadyApproved = targetItem?.approvalStatus === 'Approved';
 
-                return !isAlreadyApproved ? (
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => {
-                      const activeName = currentUser?.name || currentUser?.username || 'Plant Incharge';
-                      const signData = {
-                        name: activeName,
-                        date: new Date().toISOString().slice(0, 10),
-                        status: 'Approved',
-                        remarks: 'Preventive maintenance check list verified and authorized for active production.'
-                      };
-                      updateApprovedBySignOff(viewingTool.id || viewingTool.toolNo, signData);
-                      loadData();
-                      setViewingTool(null);
-                      showToast?.(`Management authorization signed & approved by ${activeName} for ${viewingTool.toolNo}`, 'success');
-                    }}
-                    style={{
-                      backgroundColor: '#2563eb',
-                      padding: '8px 20px',
-                      fontWeight: 700,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Authorize & Sign</span>
-                  </button>
-                ) : null;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isAlreadyApproved ? (
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <span>✓</span> Approved & Authorized by {targetItem?.approvedBy?.name || 'Management'} ({targetItem?.approvedBy?.date || ''})
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            setRejectingItem(targetItem || { tool: viewingTool });
+                            setRejectRemarks('');
+                          }}
+                          style={{
+                            backgroundColor: '#dc2626',
+                            color: '#ffffff',
+                            padding: '8px 18px',
+                            fontWeight: 700,
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 5px rgba(220, 38, 38, 0.25)',
+                            cursor: 'pointer',
+                            border: 'none',
+                            fontSize: '13px'
+                          }}
+                          title="Reject PM checklist with remarks and return to technician for rework"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                          <span>Reject (Rework)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => {
+                            const activeName = currentUser?.name || currentUser?.username || 'Plant Incharge';
+                            const signData = {
+                              name: activeName,
+                              date: new Date().toISOString().slice(0, 10),
+                              status: 'Approved',
+                              remarks: 'Preventive maintenance check list verified and authorized for active production.'
+                            };
+                            updateApprovedBySignOff(viewingTool.id || viewingTool.toolNo, signData);
+                            loadData();
+                            setViewingTool(null);
+                            showToast?.(`Management authorization signed & approved by ${activeName} for ${viewingTool.toolNo}`, 'success');
+                          }}
+                          style={{
+                            backgroundColor: '#059669',
+                            borderColor: '#059669',
+                            padding: '8px 20px',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+                            borderRadius: '6px',
+                            fontSize: '13px'
+                          }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          <span>Approve & Authorize</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
               })()}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Remarks Modal */}
+      {rejectingItem && (
+        <div className="modal-backdrop show" style={{ zIndex: 1250 }}>
+          <div className="modal-card" style={{ maxWidth: '520px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+            <div className="modal-header" style={{ borderBottom: '1.5px solid #fee2e2', backgroundColor: '#fef2f2' }}>
+              <div className="modal-title" style={{ color: '#991b1b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>✕</span>
+                <span>Reject PM Checklist: {rejectingItem.tool?.toolNo}</span>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setRejectingItem(null)}
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!rejectRemarks.trim()) {
+                showToast?.('Please specify rejection remarks so the technician knows what to rework.', 'warning');
+                return;
+              }
+              const activeName = currentUser?.name || currentUser?.username || 'Plant Incharge';
+              const signData = {
+                name: activeName,
+                date: new Date().toISOString().slice(0, 10),
+                status: 'Rejected',
+                remarks: rejectRemarks.trim()
+              };
+              updateApprovedBySignOff(rejectingItem.tool?.id || rejectingItem.tool?.toolNo, signData);
+              loadData();
+              setRejectingItem(null);
+              setViewingTool(null);
+              setRejectRemarks('');
+              showToast?.(`PM for ${rejectingItem.tool?.toolNo} REJECTED and returned for rework. Rejection notification dispatched!`, 'danger');
+            }}>
+              <div className="modal-body" style={{ padding: '20px' }}>
+                <div style={{
+                  backgroundColor: '#fff1f2',
+                  border: '1px solid #fecdd3',
+                  borderRadius: '6px',
+                  padding: '10px 14px',
+                  marginBottom: '16px',
+                  fontSize: '12.5px',
+                  color: '#9f1239'
+                }}>
+                  Rejecting this checklist will notify the maintenance technician and QA with your instructions to perform rework before re-submitting.
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 700, color: '#0f172a' }}>
+                    Rejection Reason / Specific Rework Instructions <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <textarea
+                    className="form-input"
+                    rows="4"
+                    placeholder="Enter detailed reason for rejection (e.g. Check point #2 condition is out of specification tolerance. Re-calibrate and re-inspect before releasing)..."
+                    value={rejectRemarks}
+                    onChange={(e) => setRejectRemarks(e.target.value)}
+                    required
+                    autoFocus
+                    style={{ width: '100%', resize: 'vertical', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '11px', color: '#64748b' }}>Rejected By</label>
+                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
+                      {currentUser?.name || currentUser?.username || 'Plant Incharge'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '11px', color: '#64748b' }}>Rejection Date</label>
+                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
+                      {new Date().toISOString().slice(0, 10)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setRejectingItem(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn"
+                  style={{
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    border: 'none',
+                    padding: '8px 18px',
+                    borderRadius: '6px',
+                    boxShadow: '0 2px 5px rgba(220, 38, 38, 0.3)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Confirm Rejection & Send Alert
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
