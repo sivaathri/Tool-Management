@@ -789,27 +789,11 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                     fontWeight: 900,
                     fontSize: '11.5px',
                     letterSpacing: '0.5px',
-                    borderRight: '1px solid #23416d',
-                    minWidth: '150px',
+                    borderRight: '2px solid #3b82f6',
+                    minWidth: '170px',
                     textAlign: 'left'
                   }}>
                     APPLICATION / PRODUCT
-                  </th>
-                  <th style={{
-                    position: 'sticky',
-                    left: '280px',
-                    zIndex: 20,
-                    backgroundColor: '#132847',
-                    color: '#fde047',
-                    padding: '8px 12px',
-                    fontWeight: 900,
-                    fontSize: '11.5px',
-                    letterSpacing: '0.5px',
-                    borderRight: '2px solid #3b82f6',
-                    minWidth: '160px',
-                    textAlign: 'left'
-                  }}>
-                    DEPENDENT TOOL NUMBERS
                   </th>
 
                   {/* 12 Month Headers (4 columns per month) */}
@@ -847,8 +831,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                 {/* Row 2: WEEK (1, 2, 3, 4 under each month) */}
                 <tr style={{ backgroundColor: '#0f2038', color: '#94a3b8' }}>
                   <th style={{ position: 'sticky', left: 0, zIndex: 19, backgroundColor: '#0f2038', borderRight: '1px solid #1e3a5f', padding: '4px' }}></th>
-                  <th style={{ position: 'sticky', left: '130px', zIndex: 19, backgroundColor: '#0f2038', borderRight: '1px solid #1e3a5f', padding: '4px' }}></th>
-                  <th style={{ position: 'sticky', left: '280px', zIndex: 19, backgroundColor: '#0f2038', borderRight: '2px solid #3b82f6', padding: '4px' }}></th>
+                  <th style={{ position: 'sticky', left: '130px', zIndex: 19, backgroundColor: '#0f2038', borderRight: '2px solid #3b82f6', padding: '4px' }}></th>
 
                   {months.map(m => (
                     <React.Fragment key={`week-group-${m.key}`}>
@@ -968,7 +951,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                           padding: '8px 12px',
                           fontWeight: 700,
                           color: '#334155',
-                          borderRight: '1px solid #cbd5e1',
+                          borderRight: '2px solid #3b82f6',
                           textAlign: 'left',
                           fontSize: '11px'
                         }}>
@@ -978,37 +961,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                               {item.classification}
                             </div>
                           )}
-                        </td>
-
-                        {/* Sticky Left: Dependent Tools */}
-                        <td style={{
-                          position: 'sticky',
-                          left: '280px',
-                          zIndex: 10,
-                          backgroundColor: rowBg,
-                          padding: '6px 10px',
-                          borderRight: '2px solid #3b82f6',
-                          textAlign: 'left'
-                        }}>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                            {(item.toolNos || []).map((tNo, tIdx) => (
-                              <span
-                                key={tIdx}
-                                style={{
-                                  backgroundColor: '#e0f2fe',
-                                  color: '#0369a1',
-                                  fontSize: '10.5px',
-                                  fontWeight: 800,
-                                  fontFamily: 'var(--font-mono, monospace)',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #bae6fd'
-                                }}
-                              >
-                                {tNo}
-                              </span>
-                            ))}
-                          </div>
                         </td>
 
                         {/* 48 Week Slots Grid */}
