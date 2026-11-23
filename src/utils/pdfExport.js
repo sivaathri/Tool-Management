@@ -268,7 +268,12 @@ export async function exportPMReportToPDF(tool, logs = [], pmRecord = null) {
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid #0f172a; text-align: center; background-color: #ffffff; margin-top: 18px;">
       <div style="padding: 10px 12px; border-right: 1px solid #0f172a;">
         <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569;">Inspected & Prepared By</div>
-        <div style="height: 38px;"></div>
+        <div style="height: 38px; display: flex; flex-direction: column; justify-content: center;">
+          ${(pmRecord?.preparedBy || pmRecord?.inspectedBy) ? `
+            <div style="font-weight: 800; font-size: 12px; color: #0284c7;">✓ ${pmRecord.preparedBy || pmRecord.inspectedBy}</div>
+            <div style="font-size: 9.5px; color: #64748b;">${pmRecord.checkDate || ''}</div>
+          ` : ''}
+        </div>
         <div style="font-size: 11.5px; font-weight: 700; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #0f172a;">
           Tool Maintenance Technician
         </div>

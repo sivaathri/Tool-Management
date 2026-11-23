@@ -483,6 +483,7 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
             <div className="modal-body" style={{ padding: '20px' }}>
               <PMChecklistSheet
                 tool={viewingTool}
+                currentUser={currentUser}
                 showToast={showToast}
               />
             </div>

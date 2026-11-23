@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { savePMRecord, getPMRecords } from '../../../services/toolService';
+import { authService } from '../../../services/authService';
 
-export default function PMChecklistSheet({ tool, showToast }) {
+export default function PMChecklistSheet({ tool, currentUser, showToast }) {
   if (!tool) return null;
 
   // Format today's date (YYYY-MM-DD)
@@ -53,6 +54,9 @@ export default function PMChecklistSheet({ tool, showToast }) {
   const [rows, setRows] = useState([]);
   const [activeRecordId, setActiveRecordId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [preparedBy, setPreparedBy] = useState('');
+  const [checkedByInfo, setCheckedByInfo] = useState(null);
+  const [approvedByInfo, setApprovedByInfo] = useState(null);
 
   // Helper to load or initialize PM Checklist data for current tool from storage
   const loadPMDataForTool = () => {
@@ -62,6 +66,9 @@ export default function PMChecklistSheet({ tool, showToast }) {
       (tool.id && p.toolId === tool.id) ||
       (tool.toolNo && p.toolNo && p.toolNo.toLowerCase().trim() === tool.toolNo.toLowerCase().trim())
     );
+
+    const loggedUser = currentUser || authService.getCurrentUser();
+    const loggedName = loggedUser?.name || loggedUser?.username || 'Maintenance Technician';
 
     if (saved && Array.isArray(saved.items) && saved.items.length > 0) {
       const mergedRows = defaultRows.map((dRow, idx) => {
@@ -89,12 +96,18 @@ export default function PMChecklistSheet({ tool, showToast }) {
       setRows([...mergedRows, ...extraItems]);
       if (saved.checkDate) setCheckDate(saved.checkDate);
       if (saved.nextDueDate) setNextDueDate(saved.nextDueDate);
+      setPreparedBy(saved.preparedBy || saved.inspectedBy || loggedName);
+      setCheckedByInfo(saved.checkedBy || null);
+      setApprovedByInfo(saved.approvedBy || null);
       setActiveRecordId(saved.id);
     } else {
       // Show empty text boxes by default ready for entering inspection data
       setRows(defaultRows);
       setCheckDate(getTodayDate());
       setNextDueDate(getNextDueDate());
+      setPreparedBy(loggedName);
+      setCheckedByInfo(null);
+      setApprovedByInfo(null);
       setActiveRecordId(null);
     }
   };
@@ -117,6 +130,15 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
   // Save Record
   const handleSave = () => {
+    const loggedUser = currentUser || authService.getCurrentUser();
+    const activeUserName = loggedUser?.name || loggedUser?.username || 'Maintenance Technician';
+
+    const pmList = getPMRecords();
+    const existing = pmList.find(p => 
+      (tool.id && p.toolId === tool.id) ||
+      (tool.toolNo && p.toolNo && p.toolNo.toLowerCase().trim() === tool.toolNo.toLowerCase().trim())
+    );
+
     const recordId = activeRecordId || `pm_${tool.id || tool.toolNo.replace(/\s+/g, '_')}`;
     const record = {
       id: recordId,
@@ -129,13 +151,20 @@ export default function PMChecklistSheet({ tool, showToast }) {
       application,
       classification: tool.classification || 'Non-Critical',
       items: rows,
-      rows: rows
+      rows: rows,
+      preparedBy: activeUserName,
+      inspectedBy: activeUserName,
+      checkedBy: existing?.checkedBy || checkedByInfo || null,
+      approvedBy: existing?.approvedBy || approvedByInfo || null,
+      lastModifiedBy: activeUserName,
+      lastModifiedAt: new Date().toISOString()
     };
 
     savePMRecord(record);
     setActiveRecordId(recordId);
+    setPreparedBy(activeUserName);
     setIsEditing(false);
-    showToast?.(`Preventive Maintenance check saved for ${tool.toolNo}`, 'success');
+    showToast?.(`Preventive Maintenance check saved. Prepared by: ${activeUserName}`, 'success');
   };
 
   const handleCancel = () => {
@@ -146,6 +175,10 @@ export default function PMChecklistSheet({ tool, showToast }) {
 
   const isCritical = tool.classification === 'Critical';
   const sheetTitle = `PREVENTIVE MAINTENANCE CHECK LIST FOR ${isCritical ? 'CRITICAL' : 'NON CRITICAL'} TOOLS`;
+
+  const loggedUser = currentUser || authService.getCurrentUser();
+  const loggedUserName = loggedUser?.name || loggedUser?.username || 'Maintenance Technician';
+  const displayPreparedBy = isEditing ? loggedUserName : (preparedBy || loggedUserName);
 
   return (
     <div className="card pm-sheet-card" style={{ marginTop: '24px', padding: '0', overflow: 'hidden' }}>
@@ -161,7 +194,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
         flexWrap: 'wrap',
         gap: '10px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {isEditing ? (
             <span style={{
               fontSize: '11.5px',
@@ -208,6 +241,24 @@ export default function PMChecklistSheet({ tool, showToast }) {
               gap: '6px'
             }}>
               Click Edit to enter inspection data
+            </span>
+          )}
+
+          {displayPreparedBy && (
+            <span style={{
+              fontSize: '11.5px',
+              padding: '4px 12px',
+              backgroundColor: '#f8fafc',
+              color: '#0f172a',
+              borderRadius: '12px',
+              fontWeight: 700,
+              border: '1px solid #cbd5e1',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ color: '#64748b', fontWeight: 600 }}>Prepared by:</span>
+              <strong style={{ color: '#1e40af' }}>{displayPreparedBy}</strong>
             </span>
           )}
         </div>
@@ -452,6 +503,7 @@ export default function PMChecklistSheet({ tool, showToast }) {
             <div style={{
               display: 'grid',
               gridTemplateColumns: '130px 1fr 120px 200px',
+              borderBottom: '1px solid #334155',
               minHeight: '38px',
               alignItems: 'center'
             }}>
@@ -466,6 +518,34 @@ export default function PMChecklistSheet({ tool, showToast }) {
               </div>
               <div style={{ padding: '6px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0f172a' }}>
                 {tool.toolIssuedOn || '—'}
+              </div>
+            </div>
+
+            {/* Row 4: Prepared By (Logged-in User Who Created/Edited) & Date */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '130px 1fr 120px 200px',
+              minHeight: '38px',
+              alignItems: 'center',
+              backgroundColor: '#f8fafc'
+            }}>
+              <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f1f5f9' }}>
+                Prepared By:
+              </div>
+              <div style={{ padding: '6px 12px', fontWeight: 700, color: '#0f172a', borderRight: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#15803d', fontWeight: 800 }}>✓</span>
+                <span style={{ fontSize: '13px' }}>{displayPreparedBy}</span>
+                {isEditing && (
+                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600 }}>
+                    (Logged in user)
+                  </span>
+                )}
+              </div>
+              <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f1f5f9' }}>
+                Prepared Date:
+              </div>
+              <div style={{ padding: '6px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0f172a' }}>
+                {checkDate}
               </div>
             </div>
 
@@ -683,6 +763,124 @@ export default function PMChecklistSheet({ tool, showToast }) {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Official Bottom 3-Column Sign-Off Block */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            border: '1.5px solid #0f172a',
+            borderTop: 'none',
+            textAlign: 'center',
+            backgroundColor: '#ffffff',
+            boxSizing: 'border-box'
+          }}>
+            {/* Column 1: Prepared By (Technician) */}
+            <div style={{
+              padding: '12px 14px',
+              borderRight: '1px solid #0f172a',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '90px',
+              backgroundColor: '#fafafa'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px' }}>
+                Prepared By (Technician)
+              </div>
+              <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: '13px', color: '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  ✓ {displayPreparedBy}
+                </span>
+                <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                  {checkDate ? `Checked: ${checkDate}` : ''}
+                </span>
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 700, borderTop: '1px dashed #94a3b8', paddingTop: '4px', color: '#0f172a' }}>
+                Tool Maintenance Technician
+              </div>
+            </div>
+
+            {/* Column 2: Checked By (Quality Assurance) */}
+            <div style={{
+              padding: '12px 14px',
+              borderRight: '1px solid #0f172a',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '90px',
+              backgroundColor: checkedByInfo?.status === 'Verified' ? '#f0fdf4' : checkedByInfo?.status === 'Revision Requested' ? '#fef2f2' : '#fafafa'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px' }}>
+                Checked By (Quality Assurance)
+              </div>
+              <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {checkedByInfo?.name ? (
+                  <>
+                    <span style={{
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      color: checkedByInfo.status === 'Verified' ? '#16a34a' : '#dc2626',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}>
+                      {checkedByInfo.status === 'Verified' ? '✓' : '⚠'} {checkedByInfo.name}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                      {checkedByInfo.status} &bull; {checkedByInfo.date || ''}
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: '12px', fontStyle: 'italic', color: '#94a3b8' }}>
+                    Pending QA Check
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 700, borderTop: '1px dashed #94a3b8', paddingTop: '4px', color: '#0f172a' }}>
+                Quality Assurance Lead
+              </div>
+            </div>
+
+            {/* Column 3: Approved By (Management / Plant Incharge) */}
+            <div style={{
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '90px',
+              backgroundColor: approvedByInfo?.status === 'Approved' ? '#eff6ff' : approvedByInfo?.status === 'Hold' ? '#fef2f2' : '#fafafa'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px' }}>
+                Approved By (Plant Incharge)
+              </div>
+              <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {approvedByInfo?.name ? (
+                  <>
+                    <span style={{
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      color: approvedByInfo.status === 'Approved' ? '#2563eb' : '#dc2626',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}>
+                      {approvedByInfo.status === 'Approved' ? '✓' : '⚠'} {approvedByInfo.name}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                      {approvedByInfo.status} &bull; {approvedByInfo.date || ''}
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: '12px', fontStyle: 'italic', color: '#94a3b8' }}>
+                    Pending Management Approval
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 700, borderTop: '1px dashed #94a3b8', paddingTop: '4px', color: '#0f172a' }}>
+                Tool Room Lead / Plant Incharge
+              </div>
+            </div>
           </div>
 
         </div>

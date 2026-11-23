@@ -308,6 +308,7 @@ export default function App() {
             onAddProductionLog={handleAddProductionLog}
             onDeleteProductionLog={handleDeleteProductionLog}
             onReplaceTool={handleReplaceTool}
+            currentUser={currentUser}
             showToast={addToast}
           />
         )}

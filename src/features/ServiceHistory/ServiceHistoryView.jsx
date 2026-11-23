@@ -41,6 +41,7 @@ export default function ServiceHistoryView({
   onDeleteProductionLog,
   onReplaceTool,
   showToast,
+  currentUser,
   selectedToolId: propSelectedToolId = null,
   onSelectToolId,
   onBackToMaster
@@ -682,7 +683,7 @@ export default function ServiceHistoryView({
       </div>
 
       {/* PREVENTIVE MAINTENANCE CHECK LIST SHEET (ENTER DATA) */}
-      <PMChecklistSheet tool={selectedTool} showToast={showToast} />
+      <PMChecklistSheet tool={selectedTool} currentUser={currentUser} showToast={showToast} />
 
       {/* LIFE TIME LIMIT OVERRUN ALERT BANNER */}
       {selectedTool.status === 'Replacement Due' && (
