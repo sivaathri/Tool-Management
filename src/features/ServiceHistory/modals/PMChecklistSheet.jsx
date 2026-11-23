@@ -57,6 +57,8 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
   const [preparedBy, setPreparedBy] = useState('');
   const [checkedByInfo, setCheckedByInfo] = useState(null);
   const [approvedByInfo, setApprovedByInfo] = useState(null);
+  const [historyList, setHistoryList] = useState([]);
+  const [selectedRevisionIndex, setSelectedRevisionIndex] = useState(-1);
 
   // Helper to load or initialize PM Checklist data for current tool from storage
   const loadPMDataForTool = () => {
@@ -100,6 +102,8 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
       setCheckedByInfo(saved.checkedBy || null);
       setApprovedByInfo(saved.approvedBy || null);
       setActiveRecordId(saved.id);
+      setHistoryList(Array.isArray(saved.history) ? saved.history : []);
+      setSelectedRevisionIndex(-1);
     } else {
       // Show empty text boxes by default ready for entering inspection data
       setRows(defaultRows);
@@ -109,6 +113,8 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
       setCheckedByInfo(null);
       setApprovedByInfo(null);
       setActiveRecordId(null);
+      setHistoryList([]);
+      setSelectedRevisionIndex(-1);
     }
   };
 
@@ -151,7 +157,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
     });
   };
 
-  // Save Record
+  // Save Record (Archives previous version & resets approvals to pending for re-verification)
   const handleSave = () => {
     const loggedUser = currentUser || authService.getCurrentUser();
     const activeUserName = loggedUser?.name || loggedUser?.username || 'Maintenance Technician';
@@ -163,6 +169,24 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
     );
 
     const recordId = activeRecordId || `pm_${tool.id || tool.toolNo.replace(/\s+/g, '_')}`;
+
+    // Archive old data into revision history so previous PM inspection data is permanently retained
+    let updatedHistory = Array.isArray(existing?.history) ? [...existing.history] : [];
+    if (existing && Array.isArray(existing.items) && existing.items.length > 0) {
+      const snapshot = {
+        revisionNumber: updatedHistory.length + 1,
+        savedAt: existing.lastModifiedAt || new Date().toISOString(),
+        checkDate: existing.checkDate,
+        nextDueDate: existing.nextDueDate,
+        preparedBy: existing.preparedBy || existing.inspectedBy || 'Technician',
+        checkedBy: existing.checkedBy || null,
+        approvedBy: existing.approvedBy || null,
+        items: existing.items || existing.rows || []
+      };
+      updatedHistory.push(snapshot);
+    }
+
+    // New/Edited PM record: Resets QA Check and Management Approval so they must re-verify the new inspection edits!
     const record = {
       id: recordId,
       toolId: tool.id,
@@ -177,8 +201,9 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
       rows: rows,
       preparedBy: activeUserName,
       inspectedBy: activeUserName,
-      checkedBy: existing?.checkedBy || checkedByInfo || null,
-      approvedBy: existing?.approvedBy || approvedByInfo || null,
+      checkedBy: null, // Reset: waiting for QA Check
+      approvedBy: null, // Reset: waiting for Management Approval
+      history: updatedHistory,
       lastModifiedBy: activeUserName,
       lastModifiedAt: new Date().toISOString()
     };
@@ -186,8 +211,12 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
     savePMRecord(record);
     setActiveRecordId(recordId);
     setPreparedBy(activeUserName);
+    setCheckedByInfo(null);
+    setApprovedByInfo(null);
+    setHistoryList(updatedHistory);
+    setSelectedRevisionIndex(-1);
     setIsEditing(false);
-    showToast?.(`Preventive Maintenance check saved. Prepared by: ${activeUserName}`, 'success');
+    showToast?.(`PM updated by ${activeUserName}. Re-submitted for QA check and Management authorization.`, 'success');
   };
 
   const handleCancel = () => {
@@ -201,7 +230,18 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
 
   const loggedUser = currentUser || authService.getCurrentUser();
   const loggedUserName = loggedUser?.name || loggedUser?.username || 'Maintenance Technician';
-  const displayPreparedBy = isEditing ? loggedUserName : (preparedBy || loggedUserName);
+
+  const isHistorical = selectedRevisionIndex >= 0;
+  const currentHist = isHistorical ? historyList[selectedRevisionIndex] : null;
+
+  const displayRows = isHistorical ? (currentHist.items || currentHist.rows || []) : rows;
+  const displayCheckDate = isHistorical ? (currentHist.checkDate || checkDate) : checkDate;
+  const displayNextDueDate = isHistorical ? (currentHist.nextDueDate || nextDueDate) : nextDueDate;
+  const displayPreparedBy = isHistorical
+    ? (currentHist.preparedBy || currentHist.inspectedBy || 'Technician')
+    : (isEditing ? loggedUserName : (preparedBy || loggedUserName));
+  const displayCheckedBy = isHistorical ? currentHist.checkedBy : checkedByInfo;
+  const displayApprovedBy = isHistorical ? currentHist.approvedBy : approvedByInfo;
 
   return (
     <div className="card pm-sheet-card" style={{ marginTop: '24px', padding: '0', overflow: 'hidden' }}>
@@ -234,21 +274,44 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
               Edit Mode Active — Enter inspection details below
             </span>
-          ) : activeRecordId ? (
+          ) : isHistorical ? (
             <span style={{
               fontSize: '11.5px',
               padding: '4px 12px',
-              backgroundColor: '#dcfce7',
-              color: '#15803d',
+              backgroundColor: '#fffbeb',
+              color: '#92400e',
               borderRadius: '12px',
               fontWeight: 700,
-              border: '1px solid #86efac',
+              border: '1.5px solid #f59e0b',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px'
             }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16a34a' }}></span>
-              Saved Record Active (Last Check: {checkDate})
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#d97706' }}></span>
+              Viewing Historical Revision {selectedRevisionIndex + 1} ({displayCheckDate})
+            </span>
+          ) : activeRecordId ? (
+            <span style={{
+              fontSize: '11.5px',
+              padding: '4px 12px',
+              backgroundColor: checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved' ? '#dcfce7' : '#eff6ff',
+              color: checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved' ? '#15803d' : '#1d4ed8',
+              borderRadius: '12px',
+              fontWeight: 700,
+              border: checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved' ? '1px solid #86efac' : '1px solid #bfdbfe',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved' ? '#16a34a' : '#2563eb'
+              }}></span>
+              {checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved'
+                ? `PM Active (Verified & Approved • ${checkDate})`
+                : `PM Active (Awaiting QA / Management Verification)`}
             </span>
           ) : (
             <span style={{
@@ -283,6 +346,40 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               <span style={{ color: '#64748b', fontWeight: 600 }}>Prepared by:</span>
               <strong style={{ color: '#1e40af' }}>{displayPreparedBy}</strong>
             </span>
+          )}
+
+          {/* Historical Version Dropdown (Maintains all old data and lets user view every revision) */}
+          {historyList.length > 0 && !isEditing && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                Version:
+              </span>
+              <select
+                value={selectedRevisionIndex}
+                onChange={(e) => setSelectedRevisionIndex(Number(e.target.value))}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: isHistorical ? '1.5px solid #d97706' : '1px solid #cbd5e1',
+                  backgroundColor: isHistorical ? '#fffbeb' : '#ffffff',
+                  color: isHistorical ? '#92400e' : '#0f172a',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+                title="View active PM or previous historical PM inspections"
+              >
+                <option value={-1}>
+                  Current Active (Rev {historyList.length + 1}) &bull; {checkDate} ({checkedByInfo?.status === 'Verified' && approvedByInfo?.status === 'Approved' ? 'Approved' : 'Pending QA/Approval'})
+                </option>
+                {historyList.map((h, hIdx) => (
+                  <option key={hIdx} value={hIdx}>
+                    Rev {hIdx + 1} &bull; {h.checkDate} (by {h.preparedBy || 'Technician'}) {h.checkedBy?.status ? `• QA ${h.checkedBy.status}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
 
@@ -327,6 +424,24 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                 <span>Save PM Record</span>
               </button>
             </>
+          ) : isHistorical ? (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setSelectedRevisionIndex(-1)}
+              style={{
+                padding: '8px 18px',
+                fontSize: '13px',
+                fontWeight: 700,
+                borderRadius: '6px',
+                backgroundColor: '#ffffff',
+                border: '1.5px solid #d97706',
+                color: '#92400e',
+                cursor: 'pointer'
+              }}
+            >
+              ← Back to Active PM
+            </button>
           ) : (
             <button
               type="button"
@@ -362,6 +477,48 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
           )}
         </div>
       </div>
+
+      {/* Historical Revision Alert Banner */}
+      {isHistorical && (
+        <div style={{
+          margin: '14px 18px 0',
+          padding: '10px 16px',
+          backgroundColor: '#fffbeb',
+          border: '1.5px solid #f59e0b',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '12.5px',
+          color: '#92400e'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>📜</span>
+            <span>
+              <strong>Viewing Historical Inspection: Revision {selectedRevisionIndex + 1}</strong>
+              {' '}&bull; Inspected on <strong>{displayCheckDate}</strong> by <strong>{displayPreparedBy}</strong>
+              {displayCheckedBy?.status && ` (QA: ${displayCheckedBy.status})`}
+              {displayApprovedBy?.status && ` (Management: ${displayApprovedBy.status})`}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedRevisionIndex(-1)}
+            style={{
+              padding: '4px 12px',
+              fontSize: '12px',
+              fontWeight: 700,
+              backgroundColor: '#ffffff',
+              color: '#92400e',
+              border: '1.5px solid #d97706',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            ← Return to Current Active PM
+          </button>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* THE OFFICIAL PREVENTIVE MAINTENANCE CHECK LIST SHEET           */}
@@ -451,21 +608,21 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               </div>
               <div style={{ padding: '4px 8px', borderRight: '1px solid #334155' }}>
                 <span className="print-only-text" style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a' }}>
-                  {checkDate}
+                  {displayCheckDate}
                 </span>
                 <input
                   type="date"
                   className="pm-sheet-input screen-only-input"
-                  value={checkDate}
+                  value={displayCheckDate}
                   onChange={(e) => setCheckDate(e.target.value)}
-                  disabled={!isEditing}
+                  disabled={!isEditing || isHistorical}
                   style={{
                     width: '100%',
-                    border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                    background: isEditing ? '#ffffff' : '#f8fafc',
+                    border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                    background: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
                     fontWeight: 700,
                     color: '#0f172a',
-                    cursor: isEditing ? 'pointer' : 'default',
+                    cursor: isEditing && !isHistorical ? 'pointer' : 'default',
                     padding: '4px 6px',
                     borderRadius: '4px',
                     fontSize: '12px'
@@ -499,21 +656,21 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               </div>
               <div style={{ padding: '4px 8px' }}>
                 <span className="print-only-text" style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a' }}>
-                  {nextDueDate}
+                  {displayNextDueDate}
                 </span>
                 <input
                   type="date"
                   className="pm-sheet-input screen-only-input"
-                  value={nextDueDate}
+                  value={displayNextDueDate}
                   onChange={(e) => setNextDueDate(e.target.value)}
-                  disabled={!isEditing}
+                  disabled={!isEditing || isHistorical}
                   style={{
                     width: '100%',
-                    border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                    background: isEditing ? '#ffffff' : '#f8fafc',
+                    border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                    background: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
                     fontWeight: 700,
                     color: '#0f172a',
-                    cursor: isEditing ? 'pointer' : 'default',
+                    cursor: isEditing && !isHistorical ? 'pointer' : 'default',
                     padding: '4px 6px',
                     borderRadius: '4px',
                     fontSize: '12px'
@@ -582,7 +739,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, idx) => (
+                {displayRows.map((row, idx) => (
                   <tr
                     key={idx}
                     style={{
@@ -625,7 +782,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'center', fontWeight: 600 }}>
                         {row.method || '—'}
                       </div>
-                      {isEditing ? (
+                      {isEditing && !isHistorical ? (
                         <select
                           className="screen-only-input"
                           value={row.method || ''}
@@ -690,7 +847,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
                         {row.specification || '—'}
                       </div>
-                      {isEditing && (
+                      {isEditing && !isHistorical && (
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -747,21 +904,21 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                         rows={2}
                         value={row.specification}
                         onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Specification standard (e.g. ⌀ 25 ± 0.05)..." : "—"}
+                        readOnly={!isEditing || isHistorical}
+                        placeholder={isEditing && !isHistorical ? "Specification standard (e.g. ⌀ 25 ± 0.05)..." : "—"}
                         style={{
                           width: '100%',
-                          minHeight: isEditing ? '54px' : '62px',
+                          minHeight: isEditing && !isHistorical ? '54px' : '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
+                          border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
                           fontSize: '12px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: isEditing && !isHistorical ? 'vertical' : 'none',
+                          cursor: isEditing && !isHistorical ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -783,22 +940,22 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                         rows={2}
                         value={row.actualCondition}
                         onChange={(e) => handleRowChange(idx, 'actualCondition', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Enter actual condition / observation..." : "—"}
+                        readOnly={!isEditing || isHistorical}
+                        placeholder={isEditing && !isHistorical ? "Enter actual condition / observation..." : "—"}
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
+                          border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
                           fontWeight: 600,
                           fontSize: '12.5px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: isEditing && !isHistorical ? 'vertical' : 'none',
+                          cursor: isEditing && !isHistorical ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -815,21 +972,21 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                         rows={2}
                         value={row.actionTaken}
                         onChange={(e) => handleRowChange(idx, 'actionTaken', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Enter action taken..." : "—"}
+                        readOnly={!isEditing || isHistorical}
+                        placeholder={isEditing && !isHistorical ? "Enter action taken..." : "—"}
                         style={{
                           width: '100%',
                           minHeight: '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
-                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
+                          border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
                           fontSize: '12px',
                           lineHeight: 1.45,
                           color: '#0f172a',
                           outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
+                          resize: isEditing && !isHistorical ? 'vertical' : 'none',
+                          cursor: isEditing && !isHistorical ? 'text' : 'default',
                           fontFamily: 'inherit',
                           boxSizing: 'border-box'
                         }}
@@ -869,7 +1026,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                   ✓ {displayPreparedBy}
                 </span>
                 <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
-                  {checkDate ? `Checked: ${checkDate}` : ''}
+                  {displayCheckDate ? `Checked: ${displayCheckDate}` : ''}
                 </span>
               </div>
             </div>
@@ -882,26 +1039,26 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               flexDirection: 'column',
               justifyContent: 'center',
               minHeight: '75px',
-              backgroundColor: checkedByInfo?.status === 'Verified' ? '#f0fdf4' : checkedByInfo?.status === 'Revision Requested' ? '#fef2f2' : '#fafafa'
+              backgroundColor: displayCheckedBy?.status === 'Verified' ? '#f0fdf4' : displayCheckedBy?.status === 'Revision Requested' ? '#fef2f2' : '#fafafa'
             }}>
               <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px', marginBottom: '6px' }}>
                 Checked By
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                {checkedByInfo?.name ? (
+                {displayCheckedBy?.name ? (
                   <>
                     <span style={{
                       fontWeight: 800,
                       fontSize: '13px',
-                      color: checkedByInfo.status === 'Verified' ? '#16a34a' : '#dc2626',
+                      color: displayCheckedBy.status === 'Verified' ? '#16a34a' : '#dc2626',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '5px'
                     }}>
-                      {checkedByInfo.status === 'Verified' ? '✓' : '⚠'} {checkedByInfo.name}
+                      {displayCheckedBy.status === 'Verified' ? '✓' : '⚠'} {displayCheckedBy.name}
                     </span>
                     <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
-                      {checkedByInfo.status} &bull; {checkedByInfo.date || ''}
+                      {displayCheckedBy.status} &bull; {displayCheckedBy.date || ''}
                     </span>
                   </>
                 ) : (
@@ -919,26 +1076,26 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               flexDirection: 'column',
               justifyContent: 'center',
               minHeight: '75px',
-              backgroundColor: approvedByInfo?.status === 'Approved' ? '#eff6ff' : approvedByInfo?.status === 'Hold' ? '#fef2f2' : '#fafafa'
+              backgroundColor: displayApprovedBy?.status === 'Approved' ? '#eff6ff' : displayApprovedBy?.status === 'Hold' ? '#fef2f2' : '#fafafa'
             }}>
               <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px', marginBottom: '6px' }}>
                 Approved By
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                {approvedByInfo?.name ? (
+                {displayApprovedBy?.name ? (
                   <>
                     <span style={{
                       fontWeight: 800,
                       fontSize: '13px',
-                      color: approvedByInfo.status === 'Approved' ? '#2563eb' : '#dc2626',
+                      color: displayApprovedBy.status === 'Approved' ? '#2563eb' : '#dc2626',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '5px'
                     }}>
-                      {approvedByInfo.status === 'Approved' ? '✓' : '⚠'} {approvedByInfo.name}
+                      {displayApprovedBy.status === 'Approved' ? '✓' : '⚠'} {displayApprovedBy.name}
                     </span>
                     <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
-                      {approvedByInfo.status} &bull; {approvedByInfo.date || ''}
+                      {displayApprovedBy.status} &bull; {displayApprovedBy.date || ''}
                     </span>
                   </>
                 ) : (
