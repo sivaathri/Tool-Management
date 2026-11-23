@@ -1,12 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { formatNumber } from '../../utils/formatters';
 import { exportToolsToCSV } from '../../services/reportService';
-import { getPMRecords } from '../../services/toolService';
+import { getPMRecords, getDueYearlyPMSchedules } from '../../services/toolService';
 import ToolReplacementModal from '../ServiceHistory/modals/ToolReplacementModal';
 
 export default function ReplacementAlertsView({ tools, onViewDossier, onViewServiceHistory, onNavigate, onReplaceTool, showToast }) {
   const [filterType, setFilterType] = useState('ALL');
   const [replacingTool, setReplacingTool] = useState(null);
+
+  // Yearly PM Schedules due in active week / month
+  const dueYearlyPlans = useMemo(() => {
+    try {
+      return getDueYearlyPMSchedules();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  }, [tools]);
 
   // Rejected PMs requiring technician rework
   const rejectedPMs = useMemo(() => {
@@ -204,6 +214,40 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
           </div>
         </div>
 
+        {/* Yearly PM Plan Due */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '10px',
+          border: '1.5px solid #93c5fd',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          boxShadow: '0 2px 6px rgba(37, 99, 235, 0.06)'
+        }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: '#eff6ff',
+            color: '#2563eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px'
+          }}>
+            🗓
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              Yearly PM Due (Plan)
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: '#1d4ed8', marginTop: '2px' }}>
+              {dueYearlyPlans.length}
+            </div>
+          </div>
+        </div>
+
         <div style={{
           backgroundColor: '#ffffff',
           borderRadius: '10px',
@@ -231,11 +275,167 @@ export default function ReplacementAlertsView({ tools, onViewDossier, onViewServ
               Total Action Alerts
             </div>
             <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--slate-800)', marginTop: '2px' }}>
-              {allAttention.length + rejectedPMs.length}
+              {allAttention.length + rejectedPMs.length + dueYearlyPlans.length}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Yearly PM Plan Due Alerts (from 48-Week Schedule) */}
+      {dueYearlyPlans.length > 0 && (
+        <div style={{
+          backgroundColor: '#eff6ff',
+          border: '1.5px solid #93c5fd',
+          borderRadius: '10px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          boxShadow: '0 4px 12px rgba(37, 99, 235, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '24px' }}>🗓</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#1e40af' }}>
+                  Yearly PM Plan Due This Week / Month ({dueYearlyPlans.length})
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '12.5px', color: '#2563eb' }}>
+                  Preventive maintenance inspection is scheduled for these part numbers per the FY 2026-2027 yearly plan.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => onNavigate('schedule')}
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 700,
+                padding: '6px 14px',
+                backgroundColor: '#ffffff',
+                border: '1px solid #bfdbfe',
+                color: '#1d4ed8',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              <span>📅 View 48-Week Schedule Matrix</span>
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {dueYearlyPlans.map((plan, idx) => {
+              const matchedTool = tools.find(t => 
+                (t.applicationPartNo && t.applicationPartNo.toLowerCase().trim() === (plan.applicationPartNo || '').toLowerCase().trim()) ||
+                (plan.toolNos && plan.toolNos.some(tn => tn.toLowerCase().trim() === (t.toolNo || '').toLowerCase().trim()))
+              ) || {
+                id: `tool-${plan.applicationPartNo}`,
+                toolNo: plan.toolNos?.[0] || 'INE T 0000',
+                applicationPartNo: plan.applicationPartNo,
+                productName: plan.productName,
+                classification: 'Non-Critical'
+              };
+
+              return (
+                <div
+                  key={plan.applicationPartNo || idx}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '8px',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{
+                        backgroundColor: '#2563eb',
+                        color: '#ffffff',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '4px'
+                      }}>
+                        {plan.isDueThisWeek ? 'DUE THIS WEEK' : 'DUE THIS MONTH'}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono, monospace)', fontWeight: 800, fontSize: '14.5px', color: '#0f172a' }}>
+                        Part #{plan.applicationPartNo}
+                      </span>
+                      <span style={{ color: '#475569', fontSize: '13px', fontWeight: 600 }}>
+                        &bull; {plan.productName}
+                      </span>
+                      <span style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: '#1d4ed8',
+                        backgroundColor: '#dbeafe',
+                        padding: '2px 8px',
+                        borderRadius: '12px'
+                      }}>
+                        Target: {plan.currentSlot?.monthLabel || 'Current Month'} - Week {plan.currentSlot?.weekNumber || 1}
+                      </span>
+                    </div>
+
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
+                        Dependent Tools ({plan.toolNos?.length || 0}):
+                      </span>
+                      {(plan.toolNos || []).map(tNo => (
+                        <span
+                          key={tNo}
+                          style={{
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: '11.5px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            backgroundColor: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            color: '#1e293b'
+                          }}
+                        >
+                          {tNo}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => onViewServiceHistory(matchedTool)}
+                      style={{
+                        backgroundColor: '#2563eb',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '12.5px',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
+                        whiteSpace: 'nowrap'
+                      }}
+                      title="Open Preventive Maintenance Checklist for this tool"
+                    >
+                      <span>🛠 Start PM Checklist</span>
+                      <span>&rarr;</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Rejected PM Inspections & Rework Required Alert Banner */}
       {rejectedPMs.length > 0 && (

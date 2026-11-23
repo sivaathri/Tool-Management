@@ -1,5 +1,6 @@
 import { INITIAL_TOOLS, INITIAL_MACHINES, INITIAL_PRODUCTION, INITIAL_USERS } from './initialData';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { getCurrentFiscalYear, getCurrentWeekSlot } from '../utils/pmYearlySchedule';
 
 // Format numbers with commas (e.g. 200,000)
 export function formatNumber(val) {
@@ -436,7 +437,12 @@ export function calculateMetrics(tools = [], logs = []) {
   const totalProduced = tools.reduce((sum, t) => sum + (t.cumulative || 0), 0);
   const pmRecords = getPMRecords();
   const rejectedPMCount = Array.isArray(pmRecords) ? pmRecords.filter(p => p.approvedBy?.status === 'Rejected' || p.checkedBy?.status === 'Revision Requested').length : 0;
-  const criticalAlertsCount = tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun').length + rejectedPMCount;
+  
+  // Calculate yearly scheduled PMs due this week/month
+  const dueYearlySchedules = getDueYearlyPMSchedules();
+  const dueYearlyCount = Array.isArray(dueYearlySchedules) ? dueYearlySchedules.length : 0;
+
+  const criticalAlertsCount = tools.filter(t => t.status === 'Replacement Due' || t.status === 'Critical Overrun').length + rejectedPMCount + dueYearlyCount;
   const warningAlertsCount = tools.filter(t => t.status === 'Near Limit').length;
   const activeCount = tools.filter(t => t.status === 'Active' || t.status === 'Healthy').length;
 
@@ -447,7 +453,9 @@ export function calculateMetrics(tools = [], logs = []) {
     criticalAlertsCount,
     warningAlertsCount,
     activeCount,
-    rejectedPMCount
+    rejectedPMCount,
+    dueYearlyCount,
+    dueYearlySchedules
   };
 }
 
@@ -631,6 +639,210 @@ export function saveSchedule(scheduleData) {
   } catch (e) {
     console.error('Error saving schedule', e);
     return null;
+  }
+}
+
+// Storage for 48-Week Yearly PM Schedule Plans
+const YEARLY_PLANS_KEY = 'tms_yearly_pm_plans';
+
+export function getYearlyPMPlans(fiscalYear = '2026-2027') {
+  try {
+    const raw = localStorage.getItem(YEARLY_PLANS_KEY);
+    let plans = raw ? JSON.parse(raw) : [];
+
+    // Group active tools by applicationPartNo
+    const tools = getTools();
+    const partMap = {};
+    tools.forEach(t => {
+      const partNo = (t.applicationPartNo || t.toolNo || 'Unknown-Part').trim();
+      if (!partMap[partNo]) {
+        partMap[partNo] = {
+          applicationPartNo: partNo,
+          productName: t.productName || t.application || 'Tool',
+          classification: t.classification || 'Non-Critical',
+          description: t.description || '',
+          tools: []
+        };
+      }
+      partMap[partNo].tools.push(t);
+    });
+
+    let modified = false;
+
+    // Ensure every existing application part has a plan entry for this fiscal year
+    Object.keys(partMap).forEach(partNo => {
+      const info = partMap[partNo];
+      const cleanPart = partNo.toLowerCase().trim();
+      let existingPlan = plans.find(p => 
+        p.fiscalYear === fiscalYear && 
+        (p.applicationPartNo || '').toLowerCase().trim() === cleanPart
+      );
+
+      const toolNos = info.tools.map(t => t.toolNo);
+      const toolIds = info.tools.map(t => t.id);
+
+      if (!existingPlan) {
+        // Auto-initialize plan entry with sample quarters: May-W1, Aug-W1, Nov-W2, Feb-W2 (matching user sample)
+        const startShort = fiscalYear.split('-')[0]?.slice(-2) || '26';
+        const endShort = fiscalYear.split('-')[1]?.slice(-2) || '27';
+        const defaultPlannedWeeks = [
+          `May-${startShort}_W1`,
+          `Aug-${startShort}_W1`,
+          `Nov-${startShort}_W2`,
+          `Feb-${endShort}_W2`
+        ];
+
+        existingPlan = {
+          id: `plan_${partNo.replace(/[^a-zA-Z0-9]/g, '_')}_${fiscalYear}`,
+          fiscalYear,
+          applicationPartNo: partNo,
+          productName: info.productName,
+          classification: info.classification,
+          description: info.description,
+          toolNos,
+          toolIds,
+          plannedWeeks: defaultPlannedWeeks,
+          updatedAt: new Date().toISOString()
+        };
+        plans.push(existingPlan);
+        modified = true;
+      } else {
+        // Keep toolNos and toolIds synchronized with tools in master list
+        existingPlan.toolNos = toolNos;
+        existingPlan.toolIds = toolIds;
+        existingPlan.productName = info.productName || existingPlan.productName;
+        existingPlan.classification = info.classification || existingPlan.classification;
+      }
+    });
+
+    if (modified) {
+      localStorage.setItem(YEARLY_PLANS_KEY, JSON.stringify(plans));
+    }
+
+    return plans.filter(p => p.fiscalYear === fiscalYear);
+  } catch (e) {
+    console.error('Error getting yearly PM plans', e);
+    return [];
+  }
+}
+
+export function saveYearlyPMPlan(planData) {
+  try {
+    const raw = localStorage.getItem(YEARLY_PLANS_KEY);
+    const plans = raw ? JSON.parse(raw) : [];
+    const fiscalYear = planData.fiscalYear || '2026-2027';
+    const cleanPart = (planData.applicationPartNo || '').toLowerCase().trim();
+
+    const idx = plans.findIndex(p => 
+      p.fiscalYear === fiscalYear && 
+      (p.applicationPartNo || '').toLowerCase().trim() === cleanPart
+    );
+
+    const item = {
+      ...planData,
+      id: planData.id || `plan_${(planData.applicationPartNo || 'part').replace(/[^a-zA-Z0-9]/g, '_')}_${fiscalYear}`,
+      fiscalYear,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (idx >= 0) {
+      plans[idx] = { ...plans[idx], ...item };
+    } else {
+      plans.push(item);
+    }
+
+    localStorage.setItem(YEARLY_PLANS_KEY, JSON.stringify(plans));
+    return item;
+  } catch (e) {
+    console.error('Error saving yearly PM plan', e);
+    return null;
+  }
+}
+
+export function toggleYearlyPlanWeek(applicationPartNo, fiscalYear = '2026-2027', slotKey) {
+  try {
+    const raw = localStorage.getItem(YEARLY_PLANS_KEY);
+    const plans = raw ? JSON.parse(raw) : [];
+    const cleanPart = (applicationPartNo || '').toLowerCase().trim();
+
+    let plan = plans.find(p => 
+      p.fiscalYear === fiscalYear && 
+      (p.applicationPartNo || '').toLowerCase().trim() === cleanPart
+    );
+
+    if (!plan) {
+      const allPlans = getYearlyPMPlans(fiscalYear);
+      plan = allPlans.find(p => (p.applicationPartNo || '').toLowerCase().trim() === cleanPart);
+      if (!plan) return false;
+      plans.push(plan);
+    }
+
+    const currentWeeks = Array.isArray(plan.plannedWeeks) ? [...plan.plannedWeeks] : [];
+    const existingIndex = currentWeeks.indexOf(slotKey);
+
+    if (existingIndex >= 0) {
+      currentWeeks.splice(existingIndex, 1);
+    } else {
+      currentWeeks.push(slotKey);
+    }
+
+    plan.plannedWeeks = currentWeeks;
+    plan.updatedAt = new Date().toISOString();
+
+    localStorage.setItem(YEARLY_PLANS_KEY, JSON.stringify(plans));
+    return true;
+  } catch (e) {
+    console.error('Error toggling yearly plan week', e);
+    return false;
+  }
+}
+
+export function getDueYearlyPMSchedules(fiscalYear = '2026-2027') {
+  try {
+    const currentSlot = getCurrentWeekSlot();
+    const plans = getYearlyPMPlans(fiscalYear);
+    const pmRecords = getPMRecords();
+
+    const dueList = [];
+
+    plans.forEach(plan => {
+      const weeks = Array.isArray(plan.plannedWeeks) ? plan.plannedWeeks : [];
+      // Check if current week slot is planned
+      const isDueThisWeek = weeks.includes(currentSlot.slotKey);
+      // Check if any slot in current month is planned
+      const isDueThisMonth = weeks.some(w => w.startsWith(`${currentSlot.monthKey}_`));
+
+      if (isDueThisWeek || isDueThisMonth) {
+        // Check if inspection was already verified for tools of this part in this month
+        const hasVerifiedPMInMonth = (plan.toolNos || []).some(tNo => {
+          const cleanNo = tNo.toLowerCase().trim();
+          return pmRecords.some(pm => {
+            const matchTool = (pm.toolNo || '').toLowerCase().trim() === cleanNo || (pm.applicationPartNo || '').toLowerCase().trim() === (plan.applicationPartNo || '').toLowerCase().trim();
+            const isVerified = pm.checkedBy?.status === 'Verified' || pm.approvedBy?.status === 'Approved';
+            const pmDate = pm.checkDate || '';
+            const inCurrentMonth = pmDate.includes(new Date().toISOString().slice(0, 7)); // e.g. 2026-11
+            return matchTool && isVerified && inCurrentMonth;
+          });
+        });
+
+        if (!hasVerifiedPMInMonth) {
+          dueList.push({
+            plan,
+            applicationPartNo: plan.applicationPartNo,
+            productName: plan.productName,
+            toolNos: plan.toolNos || [],
+            isDueThisWeek,
+            currentSlotKey: currentSlot.slotKey,
+            currentSlotLabel: currentSlot.label
+          });
+        }
+      }
+    });
+
+    return dueList;
+  } catch (e) {
+    console.error('Error getting due yearly schedules', e);
+    return [];
   }
 }
 
@@ -827,6 +1039,10 @@ export const TMSStorage = {
   deletePMRecord,
   getSchedules,
   saveSchedule,
+  getYearlyPMPlans,
+  saveYearlyPMPlan,
+  toggleYearlyPlanWeek,
+  getDueYearlyPMSchedules,
   updateCheckedBySignOff,
   updateApprovedBySignOff,
   sendPMToolsToApprovedBy,

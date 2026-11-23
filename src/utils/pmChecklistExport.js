@@ -314,35 +314,41 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
     container.style.left = '-9999px';
     container.style.top = '0';
     container.style.width = '1120px';
-    container.style.height = group.length === 3 ? '774px' : 'auto';
+    container.style.height = group.length === 3 ? '780px' : 'auto';
     container.style.backgroundColor = '#ffffff';
     container.style.color = '#0f172a';
     container.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    container.style.padding = '8px 12px';
+    container.style.padding = '6px 10px';
     container.style.boxSizing = 'border-box';
     container.style.zIndex = '-9999';
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     container.style.justifyContent = group.length === 3 ? 'space-between' : 'flex-start';
-    container.style.gap = '8px';
+    container.style.gap = '6px';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between; gap: 8px;">
+      <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between; gap: 6px;">
         <!-- PM 1 on this page -->
-        ${generatePMChecklistHTML(tool, insp1, insp1.revisionLabel, 3)}
+        <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+          ${generatePMChecklistHTML(tool, insp1, insp1.revisionLabel, 3)}
+        </div>
 
         ${insp2 ? `
           <!-- Divider between PM 1 and PM 2 -->
           <div style="border-top: 1.5px dashed #94a3b8; margin: 0;"></div>
           <!-- PM 2 on this page -->
-          ${generatePMChecklistHTML(tool, insp2, insp2.revisionLabel, 3)}
+          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            ${generatePMChecklistHTML(tool, insp2, insp2.revisionLabel, 3)}
+          </div>
         ` : ''}
 
         ${insp3 ? `
           <!-- Divider between PM 2 and PM 3 -->
           <div style="border-top: 1.5px dashed #94a3b8; margin: 0;"></div>
           <!-- PM 3 on this page -->
-          ${generatePMChecklistHTML(tool, insp3, insp3.revisionLabel, 3)}
+          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            ${generatePMChecklistHTML(tool, insp3, insp3.revisionLabel, 3)}
+          </div>
         ` : ''}
       </div>
     `;
@@ -359,13 +365,15 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
 
       const imgData = canvas.toDataURL('image/png');
       const contentHeight = (canvas.height * contentWidth) / canvas.width;
+      const targetFullPageHeight = pdfHeight - (margin * 2);
 
       if (pIdx > 0) {
         pdf.addPage('a4', 'l');
       }
 
-      // Add the 3 PMs page to PDF fitting neatly onto Landscape A4
-      pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, pdfHeight - (margin * 2)));
+      // When 3 PMs are generated on a page, fill the full landscape A4 height to eliminate bottom white space
+      const renderHeight = group.length === 3 ? targetFullPageHeight : Math.min(contentHeight, targetFullPageHeight);
+      pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, renderHeight);
     } finally {
       document.body.removeChild(container);
     }

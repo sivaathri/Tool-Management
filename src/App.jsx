@@ -317,6 +317,7 @@ export default function App() {
             tools={tools}
             onNavigateToPM={handleViewServiceHistory}
             showToast={addToast}
+            onRefresh={reloadData}
           />
         )}
 
