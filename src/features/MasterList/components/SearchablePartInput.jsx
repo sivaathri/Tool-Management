@@ -159,7 +159,7 @@ export default function SearchablePartInput({
 
   return (
     <div className="combobox-container" ref={containerRef} style={{ width: '100%' }}>
-      {/* Label and Inline Prefix Selection Pills on the same row */}
+      {/* Label and live preview badge */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -167,50 +167,26 @@ export default function SearchablePartInput({
         marginBottom: '6px',
         minHeight: '26px'
       }}>
-        <label className="form-label" htmlFor="inpAppPartNo" style={{ margin: 0, fontWeight: 700, whiteSpace: 'nowrap' }}>
+        <label className="form-label" htmlFor="inpAppPartNo" style={{ margin: 0, fontWeight: 700 }}>
           Application Part No. *
         </label>
-
-        {/* Inline Prefix Selection Pills: NSR, NRS, FWM, NIV, NIG */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}>
-          <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--slate-500)', textTransform: 'uppercase', marginRight: '2px' }}>
-            Select:
+        {currentFullValue && (
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            color: '#1d4ed8',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            padding: '1px 8px',
+            borderRadius: '4px',
+            fontFamily: 'var(--font-mono, monospace)'
+          }}>
+            Part: {currentFullValue}
           </span>
-          {PREFIX_OPTIONS.map(pfx => {
-            const isActive = selectedPrefix === pfx;
-            return (
-              <button
-                key={pfx}
-                type="button"
-                onClick={() => handlePrefixSelect(pfx)}
-                style={{
-                  padding: '2px 7px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  fontFamily: 'var(--font-mono, monospace)',
-                  cursor: 'pointer',
-                  border: isActive ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                  backgroundColor: isActive ? '#2563eb' : '#ffffff',
-                  color: isActive ? '#ffffff' : '#334155',
-                  boxShadow: isActive ? '0 1px 3px rgba(37, 99, 235, 0.25)' : 'none',
-                  transition: 'all 0.15s ease',
-                  lineHeight: '1.2'
-                }}
-                title={`Select ${pfx}`}
-              >
-                {pfx}
-              </button>
-            );
-          })}
-        </div>
+        )}
       </div>
 
-      {/* Unified Input Wrapper with Prefix Tag and Number Box */}
+      {/* Unified Input Wrapper with Embedded Prefix Dropdown and Number Box */}
       <div className="combobox-input-wrapper" style={{
         display: 'flex',
         alignItems: 'stretch',
@@ -221,22 +197,61 @@ export default function SearchablePartInput({
         height: '38px',
         boxSizing: 'border-box'
       }}>
-        {/* Selected Prefix Tag inside input */}
+        {/* Integrated Prefix Dropdown Selector */}
         <div style={{
+          position: 'relative',
           display: 'flex',
           alignItems: 'center',
           backgroundColor: '#f8fafc',
           borderRight: '1.5px solid #cbd5e1',
-          padding: '0 10px',
-          fontWeight: 800,
-          fontSize: '13px',
-          fontFamily: 'var(--font-mono, monospace)',
-          color: '#1d4ed8',
-          userSelect: 'none',
-          whiteSpace: 'nowrap'
+          borderTopLeftRadius: 'var(--radius-md)',
+          borderBottomLeftRadius: 'var(--radius-md)'
         }}>
-          {selectedPrefix}
-          <span style={{ marginLeft: '4px', color: '#94a3b8' }}>-</span>
+          <select
+            value={selectedPrefix}
+            onChange={(e) => handlePrefixSelect(e.target.value)}
+            style={{
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              backgroundColor: 'transparent',
+              border: 'none',
+              padding: '0 24px 0 10px',
+              fontWeight: 800,
+              fontSize: '13px',
+              fontFamily: 'var(--font-mono, monospace)',
+              color: '#1d4ed8',
+              cursor: 'pointer',
+              height: '100%',
+              outline: 'none',
+              lineHeight: '36px'
+            }}
+            title="Select Prefix (NSR, NRS, FWM, NIV, NIG)"
+          >
+            {PREFIX_OPTIONS.map(pfx => (
+              <option key={pfx} value={pfx} style={{ fontWeight: 700, color: '#0f172a' }}>
+                {pfx} -
+              </option>
+            ))}
+          </select>
+          {/* Small chevron arrow indicator for the prefix dropdown */}
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1d4ed8"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              position: 'absolute',
+              right: '8px',
+              pointerEvents: 'none'
+            }}
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
         </div>
 
         {/* Number Input */}
@@ -351,7 +366,7 @@ export default function SearchablePartInput({
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <span>Select  (NSR, NRS, FWM, NIV, NIG) & enter number</span>
+            <span>Choose prefix (NSR, NRS, FWM, NIV, NIG) & enter number</span>
           </div>
         </div>
       )}
