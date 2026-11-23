@@ -1296,106 +1296,30 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                   </div>
                 </div>
 
-                {/* Quick Presets Bar */}
-                <div style={{ marginBottom: '18px' }}>
-                  <label className="form-label" style={{ fontWeight: 800, color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>Quick Recurrence Presets:</span>
-                    <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 500 }}>(Click to auto-populate weeks across the year)</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => handleApplyPreset('Quarterly')}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        backgroundColor: selectedFrequency === 'Quarterly' ? '#2563eb' : '#ffffff',
-                        color: selectedFrequency === 'Quarterly' ? '#ffffff' : '#334155',
-                        border: '1.5px solid #cbd5e1',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      Quarterly (May-W1, Aug-W1, Nov-W2, Feb-W2)
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => handleApplyPreset('Bi-Monthly')}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        backgroundColor: selectedFrequency === 'Bi-Monthly' ? '#2563eb' : '#ffffff',
-                        color: selectedFrequency === 'Bi-Monthly' ? '#ffffff' : '#334155',
-                        border: '1.5px solid #cbd5e1',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      Bi-Monthly (Every 2 Months)
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => handleApplyPreset('Monthly')}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        backgroundColor: selectedFrequency === 'Monthly' ? '#2563eb' : '#ffffff',
-                        color: selectedFrequency === 'Monthly' ? '#ffffff' : '#334155',
-                        border: '1.5px solid #cbd5e1',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      Monthly (Every Month)
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => handleApplyPreset('Half-Yearly')}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        backgroundColor: selectedFrequency === 'Half-Yearly' ? '#2563eb' : '#ffffff',
-                        color: selectedFrequency === 'Half-Yearly' ? '#ffffff' : '#334155',
-                        border: '1.5px solid #cbd5e1',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      Half-Yearly (2 Times/Year)
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => handleApplyPreset('Clear')}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        backgroundColor: '#ffffff',
-                        color: '#dc2626',
-                        border: '1.5px solid #fecaca',
-                        borderRadius: '6px',
-                        marginLeft: 'auto'
-                      }}
-                    >
-                      ✕ Clear All
-                    </button>
-                  </div>
-                </div>
-
                 {/* Visual 12-Month Card Grid with Week Checkboxes */}
                 <div>
-                  <label className="form-label" style={{ fontWeight: 800, color: '#0f172a', marginBottom: '10px' }}>
-                    Select Inspection Month & Weeks (Custom Multi-Selection):
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <label className="form-label" style={{ fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      Select Inspection Month & Weeks:
+                    </label>
+                    {selectedWeeks.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedWeeks([])}
+                        style={{
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          color: '#dc2626',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '2px 6px'
+                        }}
+                      >
+                        ✕ Clear All Selected ({selectedWeeks.length})
+                      </button>
+                    )}
+                  </div>
 
                   <div style={{
                     display: 'grid',
