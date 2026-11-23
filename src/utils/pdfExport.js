@@ -266,40 +266,31 @@ export async function exportPMReportToPDF(tool, logs = [], pmRecord = null) {
 
     <!-- 6. OFFICIAL SIGN-OFF BLOCK -->
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid #0f172a; text-align: center; background-color: #ffffff; margin-top: 18px;">
-      <div style="padding: 10px 12px; border-right: 1px solid #0f172a;">
-        <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569;">Inspected & Prepared By</div>
-        <div style="height: 38px; display: flex; flex-direction: column; justify-content: center;">
+      <div style="padding: 12px 12px; border-right: 1px solid #0f172a; min-height: 55px; display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px;">Prepared By</div>
+        <div style="display: flex; flex-direction: column; justify-content: center;">
           ${(pmRecord?.preparedBy || pmRecord?.inspectedBy) ? `
             <div style="font-weight: 800; font-size: 12px; color: #0284c7;">✓ ${pmRecord.preparedBy || pmRecord.inspectedBy}</div>
             <div style="font-size: 9.5px; color: #64748b;">${pmRecord.checkDate || ''}</div>
-          ` : ''}
-        </div>
-        <div style="font-size: 11.5px; font-weight: 700; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #0f172a;">
-          Tool Maintenance Technician
+          ` : '<div style="font-size: 11px; color: #94a3b8;">—</div>'}
         </div>
       </div>
-      <div style="padding: 10px 12px; border-right: 1px solid #0f172a;">
-        <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569;">Verified & Checked By</div>
-        <div style="height: 38px; display: flex; flex-direction: column; justify-content: center;">
+      <div style="padding: 12px 12px; border-right: 1px solid #0f172a; min-height: 55px; display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px;">Checked By</div>
+        <div style="display: flex; flex-direction: column; justify-content: center;">
           ${pmRecord?.checkedBy?.name ? `
             <div style="font-weight: 800; font-size: 12px; color: #15803d;">✓ ${pmRecord.checkedBy.name}</div>
             <div style="font-size: 9.5px; color: #64748b;">${pmRecord.checkedBy.date || ''}</div>
-          ` : ''}
-        </div>
-        <div style="font-size: 11.5px; font-weight: 700; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #0f172a;">
-          Quality Assurance Lead
+          ` : '<div style="font-size: 11px; color: #94a3b8;">Pending QA Check</div>'}
         </div>
       </div>
-      <div style="padding: 10px 12px;">
-        <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569;">Approved By</div>
-        <div style="height: 38px; display: flex; flex-direction: column; justify-content: center;">
+      <div style="padding: 12px 12px; min-height: 55px; display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px;">Approved By</div>
+        <div style="display: flex; flex-direction: column; justify-content: center;">
           ${pmRecord?.approvedBy?.name ? `
             <div style="font-weight: 800; font-size: 12px; color: #1d4ed8;">✓ ${pmRecord.approvedBy.name}</div>
             <div style="font-size: 9.5px; color: #64748b;">${pmRecord.approvedBy.date || ''}</div>
-          ` : ''}
-        </div>
-        <div style="font-size: 11.5px; font-weight: 700; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #0f172a;">
-          Tool Room Lead / Plant Incharge
+          ` : '<div style="font-size: 11px; color: #94a3b8;">Pending Management Approval</div>'}
         </div>
       </div>
     </div>

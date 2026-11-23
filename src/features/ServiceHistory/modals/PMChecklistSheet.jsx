@@ -128,6 +128,29 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
     });
   };
 
+  // Helper to insert symbols (⌀, ±) into specification at cursor position or append
+  const handleInsertSymbol = (index, symbol) => {
+    if (!isEditing) return;
+    setRows(prev => {
+      const updated = [...prev];
+      const currentText = updated[index]?.specification || '';
+      const inputEl = document.getElementById(`spec-input-${index}`);
+      if (inputEl && typeof inputEl.selectionStart === 'number') {
+        const start = inputEl.selectionStart;
+        const end = inputEl.selectionEnd;
+        const newText = currentText.substring(0, start) + symbol + currentText.substring(end);
+        updated[index] = { ...updated[index], specification: newText };
+        setTimeout(() => {
+          inputEl.focus();
+          inputEl.setSelectionRange(start + symbol.length, start + symbol.length);
+        }, 10);
+      } else {
+        updated[index] = { ...updated[index], specification: currentText ? `${currentText}${symbol}` : symbol };
+      }
+      return updated;
+    });
+  };
+
   // Save Record
   const handleSave = () => {
     const loggedUser = currentUser || authService.getCurrentUser();
@@ -776,20 +799,20 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
             backgroundColor: '#ffffff',
             boxSizing: 'border-box'
           }}>
-            {/* Column 1: Prepared By (Technician) */}
+            {/* Column 1: Prepared By */}
             <div style={{
               padding: '12px 14px',
               borderRight: '1px solid #0f172a',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '90px',
+              justifyContent: 'center',
+              minHeight: '75px',
               backgroundColor: '#fafafa'
             }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px' }}>
-                Prepared By (Technician)
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                Prepared By
               </div>
-              <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontWeight: 800, fontSize: '13px', color: '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                   ✓ {displayPreparedBy}
                 </span>
@@ -797,25 +820,22 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                   {checkDate ? `Checked: ${checkDate}` : ''}
                 </span>
               </div>
-              <div style={{ fontSize: '11px', fontWeight: 700, borderTop: '1px dashed #94a3b8', paddingTop: '4px', color: '#0f172a' }}>
-                Tool Maintenance Technician
-              </div>
             </div>
 
-            {/* Column 2: Checked By (Quality Assurance) */}
+            {/* Column 2: Checked By */}
             <div style={{
               padding: '12px 14px',
               borderRight: '1px solid #0f172a',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '90px',
+              justifyContent: 'center',
+              minHeight: '75px',
               backgroundColor: checkedByInfo?.status === 'Verified' ? '#f0fdf4' : checkedByInfo?.status === 'Revision Requested' ? '#fef2f2' : '#fafafa'
             }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px' }}>
-                Checked By (Quality Assurance)
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                Checked By
               </div>
-              <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 {checkedByInfo?.name ? (
                   <>
                     <span style={{
@@ -838,24 +858,21 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '11px', fontWeight: 700, borderTop: '1px dashed #94a3b8', paddingTop: '4px', color: '#0f172a' }}>
-                Quality Assurance Lead
-              </div>
             </div>
 
-            {/* Column 3: Approved By (Management / Plant Incharge) */}
+            {/* Column 3: Approved By */}
             <div style={{
               padding: '12px 14px',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '90px',
+              justifyContent: 'center',
+              minHeight: '75px',
               backgroundColor: approvedByInfo?.status === 'Approved' ? '#eff6ff' : approvedByInfo?.status === 'Hold' ? '#fef2f2' : '#fafafa'
             }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px' }}>
-                Approved By (Plant Incharge)
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                Approved By
               </div>
-              <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 {approvedByInfo?.name ? (
                   <>
                     <span style={{
@@ -877,9 +894,6 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                     Pending Management Approval
                   </span>
                 )}
-              </div>
-              <div style={{ fontSize: '11px', fontWeight: 700, borderTop: '1px dashed #94a3b8', paddingTop: '4px', color: '#0f172a' }}>
-                Tool Room Lead / Plant Incharge
               </div>
             </div>
           </div>
