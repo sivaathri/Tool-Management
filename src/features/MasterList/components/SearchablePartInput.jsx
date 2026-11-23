@@ -1,4 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+
+const PREFIX_OPTIONS = ['NSR', 'NRS', 'FWM', 'NIV', 'NIG'];
+
+// Helper to parse existing value into prefix and number
+function parseValue(val) {
+  if (!val) return { prefix: 'NSR', number: '' };
+  const trimmed = String(val).trim();
+
+  // Match prefixes like NSR-1122, NRS_500, FWM 001, etc.
+  const match = trimmed.match(/^([A-Za-z]{2,5})[-_\s]?([0-9a-zA-Z\-_/]*)$/);
+  if (match) {
+    const pfx = match[1].toUpperCase();
+    const num = match[2];
+    if (PREFIX_OPTIONS.includes(pfx)) {
+      return { prefix: pfx, number: num };
+    }
+  }
+
+  // Pure numbers or legacy (e.g. 001)
+  const numOnly = trimmed.replace(/^(NSR|NRS|FWM|NIV|NIG)[-_\s]?/i, '');
+  return { prefix: 'NSR', number: numOnly || trimmed };
+}
+
+// Helper to construct the unified Application Part No
+function formatFullPart(pfx, num) {
+  const cleanNum = String(num || '').trim();
+  if (!cleanNum) return '';
+  const validPfx = PREFIX_OPTIONS.includes(pfx) ? pfx : 'NSR';
+  return `${validPfx}-${cleanNum}`;
+}
 
 export default function SearchablePartInput({
   value = '',
@@ -6,13 +36,24 @@ export default function SearchablePartInput({
   onSelectPart,
   existingTools = []
 }) {
+  const initialParsed = useMemo(() => parseValue(value), []);
+  const [selectedPrefix, setSelectedPrefix] = useState(initialParsed.prefix);
+  const [partNumber, setPartNumber] = useState(initialParsed.number);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Extract unique numeric-only part numbers
-  const uniqueParts = React.useMemo(() => {
+  // Sync state if value prop changes externally (e.g., editing different tool)
+  useEffect(() => {
+    const parsed = parseValue(value);
+    setSelectedPrefix(parsed.prefix);
+    setPartNumber(parsed.number);
+  }, [value]);
+
+  // Extract unique saved part numbers from existing tools
+  const uniqueParts = useMemo(() => {
     const parts = new Set();
     existingTools.forEach(t => {
       const part = t.applicationPartNo ? String(t.applicationPartNo).trim() : '';
@@ -21,12 +62,19 @@ export default function SearchablePartInput({
     return Array.from(parts).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [existingTools]);
 
-  // Filter parts based on input query
-  const query = String(value || '').trim().toLowerCase();
-  const filtered = uniqueParts.filter(p => !query || p.toLowerCase().includes(query));
-  const isExactMatch = uniqueParts.some(p => p.toLowerCase() === query);
+  const currentFullValue = formatFullPart(selectedPrefix, partNumber);
 
-  // Close dropdown on outside click
+  // Filter saved parts based on query
+  const query = (partNumber || '').trim().toLowerCase();
+  const filtered = uniqueParts.filter(p => {
+    if (!query) return true;
+    const lowerP = p.toLowerCase();
+    return lowerP.includes(query) || lowerP.includes(currentFullValue.toLowerCase());
+  });
+
+  const isExactMatch = uniqueParts.some(p => p.toLowerCase() === currentFullValue.toLowerCase());
+
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -37,17 +85,43 @@ export default function SearchablePartInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = (e) => {
-    // Keep numbers only
-    const cleanVal = e.target.value.replace(/[^0-9]/g, '');
-    onChange(cleanVal);
+  const handlePrefixSelect = (pfx) => {
+    setSelectedPrefix(pfx);
+    const updatedFull = formatFullPart(pfx, partNumber);
+    onChange(updatedFull);
+    inputRef.current?.focus();
+  };
+
+  const handleNumberChange = (e) => {
+    let raw = e.target.value;
+
+    // Detect if user pasted or typed full part with prefix like "NSR-1122" or "NRS 1122"
+    const match = raw.match(/^([A-Za-z]{2,5})[-_\s]?(.*)$/);
+    if (match) {
+      const potentialPfx = match[1].toUpperCase();
+      if (PREFIX_OPTIONS.includes(potentialPfx)) {
+        setSelectedPrefix(potentialPfx);
+        raw = match[2];
+      }
+    }
+
+    const cleanNum = raw.replace(/[^0-9a-zA-Z\-_/]/g, '');
+    setPartNumber(cleanNum);
+
+    const updatedFull = formatFullPart(selectedPrefix, cleanNum);
+    onChange(updatedFull);
     setIsOpen(true);
     setHighlightedIndex(-1);
   };
 
-  const handleSelect = (partNo) => {
-    onChange(partNo);
-    onSelectPart?.(partNo);
+  const handleSelect = (savedPart) => {
+    const parsed = parseValue(savedPart);
+    setSelectedPrefix(parsed.prefix);
+    setPartNumber(parsed.number);
+
+    const full = formatFullPart(parsed.prefix, parsed.number);
+    onChange(full);
+    onSelectPart?.(full);
     setIsOpen(false);
     setHighlightedIndex(-1);
   };
@@ -61,7 +135,7 @@ export default function SearchablePartInput({
       return;
     }
 
-    const totalOptions = filtered.length + (!isExactMatch && query ? 1 : 0);
+    const totalOptions = filtered.length + (!isExactMatch && currentFullValue ? 1 : 0);
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -73,8 +147,8 @@ export default function SearchablePartInput({
       e.preventDefault();
       if (highlightedIndex >= 0 && highlightedIndex < filtered.length) {
         handleSelect(filtered[highlightedIndex]);
-      } else if (!isExactMatch && query) {
-        handleSelect(query);
+      } else if (!isExactMatch && currentFullValue) {
+        handleSelect(currentFullValue);
       } else if (filtered.length > 0) {
         handleSelect(filtered[0]);
       }
@@ -85,24 +159,118 @@ export default function SearchablePartInput({
 
   return (
     <div className="combobox-container" ref={containerRef}>
-      <label className="form-label" htmlFor="inpAppPartNo">Application Part No. *</label>
-      
-      <div className="combobox-input-wrapper">
+      {/* Label and live preview badge */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+        <label className="form-label" htmlFor="inpAppPartNo" style={{ margin: 0 }}>
+          Application Part No. *
+        </label>
+        {currentFullValue && (
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            color: '#1d4ed8',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            padding: '1px 8px',
+            borderRadius: '4px',
+            fontFamily: 'var(--font-mono, monospace)'
+          }}>
+            Part: {currentFullValue}
+          </span>
+        )}
+      </div>
+
+      {/* Prefix Selection Pills: ONLY NSR, NRS, FWM, NIV, NIG */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginBottom: '8px',
+        flexWrap: 'wrap'
+      }}>
+        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+          Select:
+        </span>
+        {PREFIX_OPTIONS.map(pfx => {
+          const isActive = selectedPrefix === pfx;
+          return (
+            <button
+              key={pfx}
+              type="button"
+              onClick={() => handlePrefixSelect(pfx)}
+              style={{
+                padding: '3px 10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono, monospace)',
+                cursor: 'pointer',
+                border: isActive ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                backgroundColor: isActive ? '#2563eb' : '#ffffff',
+                color: isActive ? '#ffffff' : '#334155',
+                boxShadow: isActive ? '0 2px 4px rgba(37, 99, 235, 0.25)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+              title={`Select ${pfx}`}
+            >
+              {pfx}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Unified Input Wrapper with Prefix Tag and Number Box */}
+      <div className="combobox-input-wrapper" style={{
+        display: 'flex',
+        alignItems: 'stretch',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: '#ffffff',
+        position: 'relative'
+      }}>
+        {/* Selected Prefix Tag inside input */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: '#f8fafc',
+          borderRight: '1.5px solid #cbd5e1',
+          padding: '0 10px',
+          fontWeight: 800,
+          fontSize: '13px',
+          fontFamily: 'var(--font-mono, monospace)',
+          color: '#1d4ed8',
+          userSelect: 'none',
+          whiteSpace: 'nowrap'
+        }}>
+          {selectedPrefix}
+          <span style={{ marginLeft: '4px', color: '#94a3b8' }}>-</span>
+        </div>
+
+        {/* Number Input */}
         <input
           ref={inputRef}
           type="text"
           className="form-input combobox-input"
           id="inpAppPartNo"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          placeholder="e.g. 001, 002"
-          value={value}
-          onChange={handleInputChange}
+          style={{
+            border: 'none',
+            borderRadius: 0,
+            flex: 1,
+            boxShadow: 'none',
+            fontFamily: 'var(--font-mono, monospace)',
+            fontWeight: 600,
+            paddingRight: '36px'
+          }}
+          placeholder="e.g. 1122 or 001"
+          value={partNumber}
+          onChange={handleNumberChange}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           autoComplete="off"
           required
         />
+
+        {/* Toggle Dropdown Chevron Button */}
         <button
           type="button"
           className="combobox-chevron-btn"
@@ -112,6 +280,7 @@ export default function SearchablePartInput({
           }}
           tabIndex="-1"
           aria-label="Toggle part list"
+          style={{ top: '0', bottom: '0', right: '0' }}
         >
           <svg
             width="15"
@@ -129,8 +298,14 @@ export default function SearchablePartInput({
         </button>
       </div>
 
-      <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
-        Search and select from saved Part Numbers, or type a new number
+      {/* Helper text & Live Preview */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+        <span>Search and select from saved Part Numbers, or enter a number</span>
+        {currentFullValue && (
+          <span style={{ fontWeight: 600, color: 'var(--slate-700)' }}>
+            Application Part No: <strong style={{ color: '#1d4ed8', fontFamily: 'monospace' }}>{currentFullValue}</strong>
+          </span>
+        )}
       </div>
 
       {/* DROPDOWN MENU */}
@@ -142,14 +317,14 @@ export default function SearchablePartInput({
           </div>
 
           <div className="combobox-options">
-            {filtered.length === 0 && !query && (
+            {filtered.length === 0 && !currentFullValue && (
               <div style={{ padding: '12px', textAlign: 'center', fontSize: '12px', color: 'var(--slate-400)' }}>
                 No saved part numbers
               </div>
             )}
 
             {filtered.map((part, idx) => {
-              const isSelected = String(part).toLowerCase() === query;
+              const isSelected = String(part).toLowerCase() === currentFullValue.toLowerCase();
               const isHighlighted = idx === highlightedIndex;
 
               return (
@@ -164,13 +339,13 @@ export default function SearchablePartInput({
               );
             })}
 
-            {/* Option to create new number if not exactly matched */}
-            {query && !isExactMatch && (
+            {/* Quick Option to use new custom or typed part number if not in saved list */}
+            {currentFullValue && !isExactMatch && (
               <div
                 className={`combobox-new-option ${highlightedIndex === filtered.length ? 'active' : ''}`}
-                onClick={() => handleSelect(query)}
+                onClick={() => handleSelect(currentFullValue)}
               >
-                <span>Use <strong>"{query}"</strong> as New Part No</span>
+                <span>Use <strong>"{currentFullValue}"</strong> as Application Part No</span>
                 <span style={{ fontSize: '10px', color: 'var(--accent-600)' }}>Enter ↵</span>
               </div>
             )}
@@ -182,7 +357,7 @@ export default function SearchablePartInput({
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <span>Search & select, or type any new number</span>
+            <span>Select  (NSR, NRS, FWM, NIV, NIG) & enter number</span>
           </div>
         </div>
       )}

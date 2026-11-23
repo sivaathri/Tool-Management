@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { getPMRecords, updateCheckedBySignOff } from '../../services/toolService';
+import PMChecklistSheet from '../ServiceHistory/modals/PMChecklistSheet';
 
 export default function CheckedByView({ tools = [], onNavigateToPM, currentUser, showToast }) {
   const [pmRecords, setPMRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [signingItem, setSigningItem] = useState(null);
+  const [viewingTool, setViewingTool] = useState(null);
   const [signForm, setSignForm] = useState({
     name: '',
     date: new Date().toISOString().slice(0, 10),
@@ -21,59 +23,74 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
     loadData();
   }, [tools]);
 
-  // Combine tools with their PM and Checked By status
+  // Combine ONLY tools that have an active PM record created or edited
   const queueItems = useMemo(() => {
-    return tools.map(t => {
-      const cleanToolNo = (t.toolNo || '').toLowerCase().trim();
-      const pm = pmRecords.find(p => 
-        (p.toolId && p.toolId === t.id) || 
-        (p.toolNo && p.toolNo.toLowerCase().trim() === cleanToolNo)
+    if (!Array.isArray(pmRecords) || pmRecords.length === 0) return [];
+
+    const result = [];
+    pmRecords.forEach(pm => {
+      const cleanNo = (pm.toolNo || '').toLowerCase().trim();
+      const existing = tools.find(t =>
+        (pm.toolId && t.id === pm.toolId) ||
+        (t.toolNo && t.toolNo.toLowerCase().trim() === cleanNo)
       );
 
-      const hasInspection = !!(pm && Array.isArray(pm.items) && pm.items.length > 0);
-      const checkedBy = pm?.checkedBy || null;
-
-      let checkStatus = 'Pending Check';
-      if (checkedBy?.status === 'Verified') {
-        checkStatus = 'Verified';
-      } else if (checkedBy?.status === 'Revision Requested') {
-        checkStatus = 'Revision Requested';
-      } else if (!hasInspection) {
-        checkStatus = 'Awaiting Inspection';
-      }
-
-      return {
-        tool: t,
-        pmRecord: pm,
-        hasInspection,
-        checkStatus,
-        checkedBy,
-        checkDate: pm?.checkDate || pm?.date || '—',
-        refNo: pm?.refNo || 'MFG/FR/075',
-        checkPointsCount: pm?.items?.length || (t.checkPoints?.length || 0),
-        actualConditionsEntered: pm?.items ? pm.items.filter(i => (i.actualCondition || '').trim().length > 0).length : 0
+      const toolObj = existing || {
+        id: pm.toolId || `tool-${pm.toolNo}`,
+        toolNo: pm.toolNo || 'INE T 0000',
+        applicationPartNo: pm.applicationPartNo || pm.toolNo || '—',
+        productName: pm.productName || pm.application || 'Tool',
+        description: pm.description || pm.toolDescription || '',
+        classification: pm.classification || 'Critical',
+        toolCount: pm.toolCount || 1,
+        lifetime: pm.lifetime || 100000,
+        toolIssuedOn: pm.toolIssuedOn || pm.checkDate || new Date().toISOString().slice(0, 10),
+        checkPoints: pm.items ? pm.items.map(i => i.checkPoint) : []
       };
-    });
-  }, [tools, pmRecords]);
 
-  // KPIs
+      if (!result.some(r => r.tool.id === toolObj.id || r.tool.toolNo.toLowerCase().trim() === toolObj.toolNo.toLowerCase().trim())) {
+        const checkedBy = pm.checkedBy || null;
+        let checkStatus = 'Pending Check';
+        if (checkedBy?.status === 'Verified') {
+          checkStatus = 'Verified';
+        } else if (checkedBy?.status === 'Revision Requested') {
+          checkStatus = 'Revision Requested';
+        }
+
+        result.push({
+          tool: toolObj,
+          pmRecord: pm,
+          checkStatus,
+          checkedBy,
+          checkDate: pm.checkDate || pm.date || '—',
+          nextDueDate: pm.nextDueDate || '—',
+          refNo: pm.refNo || 'MFG/FR/075',
+          checkPointsCount: pm.items ? pm.items.length : (toolObj.checkPoints ? toolObj.checkPoints.length : 0)
+        });
+      }
+    });
+
+    return result;
+  }, [pmRecords, tools]);
+
+  // KPIs matching Approved By layout
   const metrics = useMemo(() => {
     const total = queueItems.length;
     const pending = queueItems.filter(q => q.checkStatus === 'Pending Check').length;
     const verified = queueItems.filter(q => q.checkStatus === 'Verified').length;
     const revisions = queueItems.filter(q => q.checkStatus === 'Revision Requested').length;
-    const awaiting = queueItems.filter(q => q.checkStatus === 'Awaiting Inspection').length;
-    return { total, pending, verified, revisions, awaiting };
+    return { total, pending, verified, revisions };
   }, [queueItems]);
 
-  // Filter
+  // Filters
   const filtered = useMemo(() => {
     return queueItems.filter(item => {
       const q = searchTerm.toLowerCase().trim();
       const matchSearch = !q ||
         (item.tool.toolNo && item.tool.toolNo.toLowerCase().includes(q)) ||
         (item.tool.applicationPartNo && item.tool.applicationPartNo.toLowerCase().includes(q)) ||
-        (item.tool.productName && item.tool.productName.toLowerCase().includes(q));
+        (item.tool.productName && item.tool.productName.toLowerCase().includes(q)) ||
+        (item.tool.description && item.tool.description.toLowerCase().includes(q));
 
       const matchStatus = !statusFilter || item.checkStatus === statusFilter;
 
@@ -98,24 +115,25 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
     updateCheckedBySignOff(signingItem.tool.id, signForm);
     loadData();
     setSigningItem(null);
-    showToast?.(`QA Verification sign-off saved for ${signingItem.tool.toolNo}`, 'success');
+    showToast?.(`Checked By verification updated for ${signingItem.tool.toolNo}`, 'success');
   };
 
   return (
     <section className="view-section active" id="view-checked-by">
+      
       {/* Header */}
       <div className="page-header" style={{ marginBottom: '20px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>QA Verification & Check (Checked By)</span>
+            <span>Quality Assurance Verification (Checked By)</span>
           </h1>
           <p className="page-subtitle" style={{ color: 'var(--slate-500)', fontSize: '13px', marginTop: '4px' }}>
-            Quality Assurance sign-off for Preventive Maintenance inspections and tooling checklist observations
+            QA Lead verification queue for submitted Preventive Maintenance inspection checklists
           </p>
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (Exact Approved By layout) */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
@@ -125,17 +143,17 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
         {/* Pending QA Check */}
         <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #f59e0b', backgroundColor: metrics.pending > 0 ? '#fffbeb' : '#ffffff' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: metrics.pending > 0 ? '#b45309' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Pending QA Verification
+            Pending QA Check
           </div>
           <div style={{ fontSize: '28px', fontWeight: 800, color: metrics.pending > 0 ? '#d97706' : '#0f172a', marginTop: '6px' }}>
             {metrics.pending}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            Inspected tooling awaiting QA sign-off
+            Awaiting QA checklist inspection
           </div>
         </div>
 
-        {/* Verified & Passed */}
+        {/* Verified & Checked */}
         <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
             Verified & Checked
@@ -144,11 +162,11 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
             {metrics.verified}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            QA certified and approved checklists
+            Quality inspection verified OK
           </div>
         </div>
 
-        {/* Revisions Requested */}
+        {/* Revision Requested */}
         <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #ef4444' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: metrics.revisions > 0 ? '#b91c1c' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
             Revision Requested
@@ -161,16 +179,16 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
           </div>
         </div>
 
-        {/* Awaiting Inspection */}
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #94a3b8' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Awaiting PM Inspection
+        {/* Total Inspected Tooling */}
+        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #3b82f6' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Total PM Inspected
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#334155', marginTop: '6px' }}>
-            {metrics.awaiting}
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
+            {metrics.total}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            Checklist not yet submitted
+            Tools with submitted PM
           </div>
         </div>
       </div>
@@ -200,7 +218,6 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
               <option value="Pending Check">Pending QA Check</option>
               <option value="Verified">Verified & Checked</option>
               <option value="Revision Requested">Revision Requested</option>
-              <option value="Awaiting Inspection">Awaiting Inspection</option>
             </select>
           </div>
 
@@ -227,16 +244,16 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
           <table className="enterprise-table">
             <thead>
               <tr>
-                <th style={{ textAlign: 'center', width: '55px' }}>Sl.No</th>
-                <th style={{ width: '130px' }}>Tool No.</th>
-                <th>Application & Product</th>
-                <th>PM Check Date</th>
-                <th>Inspection Points</th>
-                <th style={{ textAlign: 'center' }}>Checked By Status</th>
-                <th>QA Lead Name</th>
-                <th>Verification Date</th>
-                <th>QA Remarks</th>
-                <th style={{ textAlign: 'center', width: '190px' }}>Actions</th>
+                <th style={{ textAlign: 'center', width: '55px' }}>SL.NO</th>
+                <th style={{ width: '130px' }}>TOOL NO.</th>
+                <th>APPLICATION & PRODUCT</th>
+                <th>PM CHECK DATE</th>
+                <th>NEXT DUE DATE</th>
+                <th style={{ textAlign: 'center' }}>QA STATUS</th>
+                <th>CHECKED BY</th>
+                <th>VERIFICATION DATE</th>
+                <th>QA REMARKS</th>
+                <th style={{ textAlign: 'center', width: '190px' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -247,93 +264,89 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                       No verification records found
                     </div>
                     <div style={{ fontSize: '13px', marginTop: '6px' }}>
-                      Submit inspection records in Preventive Maintenance to populate the QA queue.
+                      Preventive Maintenance records will appear here after they are created or edited.
                     </div>
                   </td>
                 </tr>
               ) : (
                 filtered.map((item, idx) => {
                   const isVerified = item.checkStatus === 'Verified';
-                  const isPending = item.checkStatus === 'Pending Check';
                   const isRevision = item.checkStatus === 'Revision Requested';
+                  const isPending = item.checkStatus === 'Pending Check';
 
                   return (
                     <tr key={item.tool.id || idx}>
                       <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
                         {idx + 1}
                       </td>
-                      <td style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-700)' }}>
-                        {item.tool.toolNo}
+                      <td>
+                        <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono, monospace)', color: '#0f172a' }}>
+                          {item.tool.toolNo}
+                        </span>
                       </td>
                       <td>
-                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.tool.productName || '—'}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                          {item.tool.productName}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>
                           Part #{item.tool.applicationPartNo || '—'} &bull; {item.tool.classification}
                         </div>
                       </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}>
+                      <td style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '12.5px' }}>
                         {item.checkDate}
                       </td>
-                      <td>
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: item.hasInspection ? '#059669' : '#94a3b8' }}>
-                          {item.hasInspection ? `${item.actualConditionsEntered}/${item.checkPointsCount} Points Recorded` : 'No Checklist Yet'}
-                        </div>
+                      <td style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '12.5px' }}>
+                        {item.nextDueDate}
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         {isVerified ? (
-                          <span className="badge badge-healthy">
-                            <span className="badge-dot"></span>
-                            Verified & Checked
+                          <span className="badge badge-success" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700 }}>
+                            &bull; Verified
                           </span>
                         ) : isRevision ? (
-                          <span className="badge badge-danger">
-                            <span className="badge-dot"></span>
-                            Revision Needed
-                          </span>
-                        ) : isPending ? (
-                          <span className="badge badge-warning">
-                            <span className="badge-dot"></span>
-                            Pending Check
+                          <span className="badge badge-danger" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700 }}>
+                            &bull; Revision Requested
                           </span>
                         ) : (
-                          <span className="badge badge-neutral">
-                            Awaiting PM
+                          <span className="badge badge-warning" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700 }}>
+                            &bull; Pending QA Check
                           </span>
                         )}
                       </td>
-                      <td style={{ fontWeight: 600, color: '#0f172a', fontSize: '12px' }}>
+                      <td style={{ fontSize: '12.5px', fontWeight: 600, color: '#0f172a' }}>
                         {item.checkedBy?.name || '—'}
                       </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                      <td style={{ fontSize: '12px', fontFamily: 'var(--font-mono, monospace)', color: '#475569' }}>
                         {item.checkedBy?.date || '—'}
                       </td>
-                      <td style={{ fontSize: '12px', color: '#475569', maxWidth: '200px' }} title={item.checkedBy?.remarks || ''}>
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.checkedBy?.remarks || '—'}
-                        </div>
+                      <td style={{ fontSize: '12px', color: '#475569', maxWidth: '200px' }} className="truncate" title={item.checkedBy?.remarks || ''}>
+                        {item.checkedBy?.remarks || '—'}
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'inline-flex', gap: '6px' }}>
                           <button
                             type="button"
                             className="btn btn-primary"
                             onClick={() => handleOpenSign(item)}
-                            title="Sign and verify this inspection checklist"
                             style={{
-                              padding: '6px 11px',
-                              fontSize: '11.5px',
-                              backgroundColor: isVerified ? '#059669' : '#2563eb',
-                              borderRadius: '5px'
+                              padding: '5px 12px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              backgroundColor: isVerified ? '#166534' : '#2563eb'
                             }}
                           >
-                            {isVerified ? 'Update Sign' : 'Sign & Verify'}
+                            {isVerified ? 'Re-verify' : 'Verify'}
                           </button>
                           <button
                             type="button"
                             className="btn btn-secondary"
-                            onClick={() => onNavigateToPM?.(item.tool.id)}
-                            title="View Preventive Maintenance Checklist"
-                            style={{ padding: '6px 10px', fontSize: '11.5px', borderRadius: '5px' }}
+                            onClick={() => setViewingTool(item.tool)}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              backgroundColor: '#ffffff'
+                            }}
                           >
                             View PM
                           </button>
@@ -348,58 +361,117 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
         </div>
       </div>
 
-      {/* Sign-off Modal */}
+      {/* View PM Checklist Sheet Modal */}
+      {viewingTool && (
+        <div className="modal-backdrop show" style={{ zIndex: 1100 }}>
+          <div className="modal-card modal-xl" style={{ maxWidth: '1250px', maxHeight: '92vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <div className="modal-title">
+                <span>Preventive Maintenance Checklist: {viewingTool.toolNo}</span>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setViewingTool(null)}
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <PMChecklistSheet
+                tool={viewingTool}
+                showToast={showToast}
+              />
+            </div>
+
+            <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setViewingTool(null)}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const targetItem = queueItems.find(q => q.tool.id === viewingTool.id);
+                  setViewingTool(null);
+                  handleOpenSign(targetItem);
+                }}
+              >
+                Verify & Sign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QA Sign-off Modal */}
       {signingItem && (
-        <div className="modal-backdrop show">
-          <div className="modal-card" style={{ maxWidth: '540px' }}>
+        <div className="modal-backdrop show" style={{ zIndex: 1150 }}>
+          <div className="modal-card" style={{ maxWidth: '520px' }}>
             <div className="modal-header">
               <div className="modal-title">
                 <span>QA Verification Sign-off (Checked By)</span>
               </div>
-              <button type="button" className="modal-close" onClick={() => setSigningItem(null)}>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setSigningItem(null)}
+                title="Close"
+              >
                 &times;
               </button>
             </div>
+
             <form onSubmit={handleSubmitSign}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
-                <div style={{ backgroundColor: '#f8fafc', padding: '12px 14px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '15px' }}>
-                    {signingItem.tool.toolNo}
+              <div className="modal-body" style={{ padding: '20px' }}>
+                <div style={{
+                  padding: '10px 14px',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  marginBottom: '16px',
+                  fontSize: '13px'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                    {signingItem.tool.toolNo} &bull; {signingItem.tool.productName}
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
-                    {signingItem.tool.productName} (Part #{signingItem.tool.applicationPartNo})
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px' }}>
-                    Inspection Date: <strong>{signingItem.checkDate}</strong> &bull; Document Ref: <strong>{signingItem.refNo}</strong>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    Part #{signingItem.tool.applicationPartNo} &bull; {signingItem.tool.classification}
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Quality Assurance Verification Status *</label>
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label">QA Verification Status *</label>
                   <select
                     className="form-select"
                     value={signForm.status}
                     onChange={(e) => setSignForm(prev => ({ ...prev, status: e.target.value }))}
-                    style={{ fontWeight: 700 }}
+                    required
                   >
-                    <option value="Verified">✓ Verified & Checked (Inspection Passed)</option>
-                    <option value="Revision Requested">⚠️ Request Revision (Corrective Action Needed)</option>
+                    <option value="Verified">Verified & Checked (Pass)</option>
+                    <option value="Revision Requested">Revision Requested (Return to Technician)</option>
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Checked By (QA Lead Name) *</label>
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label">Quality Assurance Lead Name *</label>
                   <input
                     type="text"
                     className="form-input"
                     value={signForm.name}
                     onChange={(e) => setSignForm(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter QA Inspector / Lead Name"
+                    placeholder="Enter QA Lead Name"
                     required
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '14px' }}>
                   <label className="form-label">Verification Date *</label>
                   <input
                     type="date"
@@ -411,22 +483,34 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">QA Verification Remarks & Notes</label>
+                  <label className="form-label">Inspection & QA Remarks</label>
                   <textarea
-                    className="form-input"
+                    className="form-textarea"
                     rows="3"
                     value={signForm.remarks}
                     onChange={(e) => setSignForm(prev => ({ ...prev, remarks: e.target.value }))}
-                    placeholder="Detail verification results, gauge checks, and tool standard adherence..."
-                  />
+                    placeholder="Enter observation notes, verified dimensions, or rework instructions..."
+                  ></textarea>
                 </div>
               </div>
-              <div className="modal-footer" style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setSigningItem(null)}>
+
+              <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSigningItem(null)}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ backgroundColor: signForm.status === 'Verified' ? '#059669' : '#dc2626' }}>
-                  {signForm.status === 'Verified' ? 'Confirm QA Sign-off' : 'Submit Revision Request'}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    backgroundColor: signForm.status === 'Verified' ? '#166534' : '#dc2626',
+                    borderColor: signForm.status === 'Verified' ? '#166534' : '#dc2626'
+                  }}
+                >
+                  {signForm.status === 'Verified' ? 'Confirm & Sign Verified' : 'Submit Revision Request'}
                 </button>
               </div>
             </form>
