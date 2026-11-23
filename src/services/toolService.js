@@ -13,6 +13,7 @@ import {
   saveSchedule,
   updateCheckedBySignOff,
   updateApprovedBySignOff,
+  sendPMToolsToApprovedBy,
   resetToInitialData
 } from '../data/storage';
 
@@ -31,6 +32,7 @@ export const toolService = {
   saveSchedule,
   updateCheckedBySignOff,
   updateApprovedBySignOff,
+  sendPMToolsToApprovedBy,
   resetToInitialData
 };
 
@@ -49,5 +51,6 @@ export {
   saveSchedule,
   updateCheckedBySignOff,
   updateApprovedBySignOff,
+  sendPMToolsToApprovedBy,
   resetToInitialData
 };

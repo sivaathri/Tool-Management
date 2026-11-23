@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { getPMRecords, updateCheckedBySignOff } from '../../services/toolService';
+import { getPMRecords, updateCheckedBySignOff, sendPMToolsToApprovedBy } from '../../services/toolService';
 import PMChecklistSheet from '../ServiceHistory/modals/PMChecklistSheet';
 
 export default function CheckedByView({ tools = [], onNavigateToPM, currentUser, showToast }) {
@@ -10,6 +10,7 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
   const pageSize = 15;
   const [signingItem, setSigningItem] = useState(null);
   const [viewingTool, setViewingTool] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [signForm, setSignForm] = useState({
     name: '',
     date: new Date().toISOString().slice(0, 10),
@@ -64,6 +65,8 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
           pmRecord: pm,
           checkStatus,
           checkedBy,
+          sentToApprovedBy: Boolean(pm.sentToApprovedBy),
+          sentToApprovedAt: pm.sentToApprovedAt || null,
           checkDate: pm.checkDate || pm.date || '—',
           nextDueDate: pm.nextDueDate || '—',
           refNo: pm.refNo || 'MFG/FR/075',
@@ -79,9 +82,10 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
   const metrics = useMemo(() => {
     const total = queueItems.length;
     const pending = queueItems.filter(q => q.checkStatus === 'Pending Check').length;
-    const verified = queueItems.filter(q => q.checkStatus === 'Verified').length;
+    const verifiedReady = queueItems.filter(q => q.checkStatus === 'Verified' && !q.sentToApprovedBy).length;
+    const sent = queueItems.filter(q => q.sentToApprovedBy).length;
     const revisions = queueItems.filter(q => q.checkStatus === 'Revision Requested').length;
-    return { total, pending, verified, revisions };
+    return { total, pending, verifiedReady, sent, revisions };
   }, [queueItems]);
 
   // Filters
@@ -94,11 +98,57 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
         (item.tool.productName && item.tool.productName.toLowerCase().includes(q)) ||
         (item.tool.description && item.tool.description.toLowerCase().includes(q));
 
-      const matchStatus = !statusFilter || item.checkStatus === statusFilter;
+      let matchStatus = true;
+      if (statusFilter === 'Pending Check') {
+        matchStatus = item.checkStatus === 'Pending Check';
+      } else if (statusFilter === 'VerifiedReady') {
+        matchStatus = item.checkStatus === 'Verified' && !item.sentToApprovedBy;
+      } else if (statusFilter === 'Sent') {
+        matchStatus = item.sentToApprovedBy;
+      } else if (statusFilter === 'Revision Requested') {
+        matchStatus = item.checkStatus === 'Revision Requested';
+      }
 
       return matchSearch && matchStatus;
     });
   }, [queueItems, searchTerm, statusFilter]);
+
+  // Selectable items for sending to Approved By
+  const selectableItems = useMemo(() => {
+    return filtered.filter(i => i.checkStatus === 'Verified' && !i.sentToApprovedBy);
+  }, [filtered]);
+
+  const isAllSelected = selectableItems.length > 0 && selectableItems.every(i => selectedIds.includes(i.tool.id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !selectableItems.some(i => i.tool.id === id)));
+    } else {
+      const newIds = selectableItems.map(i => i.tool.id);
+      setSelectedIds(prev => Array.from(new Set([...prev, ...newIds])));
+    }
+  };
+
+  const handleToggleSelect = (toolId) => {
+    setSelectedIds(prev =>
+      prev.includes(toolId) ? prev.filter(id => id !== toolId) : [...prev, toolId]
+    );
+  };
+
+  const handleSendBulkToApprovedBy = () => {
+    if (selectedIds.length === 0) return;
+    const count = sendPMToolsToApprovedBy(selectedIds, currentUser?.name || 'QA Lead');
+    loadData();
+    setSelectedIds([]);
+    showToast?.(`Successfully sent ${count} verified PM tools to Management Authorization (Approved By)!`, 'success');
+  };
+
+  const handleSendSingle = (toolId, toolNo) => {
+    const count = sendPMToolsToApprovedBy([toolId], currentUser?.name || 'QA Lead');
+    loadData();
+    setSelectedIds(prev => prev.filter(id => id !== toolId));
+    showToast?.(`Sent ${toolNo} to Management Authorization (Approved By)!`, 'success');
+  };
 
   // Pagination calculation (15 per page)
   const totalItems = filtered.length;
@@ -188,35 +238,35 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
           </div>
         </div>
 
-        {/* Verified & Checked */}
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Verified & Checked
+        {/* Verified (Ready to Send) */}
+        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #0284c7', backgroundColor: metrics.verifiedReady > 0 ? '#f0f9ff' : '#ffffff' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Verified (Ready to Send)
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', marginTop: '6px' }}>
-            {metrics.verified}
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#0284c7', marginTop: '6px' }}>
+            {metrics.verifiedReady}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            Quality inspection verified OK
+            Waiting to send to Approved By
           </div>
         </div>
 
-        {/* Revision Requested */}
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #ef4444' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: metrics.revisions > 0 ? '#b91c1c' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Revision Requested
+        {/* Sent to Approved By */}
+        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Sent to Approved By
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: metrics.revisions > 0 ? '#dc2626' : '#0f172a', marginTop: '6px' }}>
-            {metrics.revisions}
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', marginTop: '6px' }}>
+            {metrics.sent}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-            Returned to technician for rework
+            Forwarded for management release
           </div>
         </div>
 
         {/* Total Inspected Tooling */}
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #3b82f6' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #6366f1' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
             Total PM Inspected
           </div>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
@@ -257,7 +307,8 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
             >
               <option value="">All Verification Statuses</option>
               <option value="Pending Check">Pending QA Check</option>
-              <option value="Verified">Verified & Checked</option>
+              <option value="VerifiedReady">Verified (Ready to Send)</option>
+              <option value="Sent">Sent to Approved By</option>
               <option value="Revision Requested">Revision Requested</option>
             </select>
           </div>
@@ -280,12 +331,86 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
         </div>
       </div>
 
+      {/* Bulk Send to Approved By Action Bar */}
+      {selectedIds.length > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 20px',
+          marginBottom: '16px',
+          backgroundColor: '#f0fdf4',
+          border: '1px solid #86efac',
+          borderRadius: '8px',
+          boxShadow: '0 2px 6px rgba(22, 101, 52, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', fontWeight: 600, fontSize: '13.5px' }}>
+            <span style={{
+              backgroundColor: '#16a34a',
+              color: '#ffffff',
+              borderRadius: '999px',
+              padding: '2px 10px',
+              fontWeight: 800,
+              fontSize: '12px'
+            }}>
+              {selectedIds.length}
+            </span>
+            <span>tool{selectedIds.length > 1 ? 's' : ''} selected &mdash; ready to send to Management Authorization (Approved By)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setSelectedIds([])}
+              style={{ padding: '6px 14px', fontSize: '12.5px', backgroundColor: '#ffffff' }}
+            >
+              Clear Selection
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSendBulkToApprovedBy}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 18px',
+                fontSize: '13px',
+                fontWeight: 700,
+                backgroundColor: '#059669',
+                borderColor: '#059669',
+                boxShadow: '0 2px 5px rgba(5, 150, 105, 0.3)'
+              }}
+            >
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              <span>Send to Approved By ({selectedIds.length})</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table Card */}
       <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         <div className="table-responsive" style={{ margin: 0 }}>
           <table className="enterprise-table">
             <thead>
               <tr>
+                <th style={{ textAlign: 'center', width: '45px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleToggleSelectAll}
+                    disabled={selectableItems.length === 0}
+                    title={selectableItems.length === 0 ? 'No verified tools ready to send' : 'Select all verified tools ready to send'}
+                    style={{
+                      cursor: selectableItems.length === 0 ? 'not-allowed' : 'pointer',
+                      width: '16px',
+                      height: '16px'
+                    }}
+                  />
+                </th>
                 <th style={{ textAlign: 'center', width: '55px' }}>SL.NO</th>
                 <th style={{ width: '130px' }}>TOOL NO.</th>
                 <th>APPLICATION & PRODUCT</th>
@@ -295,13 +420,13 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                 <th>CHECKED BY</th>
                 <th>VERIFICATION DATE</th>
                 <th>QA REMARKS</th>
-                <th style={{ textAlign: 'center', width: '190px' }}>ACTIONS</th>
+                <th style={{ textAlign: 'center', width: '170px' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                  <td colSpan="11" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
                     <div style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>
                       No verification records found
                     </div>
@@ -315,9 +440,31 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                   const isVerified = item.checkStatus === 'Verified';
                   const isRevision = item.checkStatus === 'Revision Requested';
                   const isPending = item.checkStatus === 'Pending Check';
+                  const isSent = Boolean(item.sentToApprovedBy);
+                  const isSelectable = isVerified && !isSent;
 
                   return (
                     <tr key={item.tool.id || idx}>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.tool.id)}
+                          onChange={() => handleToggleSelect(item.tool.id)}
+                          disabled={!isSelectable}
+                          title={
+                            isSent
+                              ? 'Already sent to Approved By'
+                              : !isVerified
+                                ? 'Verify inspection before sending'
+                                : 'Select to send to Approved By'
+                          }
+                          style={{
+                            cursor: isSelectable ? 'pointer' : 'not-allowed',
+                            width: '16px',
+                            height: '16px'
+                          }}
+                        />
+                      </td>
                       <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
                         {(safeCurrentPage - 1) * pageSize + idx + 1}
                       </td>
@@ -341,16 +488,20 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                         {item.nextDueDate}
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        {isVerified ? (
-                          <span className="badge badge-success" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700 }}>
-                            &bull; Verified
+                        {isSent ? (
+                          <span className="badge" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700, backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', whiteSpace: 'nowrap' }}>
+                            &bull; Sent to Approved By
+                          </span>
+                        ) : isVerified ? (
+                          <span className="badge" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700, backgroundColor: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', whiteSpace: 'nowrap' }}>
+                            &bull; Verified (Ready to Send)
                           </span>
                         ) : isRevision ? (
-                          <span className="badge badge-danger" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700 }}>
+                          <span className="badge badge-danger" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                             &bull; Revision Requested
                           </span>
                         ) : (
-                          <span className="badge badge-warning" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700 }}>
+                          <span className="badge badge-warning" style={{ padding: '3px 9px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                             &bull; Pending QA Check
                           </span>
                         )}
@@ -364,29 +515,14 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                       <td style={{ fontSize: '12px', color: '#475569', maxWidth: '200px' }} className="truncate" title={item.checkedBy?.remarks || ''}>
                         {item.checkedBy?.remarks || '—'}
                       </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', gap: '6px' }}>
-                          {!isVerified && (
-                            <button
-                              type="button"
-                              className="btn btn-primary"
-                              onClick={() => handleOpenSign(item)}
-                              style={{
-                                padding: '5px 12px',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                backgroundColor: '#2563eb'
-                              }}
-                            >
-                              Verify
-                            </button>
-                          )}
+                      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                           <button
                             type="button"
                             className="btn btn-secondary"
                             onClick={() => setViewingTool(item.tool)}
                             style={{
-                              padding: '5px 10px',
+                              padding: '5px 12px',
                               fontSize: '12px',
                               fontWeight: 600,
                               backgroundColor: '#ffffff'
@@ -394,6 +530,30 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                           >
                             View PM
                           </button>
+                          {isSelectable && (
+                            <button
+                              type="button"
+                              className="btn"
+                              onClick={() => handleSendSingle(item.tool.id, item.tool.toolNo)}
+                              title="Send immediately to Approved By"
+                              style={{
+                                padding: '5px 10px',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                backgroundColor: '#059669',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '5px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <span>Send</span>
+                              <span>&rarr;</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -652,6 +652,7 @@ export function updateCheckedBySignOff(toolIdOrNo, signOffData) {
 
     if (pm) {
       pm.checkedBy = checkedObj;
+      pm.sentToApprovedBy = false; // Freshly verified: waiting for QA to send to Approved By
       savePMRecord(pm);
       return pm;
     } else {
@@ -663,6 +664,7 @@ export function updateCheckedBySignOff(toolIdOrNo, signOffData) {
         toolNo: tool?.toolNo || toolIdOrNo,
         checkDate: new Date().toISOString().slice(0, 10),
         checkedBy: checkedObj,
+        sentToApprovedBy: false,
         items: []
       };
       savePMRecord(newPm);
@@ -671,6 +673,34 @@ export function updateCheckedBySignOff(toolIdOrNo, signOffData) {
   } catch (e) {
     console.error('Error updating Checked By sign-off', e);
     return null;
+  }
+}
+
+// Bulk send verified PM tools from QA (Checked By) to Management (Approved By)
+export function sendPMToolsToApprovedBy(toolIdsOrNos = [], senderName = 'Quality Assurance Lead') {
+  try {
+    const records = getPMRecords();
+    const cleanTargets = toolIdsOrNos.map(id => String(id).toLowerCase().trim());
+
+    let updatedCount = 0;
+    records.forEach(pm => {
+      const pmId = String(pm.id || '').toLowerCase().trim();
+      const toolId = String(pm.toolId || '').toLowerCase().trim();
+      const toolNo = String(pm.toolNo || '').toLowerCase().trim();
+
+      if (cleanTargets.includes(pmId) || cleanTargets.includes(toolId) || cleanTargets.includes(toolNo)) {
+        pm.sentToApprovedBy = true;
+        pm.sentToApprovedAt = new Date().toISOString();
+        pm.sentToApprovedBySender = senderName;
+        updatedCount++;
+      }
+    });
+
+    localStorage.setItem('tms_pm_records', JSON.stringify(records));
+    return updatedCount;
+  } catch (e) {
+    console.error('Error sending PM tools to Approved By', e);
+    return 0;
   }
 }
 
@@ -793,6 +823,7 @@ export const TMSStorage = {
   saveSchedule,
   updateCheckedBySignOff,
   updateApprovedBySignOff,
+  sendPMToolsToApprovedBy,
   getUsers,
   saveUser,
   deleteUser,

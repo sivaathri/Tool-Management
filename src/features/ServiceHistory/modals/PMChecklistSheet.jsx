@@ -206,6 +206,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
       inspectedBy: activeUserName,
       checkedBy: null, // Reset: waiting for QA Check
       approvedBy: null, // Reset: waiting for Management Approval
+      sentToApprovedBy: false, // Reset: must be re-verified and re-sent by QA
       history: updatedHistory,
       lastModifiedBy: activeUserName,
       lastModifiedAt: new Date().toISOString()

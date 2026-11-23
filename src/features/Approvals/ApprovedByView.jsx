@@ -26,8 +26,12 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
   }, [tools]);
 
   // Combine tools with their PM, QA verification, and Approval status
+  // Only tools that have been verified and explicitly sent by QA (or already approved/held) appear here
   const queueItems = useMemo(() => {
-    return tools.map(t => {
+    const list = [];
+
+    // Check tools list
+    tools.forEach(t => {
       const cleanToolNo = (t.toolNo || '').toLowerCase().trim();
       const pm = pmRecords.find(p => 
         (p.toolId && p.toolId === t.id) || 
@@ -36,26 +40,76 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
 
       const checkedBy = pm?.checkedBy || null;
       const approvedBy = pm?.approvedBy || null;
+      const isSentForApproval = Boolean(pm?.sentToApprovedBy || approvedBy?.status === 'Approved' || approvedBy?.status === 'Hold');
 
-      let approvalStatus = 'Pending Approval';
-      if (approvedBy?.status === 'Approved') {
-        approvalStatus = 'Approved';
-      } else if (approvedBy?.status === 'Hold') {
-        approvalStatus = 'Hold';
+      if (isSentForApproval) {
+        let approvalStatus = 'Pending Approval';
+        if (approvedBy?.status === 'Approved') {
+          approvalStatus = 'Approved';
+        } else if (approvedBy?.status === 'Hold') {
+          approvalStatus = 'Hold';
+        }
+
+        const pct = t.lifetime > 0 ? Math.min(100, Math.round(((t.cumulative || 0) / t.lifetime) * 100)) : 0;
+
+        list.push({
+          tool: t,
+          pmRecord: pm,
+          checkedBy,
+          approvedBy,
+          approvalStatus,
+          wearPct: pct,
+          isQAVerified: checkedBy?.status === 'Verified',
+          sentToApprovedBy: Boolean(pm?.sentToApprovedBy)
+        });
       }
-
-      const pct = t.lifetime > 0 ? Math.min(100, Math.round(((t.cumulative || 0) / t.lifetime) * 100)) : 0;
-
-      return {
-        tool: t,
-        pmRecord: pm,
-        checkedBy,
-        approvedBy,
-        approvalStatus,
-        wearPct: pct,
-        isQAVerified: checkedBy?.status === 'Verified'
-      };
     });
+
+    // Also include any PM records marked sentToApprovedBy whose tool might not be in tools prop
+    pmRecords.forEach(pm => {
+      const isSent = Boolean(pm.sentToApprovedBy || pm.approvedBy?.status === 'Approved' || pm.approvedBy?.status === 'Hold');
+      if (isSent) {
+        const cleanPmNo = (pm.toolNo || '').toLowerCase().trim();
+        const alreadyInList = list.some(item => 
+          (pm.toolId && item.tool.id === pm.toolId) || 
+          (cleanPmNo && item.tool.toolNo && item.tool.toolNo.toLowerCase().trim() === cleanPmNo)
+        );
+
+        if (!alreadyInList) {
+          const fallbackTool = {
+            id: pm.toolId || `tool-${pm.toolNo}`,
+            toolNo: pm.toolNo || 'INE T 0000',
+            applicationPartNo: pm.applicationPartNo || pm.toolNo || '—',
+            productName: pm.productName || pm.application || 'Tool',
+            description: pm.description || pm.toolDescription || '',
+            classification: pm.classification || 'Critical',
+            toolCount: 1,
+            lifetime: pm.lifetime || 100000,
+            cumulative: pm.cumulative || 0
+          };
+
+          let approvalStatus = 'Pending Approval';
+          if (pm.approvedBy?.status === 'Approved') {
+            approvalStatus = 'Approved';
+          } else if (pm.approvedBy?.status === 'Hold') {
+            approvalStatus = 'Hold';
+          }
+
+          list.push({
+            tool: fallbackTool,
+            pmRecord: pm,
+            checkedBy: pm.checkedBy || null,
+            approvedBy: pm.approvedBy || null,
+            approvalStatus,
+            wearPct: 0,
+            isQAVerified: pm.checkedBy?.status === 'Verified',
+            sentToApprovedBy: Boolean(pm.sentToApprovedBy)
+          });
+        }
+      }
+    });
+
+    return list;
   }, [tools, pmRecords]);
 
   // KPIs
@@ -282,12 +336,12 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                  <td colSpan="10" style={{ textAlign: 'center', padding: '45px 20px', color: '#64748b' }}>
                     <div style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>
-                      No approval records found
+                      No tools pending management authorization
                     </div>
-                    <div style={{ fontSize: '13px', marginTop: '6px' }}>
-                      Registered tools will appear here for management release sign-off.
+                    <div style={{ fontSize: '13px', marginTop: '6px', maxWidth: '520px', margin: '6px auto 0' }}>
+                      Once Quality Assurance completes and verifies PM checklists in <strong>Checked By</strong> and selects <em>Send to Approved By</em>, tools will appear here for management release sign-off.
                     </div>
                   </td>
                 </tr>
