@@ -728,34 +728,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
             <button
               type="button"
-              className="btn"
-              onClick={() => {
-                saveYearlyPMPlan(fiscalYear, activeSelectedPlan);
-                loadData();
-                onRefresh?.();
-                showToast?.(`Yearly PM Schedule plan saved for Part #${activeSelectedPlan.applicationPartNo} (${(activeSelectedPlan.plannedWeeks || []).length} weeks)`, 'success');
-              }}
-              style={{
-                backgroundColor: '#059669',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '13px',
-                padding: '9px 18px',
-                borderRadius: '6px',
-                border: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
-              }}
-              title="Save PM Schedule to Database"
-            >
-              <span>💾 Save Plan</span>
-            </button>
-
-            <button
-              type="button"
               className="btn btn-secondary"
               onClick={() => {
                 setSelectedPartNo('');
@@ -1096,29 +1068,6 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                               title="Plan / Edit scheduled weeks for this part"
                             >
                               ✏ Plan
-                            </button>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => {
-                                saveYearlyPMPlan(fiscalYear, item);
-                                loadData();
-                                onRefresh?.();
-                                showToast?.(`Yearly PM Schedule saved for Part #${item.applicationPartNo}`, 'success');
-                              }}
-                              style={{
-                                padding: '4px 8px',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                backgroundColor: '#059669',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                              }}
-                              title="Save PM Schedule to Database"
-                            >
-                              💾 Save
                             </button>
                             <button
                               type="button"
