@@ -36,6 +36,55 @@ export function getFiscalYearMonths(fiscalYear = '2026-2027') {
   ];
 }
 
+export function getMonthsInRange(fromYear, fromMonthIndex, toYear, toMonthIndex) {
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  let startY = parseInt(fromYear, 10) || 2026;
+  let startM = parseInt(fromMonthIndex, 10);
+  if (isNaN(startM) || startM < 0 || startM > 11) startM = 3; // Default Apr (index 3)
+
+  let endY = parseInt(toYear, 10) || startY + 1;
+  let endM = parseInt(toMonthIndex, 10);
+  if (isNaN(endM) || endM < 0 || endM > 11) endM = 2; // Default Mar (index 2)
+
+  // Swap if start is after end
+  if (startY > endY || (startY === endY && startM > endM)) {
+    const tempY = startY; const tempM = startM;
+    startY = endY; startM = endM;
+    endY = tempY; endM = tempM;
+  }
+
+  const result = [];
+  let currY = startY;
+  let currM = startM;
+
+  let count = 0;
+  while ((currY < endY || (currY === endY && currM <= endM)) && count < 36) {
+    const yearShort = String(currY).slice(-2);
+    const mName = monthNames[currM];
+    const key = `${mName}-${yearShort}`;
+
+    result.push({
+      key,
+      name: mName,
+      label: key,
+      monthNum: currM + 1,
+      monthIndex: currM,
+      year: currY,
+      weeks: [1, 2, 3, 4]
+    });
+
+    currM++;
+    if (currM > 11) {
+      currM = 0;
+      currY++;
+    }
+    count++;
+  }
+
+  return result.length > 0 ? result : getFiscalYearMonths(`${startY}-${startY + 1}`);
+}
+
 export function getCurrentWeekSlot(date = new Date()) {
   const d = new Date(date);
   const yearShort = String(d.getFullYear()).slice(-2);

@@ -10,17 +10,39 @@ import {
 import {
   getCurrentFiscalYear,
   getFiscalYearMonths,
+  getMonthsInRange,
   getCurrentWeekSlot,
   generatePresetWeeks,
   exportYearlyScheduleMatrixCSV
 } from '../../utils/pmYearlySchedule';
 
+const MONTH_OPTIONS = [
+  { value: 0, label: 'Jan' },
+  { value: 1, label: 'Feb' },
+  { value: 2, label: 'Mar' },
+  { value: 3, label: 'Apr' },
+  { value: 4, label: 'May' },
+  { value: 5, label: 'Jun' },
+  { value: 6, label: 'Jul' },
+  { value: 7, label: 'Aug' },
+  { value: 8, label: 'Sep' },
+  { value: 9, label: 'Oct' },
+  { value: 10, label: 'Nov' },
+  { value: 11, label: 'Dec' }
+];
+
+const YEAR_OPTIONS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
+
 export default function ScheduleView({ tools = [], onNavigateToPM, showToast, onRefresh }) {
   const [viewMode, setViewMode] = useState('matrix'); // 'matrix' (48-Week Grid) or 'list' (Tool List)
   const currentFiscalYear = useMemo(() => getCurrentFiscalYear(), []);
-  const [fiscalYear, setFiscalYear] = useState(() => getCurrentFiscalYear());
-  const [startMonthIndex, setStartMonthIndex] = useState(0); // 0 = Apr (Start of Fiscal Year)
-  const [endMonthIndex, setEndMonthIndex] = useState(11); // 11 = Mar (End of Fiscal Year)
+
+  // From and To range selectors (Month & Year for both)
+  const [fromMonth, setFromMonth] = useState(3); // 3 = Apr
+  const [fromYear, setFromYear] = useState(2026);
+  const [toMonth, setToMonth] = useState(2); // 2 = Mar
+  const [toYear, setToYear] = useState(2027);
+
   const [yearlyPlans, setYearlyPlans] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [selectedPartNo, setSelectedPartNo] = useState('');
@@ -38,15 +60,28 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [isToolModalOpen, setIsToolModalOpen] = useState(false);
 
+  // Compute fiscal year for backing storage plans
+  const fiscalYear = useMemo(() => {
+    const startFYYear = fromMonth >= 3 ? fromYear : fromYear - 1;
+    return `${startFYYear}-${startFYYear + 1}`;
+  }, [fromYear, fromMonth]);
+
   const currentSlot = useMemo(() => getCurrentWeekSlot(), []);
   const months = useMemo(() => getFiscalYearMonths(fiscalYear), [fiscalYear]);
 
-  // Filtered month slice for month-range filtering
+  // Dynamic month range computed between From (month+year) and To (month+year)
   const displayedMonths = useMemo(() => {
-    const start = Math.min(startMonthIndex, endMonthIndex);
-    const end = Math.max(startMonthIndex, endMonthIndex);
-    return months.filter((_, idx) => idx >= start && idx <= end);
-  }, [months, startMonthIndex, endMonthIndex]);
+    return getMonthsInRange(fromYear, fromMonth, toYear, toMonth);
+  }, [fromYear, fromMonth, toYear, toMonth]);
+
+  const isThisYearActive = fromMonth === 3 && fromYear === 2026 && toMonth === 2 && toYear === 2027;
+
+  const handleResetThisYear = () => {
+    setFromMonth(3);
+    setFromYear(2026);
+    setToMonth(2);
+    setToYear(2027);
+  };
 
   const loadData = () => {
     const list = getSchedules();
@@ -211,16 +246,12 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
           </p>
         </div>
 
-        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Quick "This Year" Button */}
           <button
             type="button"
             className="btn"
-            onClick={() => {
-              setFiscalYear(currentFiscalYear);
-              setStartMonthIndex(0);
-              setEndMonthIndex(11);
-            }}
+            onClick={handleResetThisYear}
             style={{
               height: '36px',
               padding: '0 12px',
@@ -231,191 +262,84 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              border: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-              backgroundColor: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '#eff6ff' : '#ffffff',
-              color: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '#1d4ed8' : '#334155',
-              boxShadow: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '0 1px 3px rgba(37,99,235,0.15)' : 'none'
+              border: isThisYearActive ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+              backgroundColor: isThisYearActive ? '#eff6ff' : '#ffffff',
+              color: isThisYearActive ? '#1d4ed8' : '#334155',
+              boxShadow: isThisYearActive ? '0 1px 3px rgba(37,99,235,0.15)' : 'none'
             }}
-            title={`Reset to Current Fiscal Year (${currentFiscalYear}) full 12-month plan`}
+            title="Reset to This Year (Apr 2026 to Mar 2027)"
           >
             <span>📅</span>
-            <span>This Year (FY {currentFiscalYear})</span>
+            <span>This Year</span>
           </button>
 
-          {/* Fiscal Year Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Year:</label>
-            <select
-              className="form-select"
-              value={fiscalYear}
-              onChange={(e) => setFiscalYear(e.target.value)}
-              style={{ height: '36px', padding: '4px 10px', fontSize: '12.5px', fontWeight: 700 }}
-            >
-              <option value="2024-2025">FY 2024-2025 (Apr 24 - Mar 25)</option>
-              <option value="2025-2026">FY 2025-2026 (Apr 25 - Mar 26)</option>
-              <option value="2026-2027">FY 2026-2027 (Apr 26 - Mar 27)</option>
-              <option value="2027-2028">FY 2027-2028 (Apr 27 - Mar 28)</option>
-              <option value="2028-2029">FY 2028-2029 (Apr 28 - Mar 29)</option>
-            </select>
-          </div>
-
-          {/* Month Range Selector to Filter and See */}
+          {/* Date Range Selector: Choose Month and Year for Both From and To */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
             backgroundColor: '#ffffff',
-            border: '1px solid #cbd5e1',
+            border: '1.5px solid #cbd5e1',
             borderRadius: '6px',
-            padding: '2px 8px',
-            height: '36px'
+            padding: '2px 10px',
+            height: '36px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
           }}>
-            <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>
-              Month Range:
-            </label>
-            <select
-              className="form-select"
-              value={startMonthIndex}
-              onChange={(e) => setStartMonthIndex(Number(e.target.value))}
-              style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
-            >
-              {months.map((m, idx) => (
-                <option key={`start-${m.key}`} value={idx}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>to</span>
-            <select
-              className="form-select"
-              value={endMonthIndex}
-              onChange={(e) => setEndMonthIndex(Number(e.target.value))}
-              style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
-            >
-              {months.map((m, idx) => (
-                <option key={`end-${m.key}`} value={idx}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* FROM: Month & Year */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>From:</label>
+              <select
+                className="form-select"
+                value={fromMonth}
+                onChange={(e) => setFromMonth(Number(e.target.value))}
+                style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
+                title="From Month"
+              >
+                {MONTH_OPTIONS.map(m => (
+                  <option key={`from-m-${m.value}`} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+              <select
+                className="form-select"
+                value={fromYear}
+                onChange={(e) => setFromYear(Number(e.target.value))}
+                style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
+                title="From Year"
+              >
+                {YEAR_OPTIONS.map(y => (
+                  <option key={`from-y-${y}`} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Quick Range Presets */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-            <button
-              type="button"
-              onClick={() => { setStartMonthIndex(0); setEndMonthIndex(11); }}
-              style={{
-                height: '30px',
-                padding: '0 8px',
-                fontSize: '11px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: startMonthIndex === 0 && endMonthIndex === 11 ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: startMonthIndex === 0 && endMonthIndex === 11 ? '#eff6ff' : '#ffffff',
-                color: startMonthIndex === 0 && endMonthIndex === 11 ? '#1d4ed8' : '#64748b',
-                cursor: 'pointer'
-              }}
-              title="Show All 12 Months"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const curIdx = months.findIndex(m => m.key === currentSlot.monthKey);
-                if (curIdx >= 0) {
-                  setStartMonthIndex(curIdx);
-                  setEndMonthIndex(curIdx);
-                }
-              }}
-              style={{
-                height: '30px',
-                padding: '0 8px',
-                fontSize: '11px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: (startMonthIndex === endMonthIndex && months[startMonthIndex]?.key === currentSlot.monthKey) ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: (startMonthIndex === endMonthIndex && months[startMonthIndex]?.key === currentSlot.monthKey) ? '#eff6ff' : '#ffffff',
-                color: (startMonthIndex === endMonthIndex && months[startMonthIndex]?.key === currentSlot.monthKey) ? '#1d4ed8' : '#64748b',
-                cursor: 'pointer'
-              }}
-              title={`Show Current Month (${currentSlot.monthKey})`}
-            >
-              Current Month
-            </button>
-            <button
-              type="button"
-              onClick={() => { setStartMonthIndex(0); setEndMonthIndex(2); }}
-              style={{
-                height: '30px',
-                padding: '0 6px',
-                fontSize: '11px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: startMonthIndex === 0 && endMonthIndex === 2 ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: startMonthIndex === 0 && endMonthIndex === 2 ? '#eff6ff' : '#ffffff',
-                color: startMonthIndex === 0 && endMonthIndex === 2 ? '#1d4ed8' : '#64748b',
-                cursor: 'pointer'
-              }}
-              title="Q1: Apr - Jun"
-            >
-              Q1
-            </button>
-            <button
-              type="button"
-              onClick={() => { setStartMonthIndex(3); setEndMonthIndex(5); }}
-              style={{
-                height: '30px',
-                padding: '0 6px',
-                fontSize: '11px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: startMonthIndex === 3 && endMonthIndex === 5 ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: startMonthIndex === 3 && endMonthIndex === 5 ? '#eff6ff' : '#ffffff',
-                color: startMonthIndex === 3 && endMonthIndex === 5 ? '#1d4ed8' : '#64748b',
-                cursor: 'pointer'
-              }}
-              title="Q2: Jul - Sep"
-            >
-              Q2
-            </button>
-            <button
-              type="button"
-              onClick={() => { setStartMonthIndex(6); setEndMonthIndex(8); }}
-              style={{
-                height: '30px',
-                padding: '0 6px',
-                fontSize: '11px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: startMonthIndex === 6 && endMonthIndex === 8 ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: startMonthIndex === 6 && endMonthIndex === 8 ? '#eff6ff' : '#ffffff',
-                color: startMonthIndex === 6 && endMonthIndex === 8 ? '#1d4ed8' : '#64748b',
-                cursor: 'pointer'
-              }}
-              title="Q3: Oct - Dec"
-            >
-              Q3
-            </button>
-            <button
-              type="button"
-              onClick={() => { setStartMonthIndex(9); setEndMonthIndex(11); }}
-              style={{
-                height: '30px',
-                padding: '0 6px',
-                fontSize: '11px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: startMonthIndex === 9 && endMonthIndex === 11 ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: startMonthIndex === 9 && endMonthIndex === 11 ? '#eff6ff' : '#ffffff',
-                color: startMonthIndex === 9 && endMonthIndex === 11 ? '#1d4ed8' : '#64748b',
-                cursor: 'pointer'
-              }}
-              title="Q4: Jan - Mar"
-            >
-              Q4
-            </button>
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 800, padding: '0 2px' }}>to</span>
+
+            {/* TO: Month & Year */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>To:</label>
+              <select
+                className="form-select"
+                value={toMonth}
+                onChange={(e) => setToMonth(Number(e.target.value))}
+                style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
+                title="To Month"
+              >
+                {MONTH_OPTIONS.map(m => (
+                  <option key={`to-m-${m.value}`} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+              <select
+                className="form-select"
+                value={toYear}
+                onChange={(e) => setToYear(Number(e.target.value))}
+                style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
+                title="To Year"
+              >
+                {YEAR_OPTIONS.map(y => (
+                  <option key={`to-y-${y}`} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Export Matrix CSV */}
@@ -931,7 +855,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
       {viewMode === 'matrix' && (
         <>
           {/* Filtered Month Range Indicator Banner */}
-          {displayedMonths.length < 12 && (
+          {!isThisYearActive && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -948,12 +872,12 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '15px' }}>🔍</span>
                 <span>
-                  <strong>Filtered Month Range:</strong> Showing <strong>{displayedMonths.length} Months</strong> ({displayedMonths[0]?.label} &rarr; {displayedMonths[displayedMonths.length - 1]?.label}) &bull; <strong>{displayedMonths.length * 4} Weeks</strong>
+                  <strong>Filtered Range:</strong> Showing <strong>{displayedMonths.length} Months</strong> ({displayedMonths[0]?.label} &rarr; {displayedMonths[displayedMonths.length - 1]?.label}) &bull; <strong>{displayedMonths.length * 4} Weeks</strong>
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => { setStartMonthIndex(0); setEndMonthIndex(11); }}
+                onClick={handleResetThisYear}
                 style={{
                   backgroundColor: '#ffffff',
                   border: '1px solid #93c5fd',
@@ -965,7 +889,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                   cursor: 'pointer'
                 }}
               >
-                ✕ Reset to Full Year (12 Months / 48 Weeks)
+                ✕ Reset to This Year (12 Months)
               </button>
             </div>
           )}
