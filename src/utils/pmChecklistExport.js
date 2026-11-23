@@ -62,35 +62,35 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
   const is2 = compactCount === 2;
   const isCompact = is3 || is2;
 
-  const logoSize = is3 ? '22px' : is2 ? '28px' : '38px';
-  const companyTitleSize = is3 ? '9.5px' : is2 ? '11px' : '13px';
-  const sheetTitleSize = is3 ? '11px' : is2 ? '12.5px' : '15px';
-  const metaMinHeight = is3 ? '20px' : is2 ? '26px' : '34px';
-  const metaPadding = is3 ? '2px 6px' : is2 ? '4px 8px' : '6px 10px';
-  const metaFontSize = is3 ? '8.5px' : is2 ? '10px' : '11.5px';
-  const tableFontSize = is3 ? '8.5px' : is2 ? '10px' : '11px';
-  const cellPadding = is3 ? '3px 4px' : is2 ? '5px 6px' : '8px 8px';
-  const signoffMinHeight = is3 ? '32px' : is2 ? '46px' : '65px';
-  const signoffPadding = is3 ? '3px 6px' : is2 ? '6px 10px' : '12px 14px';
+  const logoSize = is3 ? '30px' : is2 ? '28px' : '38px';
+  const companyTitleSize = is3 ? '11px' : is2 ? '11px' : '13px';
+  const sheetTitleSize = is3 ? '12.5px' : is2 ? '12.5px' : '15px';
+  const metaMinHeight = is3 ? '25px' : is2 ? '26px' : '34px';
+  const metaPadding = is3 ? '4px 8px' : is2 ? '4px 8px' : '6px 10px';
+  const metaFontSize = is3 ? '10px' : is2 ? '10px' : '11.5px';
+  const tableFontSize = is3 ? '10px' : is2 ? '10px' : '11px';
+  const cellPadding = is3 ? '6px 8px' : is2 ? '5px 6px' : '8px 8px';
+  const signoffMinHeight = is3 ? '46px' : is2 ? '46px' : '65px';
+  const signoffPadding = is3 ? '6px 10px' : is2 ? '6px 10px' : '12px 14px';
 
   return `
-    <div style="border: 1.2px solid #0f172a; border-radius: 3px; overflow: hidden; background-color: #ffffff; width: 100%; box-sizing: border-box;">
+    <div style="border: 1.5px solid #0f172a; border-radius: 4px; overflow: hidden; background-color: #ffffff; width: 100%; box-sizing: border-box; flex: 1; min-height: ${is3 ? '236px' : 'auto'}; display: flex; flex-direction: column; justify-content: space-between;">
       
       <!-- 1. Header Box: Logo & Title -->
-      <div style="display: grid; grid-template-columns: ${is3 ? '120px 1fr' : is2 ? '140px 1fr' : '180px 1fr'}; border-bottom: 1.2px solid #0f172a; min-height: ${is3 ? '28px' : is2 ? '38px' : '52px'};">
-        <div style="display: flex; align-items: center; gap: ${is3 ? '5px' : '8px'}; padding: ${is3 ? '2px 6px' : '4px 8px'}; border-right: 1.2px solid #0f172a; background-color: #f8fafc;">
+      <div style="display: grid; grid-template-columns: ${is3 ? '150px 1fr' : is2 ? '140px 1fr' : '180px 1fr'}; border-bottom: 1.5px solid #0f172a; min-height: ${is3 ? '38px' : is2 ? '38px' : '52px'};">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-right: 1.5px solid #0f172a; background-color: #f8fafc;">
           <img src="/inel-logo.png" alt="INEL" style="width: ${logoSize}; height: ${logoSize}; object-fit: contain;" />
-          <div style="line-height: 1.1;">
+          <div style="line-height: 1.15;">
             <div style="font-size: ${companyTitleSize}; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">INEL II</div>
-            <div style="font-size: ${is3 ? '7.5px' : is2 ? '9px' : '10.5px'}; font-weight: 700; color: #475569; letter-spacing: 0.5px;">PUDUCHERRY</div>
+            <div style="font-size: ${is3 ? '8.5px' : is2 ? '9px' : '10.5px'}; font-weight: 700; color: #475569; letter-spacing: 0.5px;">PUDUCHERRY</div>
           </div>
         </div>
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: ${is3 ? '2px 8px' : '4px 10px'}; text-align: center; background-color: #ffffff;">
-          <div style="font-size: ${sheetTitleSize}; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; color: #0f172a; line-height: 1.15;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 10px; text-align: center; background-color: #ffffff;">
+          <div style="font-size: ${sheetTitleSize}; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; color: #0f172a; line-height: 1.2;">
             PREVENTIVE MAINTENANCE CHECK LIST FOR ${isCritical ? 'CRITICAL' : 'NON CRITICAL'} TOOLS
           </div>
           ${revisionLabel ? `
-            <div style="font-size: ${is3 ? '8px' : is2 ? '9.5px' : '11px'}; font-weight: 800; color: #1e40af; margin-top: 1px; letter-spacing: 0.5px;">
+            <div style="font-size: ${is3 ? '9.5px' : is2 ? '9.5px' : '11px'}; font-weight: 800; color: #1e40af; margin-top: 1px; letter-spacing: 0.5px;">
               ● ${revisionLabel}
             </div>
           ` : ''}
@@ -98,12 +98,12 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
       </div>
 
       <!-- 2. Metadata Grid (3 Rows) -->
-      <div style="border-bottom: 1.2px solid #0f172a; font-size: ${metaFontSize};">
+      <div style="border-bottom: 1.5px solid #0f172a; font-size: ${metaFontSize};">
         
         <!-- Row 1: Tool No | Date of check | Ref No -->
-        <div style="display: grid; grid-template-columns: ${isCompact ? '95px 1fr 90px 100px 60px 95px' : '130px 1fr 120px 140px 80px 130px'}; border-bottom: 1px solid #0f172a; min-height: ${metaMinHeight}; align-items: center;">
+        <div style="display: grid; grid-template-columns: ${isCompact ? '105px 1fr 95px 110px 70px 105px' : '130px 1fr 120px 140px 80px 130px'}; border-bottom: 1px solid #0f172a; min-height: ${metaMinHeight}; align-items: center;">
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Tool No</div>
-          <div style="padding: ${metaPadding}; font-family: monospace; font-weight: 800; color: #1e40af; font-size: ${is3 ? '10px' : is2 ? '11.5px' : '13.5px'}; border-right: 1px solid #0f172a;">${tool.toolNo || ''}</div>
+          <div style="padding: ${metaPadding}; font-family: monospace; font-weight: 800; color: #1e40af; font-size: ${is3 ? '11.5px' : is2 ? '11.5px' : '13.5px'}; border-right: 1px solid #0f172a;">${tool.toolNo || ''}</div>
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Date of check:</div>
           <div style="padding: ${metaPadding}; font-weight: 700; border-right: 1px solid #0f172a; color: #0f172a;">${checkDate}</div>
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Ref No.:</div>
@@ -111,7 +111,7 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
         </div>
 
         <!-- Row 2: Tool description | Next due Date -->
-        <div style="display: grid; grid-template-columns: ${isCompact ? '95px 1fr 90px 220px' : '130px 1fr 120px 350px'}; border-bottom: 1px solid #0f172a; min-height: ${metaMinHeight}; align-items: center;">
+        <div style="display: grid; grid-template-columns: ${isCompact ? '105px 1fr 95px 260px' : '130px 1fr 120px 350px'}; border-bottom: 1px solid #0f172a; min-height: ${metaMinHeight}; align-items: center;">
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Tool description</div>
           <div style="padding: ${metaPadding}; font-weight: 700; text-transform: uppercase; color: #0f172a; border-right: 1px solid #0f172a;">${tool.description || 'Precision Manufacturing Tool'}</div>
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Next due Date:</div>
@@ -119,7 +119,7 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
         </div>
 
         <!-- Row 3: Application | Tool Issued On -->
-        <div style="display: grid; grid-template-columns: ${isCompact ? '95px 1fr 90px 220px' : '130px 1fr 120px 350px'}; min-height: ${metaMinHeight}; align-items: center;">
+        <div style="display: grid; grid-template-columns: ${isCompact ? '105px 1fr 95px 260px' : '130px 1fr 120px 350px'}; min-height: ${metaMinHeight}; align-items: center;">
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Application</div>
           <div style="padding: ${metaPadding}; font-weight: 600; color: #0f172a; border-right: 1px solid #0f172a;">${appPartText}</div>
           <div style="padding: ${metaPadding}; font-weight: 700; background-color: #f8fafc; border-right: 1px solid #0f172a; color: #1e293b;">Tool Issued On:</div>
@@ -128,54 +128,56 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
       </div>
 
       <!-- 3. Checklist Items Table -->
-      <table style="width: 100%; border-collapse: collapse; font-size: ${tableFontSize}; table-layout: fixed;">
-        <thead>
-          <tr style="background-color: #f1f5f9; border-bottom: 1.2px solid #0f172a; font-weight: 800; text-transform: uppercase;">
-            <th style="width: 5%; text-align: center; padding: ${cellPadding}; border-right: 1px solid #0f172a;">S.no</th>
-            <th style="width: 26%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Check points</th>
-            <th style="width: 14%; text-align: center; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Checking Method</th>
-            <th style="width: 18%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Specification</th>
-            <th style="width: 20%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a; background-color: #eff6ff;">Actual condition *</th>
-            <th style="width: 17%; text-align: left; padding: ${cellPadding};">Action Taken</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${checkItems.map((item, idx) => `
-            <tr style="border-bottom: 1px solid #cbd5e1; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-              <td style="text-align: center; font-weight: 700; padding: ${cellPadding}; border-right: 1px solid #cbd5e1;">${item.sno || idx + 1}</td>
-              <td style="padding: ${cellPadding}; font-weight: 800; color: #0f172a; border-right: 1px solid #cbd5e1; line-height: 1.2;">${item.checkPoint || ''}</td>
-              <td style="text-align: center; padding: ${cellPadding}; font-weight: 700; color: #334155; border-right: 1px solid #cbd5e1;">${item.method || 'Visual'}</td>
-              <td style="padding: ${cellPadding}; color: #1e293b; border-right: 1px solid #cbd5e1; line-height: 1.2;">${item.specification || '—'}</td>
-              <td style="padding: ${cellPadding}; font-weight: 700; color: #1e3a8a; border-right: 1px solid #cbd5e1; background-color: #eff6ff;">${item.actualCondition || 'OK / Verified'}</td>
-              <td style="padding: ${cellPadding}; color: #1e293b;">${item.actionTaken || 'None required'}</td>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <table style="width: 100%; height: 100%; border-collapse: collapse; font-size: ${tableFontSize}; table-layout: fixed;">
+          <thead>
+            <tr style="background-color: #f1f5f9; border-bottom: 1.5px solid #0f172a; font-weight: 800; text-transform: uppercase;">
+              <th style="width: 5%; text-align: center; padding: ${cellPadding}; border-right: 1px solid #0f172a;">S.no</th>
+              <th style="width: 26%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Check points</th>
+              <th style="width: 14%; text-align: center; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Checking Method</th>
+              <th style="width: 18%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Specification</th>
+              <th style="width: 20%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a; background-color: #eff6ff;">Actual condition *</th>
+              <th style="width: 17%; text-align: left; padding: ${cellPadding};">Action Taken</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${checkItems.map((item, idx) => `
+              <tr style="border-bottom: 1px solid #cbd5e1; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                <td style="text-align: center; font-weight: 700; padding: ${cellPadding}; border-right: 1px solid #cbd5e1;">${item.sno || idx + 1}</td>
+                <td style="padding: ${cellPadding}; font-weight: 800; color: #0f172a; border-right: 1px solid #cbd5e1; line-height: 1.3;">${item.checkPoint || ''}</td>
+                <td style="text-align: center; padding: ${cellPadding}; font-weight: 700; color: #334155; border-right: 1px solid #cbd5e1;">${item.method || 'Visual'}</td>
+                <td style="padding: ${cellPadding}; color: #1e293b; border-right: 1px solid #cbd5e1; line-height: 1.3;">${item.specification || '—'}</td>
+                <td style="padding: ${cellPadding}; font-weight: 700; color: #1e3a8a; border-right: 1px solid #cbd5e1; background-color: #eff6ff;">${item.actualCondition || 'OK / Verified'}</td>
+                <td style="padding: ${cellPadding}; color: #1e293b;">${item.actionTaken || 'None required'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
 
       <!-- 4. Sign-Off Authorization Footer (3 Columns) -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1.2px solid #0f172a; background-color: #ffffff; text-align: center;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1.5px solid #0f172a; background-color: #ffffff; text-align: center;">
         <div style="padding: ${signoffPadding}; border-right: 1px solid #0f172a; min-height: ${signoffMinHeight}; display: flex; flex-direction: column; justify-content: center;">
-          <div style="font-size: ${is3 ? '8px' : is2 ? '9.5px' : '11px'}; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 1px;">Prepared By</div>
-          <div style="font-weight: 800; font-size: ${is3 ? '9.5px' : is2 ? '11px' : '13px'}; color: #0284c7;">✓ ${preparedByName}</div>
-          <div style="font-size: ${is3 ? '7.5px' : is2 ? '8.5px' : '10px'}; color: #64748b; margin-top: 1px;">Checked: ${checkDate}</div>
+          <div style="font-size: ${is3 ? '9.5px' : is2 ? '9.5px' : '11px'}; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 2px;">Prepared By</div>
+          <div style="font-weight: 800; font-size: ${is3 ? '11px' : is2 ? '11px' : '13px'}; color: #0284c7;">✓ ${preparedByName}</div>
+          <div style="font-size: ${is3 ? '8.5px' : is2 ? '8.5px' : '10px'}; color: #64748b; margin-top: 1px;">Checked: ${checkDate}</div>
         </div>
         <div style="padding: ${signoffPadding}; border-right: 1px solid #0f172a; min-height: ${signoffMinHeight}; display: flex; flex-direction: column; justify-content: center; background-color: ${isChecked ? '#f0fdf4' : '#fafafa'};">
-          <div style="font-size: ${is3 ? '8px' : is2 ? '9.5px' : '11px'}; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 1px;">Checked By</div>
+          <div style="font-size: ${is3 ? '9.5px' : is2 ? '9.5px' : '11px'}; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 2px;">Checked By</div>
           ${isChecked ? `
-            <div style="font-weight: 800; font-size: ${is3 ? '9.5px' : is2 ? '11px' : '13px'}; color: #16a34a;">✓ ${checkedByName}</div>
-            <div style="font-size: ${is3 ? '7.5px' : is2 ? '8.5px' : '10px'}; color: #64748b; margin-top: 1px;">Verified &bull; ${checkedByDate}</div>
+            <div style="font-weight: 800; font-size: ${is3 ? '11px' : is2 ? '11px' : '13px'}; color: #16a34a;">✓ ${checkedByName}</div>
+            <div style="font-size: ${is3 ? '8.5px' : is2 ? '8.5px' : '10px'}; color: #64748b; margin-top: 1px;">Verified &bull; ${checkedByDate}</div>
           ` : `
-            <div style="font-size: ${is3 ? '8.5px' : is2 ? '10px' : '12px'}; font-style: italic; color: #94a3b8;">Pending QA Check</div>
+            <div style="font-size: ${is3 ? '10px' : is2 ? '10px' : '12px'}; font-style: italic; color: #94a3b8;">Pending QA Check</div>
           `}
         </div>
         <div style="padding: ${signoffPadding}; min-height: ${signoffMinHeight}; display: flex; flex-direction: column; justify-content: center; background-color: ${isApproved ? '#eff6ff' : '#fafafa'};">
-          <div style="font-size: ${is3 ? '8px' : is2 ? '9.5px' : '11px'}; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 1px;">Approved By</div>
+          <div style="font-size: ${is3 ? '9.5px' : is2 ? '9.5px' : '11px'}; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 2px;">Approved By</div>
           ${isApproved ? `
-            <div style="font-weight: 800; font-size: ${is3 ? '9.5px' : is2 ? '11px' : '13px'}; color: #2563eb;">✓ ${approvedByName}</div>
-            <div style="font-size: ${is3 ? '7.5px' : is2 ? '8.5px' : '10px'}; color: #64748b; margin-top: 1px;">Approved &bull; ${approvedByDate}</div>
+            <div style="font-weight: 800; font-size: ${is3 ? '11px' : is2 ? '11px' : '13px'}; color: #2563eb;">✓ ${approvedByName}</div>
+            <div style="font-size: ${is3 ? '8.5px' : is2 ? '8.5px' : '10px'}; color: #64748b; margin-top: 1px;">Approved &bull; ${approvedByDate}</div>
           ` : `
-            <div style="font-size: ${is3 ? '8.5px' : is2 ? '10px' : '12px'}; font-style: italic; color: #94a3b8;">Pending Management Approval</div>
+            <div style="font-size: ${is3 ? '10px' : is2 ? '10px' : '12px'}; font-style: italic; color: #94a3b8;">Pending Management Approval</div>
           `}
         </div>
       </div>
@@ -312,28 +314,33 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
     container.style.left = '-9999px';
     container.style.top = '0';
     container.style.width = '1120px';
+    container.style.height = group.length === 3 ? '774px' : 'auto';
     container.style.backgroundColor = '#ffffff';
     container.style.color = '#0f172a';
     container.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    container.style.padding = '6px 10px';
+    container.style.padding = '8px 12px';
     container.style.boxSizing = 'border-box';
     container.style.zIndex = '-9999';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.justifyContent = group.length === 3 ? 'space-between' : 'flex-start';
+    container.style.gap = '8px';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 5px;">
+      <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between; gap: 8px;">
         <!-- PM 1 on this page -->
         ${generatePMChecklistHTML(tool, insp1, insp1.revisionLabel, 3)}
 
         ${insp2 ? `
           <!-- Divider between PM 1 and PM 2 -->
-          <div style="border-top: 1px dashed #94a3b8; margin: 1px 0;"></div>
+          <div style="border-top: 1.5px dashed #94a3b8; margin: 0;"></div>
           <!-- PM 2 on this page -->
           ${generatePMChecklistHTML(tool, insp2, insp2.revisionLabel, 3)}
         ` : ''}
 
         ${insp3 ? `
           <!-- Divider between PM 2 and PM 3 -->
-          <div style="border-top: 1px dashed #94a3b8; margin: 1px 0;"></div>
+          <div style="border-top: 1.5px dashed #94a3b8; margin: 0;"></div>
           <!-- PM 3 on this page -->
           ${generatePMChecklistHTML(tool, insp3, insp3.revisionLabel, 3)}
         ` : ''}
