@@ -430,31 +430,20 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                         </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => handleOpenApprove(item)}
-                            title="Sign and authorize this tool for production release"
-                            style={{
-                              padding: '6px 11px',
-                              fontSize: '11.5px',
-                              backgroundColor: isApproved ? '#059669' : '#2563eb',
-                              borderRadius: '5px'
-                            }}
-                          >
-                            {isApproved ? 'Update Auth' : 'Authorize'}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => setViewingTool(item.tool)}
-                            title="View Preventive Maintenance Checklist"
-                            style={{ padding: '6px 10px', fontSize: '11.5px', borderRadius: '5px' }}
-                          >
-                            View PM
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => setViewingTool(item.tool)}
+                          title="View Preventive Maintenance Checklist"
+                          style={{
+                            padding: '5px 14px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            backgroundColor: '#ffffff'
+                          }}
+                        >
+                          View PM
+                        </button>
                       </td>
                     </tr>
                   );
