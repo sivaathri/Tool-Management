@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { getPMRecords, updateCheckedBySignOff, sendPMToolsToApprovedBy } from '../../services/toolService';
 import PMChecklistSheet from '../ServiceHistory/modals/PMChecklistSheet';
 
-export default function CheckedByView({ tools = [], onNavigateToPM, currentUser, showToast }) {
+export default function CheckedByView({ tools = [], onNavigateToPM, currentUser, showToast, onRefresh }) {
   const [pmRecords, setPMRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -146,6 +146,7 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
     if (selectedIds.length === 0) return;
     const count = sendPMToolsToApprovedBy(selectedIds, currentUser?.name || 'QA Lead');
     loadData();
+    onRefresh?.();
     setSelectedIds([]);
     showToast?.(`Successfully sent ${count} verified PM tools to Management Authorization (Approved By)!`, 'success');
   };
@@ -153,6 +154,7 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
   const handleSendSingle = (toolId, toolNo) => {
     const count = sendPMToolsToApprovedBy([toolId], currentUser?.name || 'QA Lead');
     loadData();
+    onRefresh?.();
     setSelectedIds(prev => prev.filter(id => id !== toolId));
     showToast?.(`Sent ${toolNo} to Management Authorization (Approved By)!`, 'success');
   };
@@ -692,6 +694,7 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                       };
                       updateCheckedBySignOff(viewingTool.id || viewingTool.toolNo, signData);
                       loadData();
+                      onRefresh?.();
                       setViewingTool(null);
                       showToast?.(`Checked By QA verification verified & signed by ${activeName} for ${viewingTool.toolNo}`, 'success');
                     }}

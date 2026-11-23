@@ -73,8 +73,10 @@ export default function ServiceHistoryView({
   useEffect(() => {
     setSelectedToolId(propSelectedToolId || null);
     if (propSelectedToolId) {
-      const tool = tools.find(t => t.id === propSelectedToolId);
+      const cleanTarget = String(propSelectedToolId).toLowerCase().trim();
+      const tool = tools.find(t => t.id === propSelectedToolId || (t.toolNo && t.toolNo.toLowerCase().trim() === cleanTarget));
       if (tool) {
+        setSelectedToolId(tool.id);
         setSearchInput(getToolNumberOnly(tool.toolNo));
       }
     } else {

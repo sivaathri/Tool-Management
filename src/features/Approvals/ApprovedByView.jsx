@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { getPMRecords, updateApprovedBySignOff } from '../../services/toolService';
 import PMChecklistSheet from '../ServiceHistory/modals/PMChecklistSheet';
 
-export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser, showToast }) {
+export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser, showToast, onRefresh }) {
   const [pmRecords, setPMRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -699,6 +699,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                             };
                             updateApprovedBySignOff(viewingTool.id || viewingTool.toolNo, signData);
                             loadData();
+                            onRefresh?.();
                             setViewingTool(null);
                             showToast?.(`Management authorization signed & approved by ${activeName} for ${viewingTool.toolNo}`, 'success');
                           }}
@@ -762,12 +763,25 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                 status: 'Rejected',
                 remarks: rejectRemarks.trim()
               };
-              updateApprovedBySignOff(rejectingItem.tool?.id || rejectingItem.tool?.toolNo, signData);
+              const targetTool = rejectingItem.tool;
+              updateApprovedBySignOff(targetTool?.id || targetTool?.toolNo, signData);
               loadData();
+              onRefresh?.();
               setRejectingItem(null);
               setViewingTool(null);
               setRejectRemarks('');
-              showToast?.(`PM for ${rejectingItem.tool?.toolNo} REJECTED and returned for rework. Rejection notification dispatched!`, 'danger');
+
+              // Send rich interactive clickable toast notification
+              showToast?.({
+                title: `🚨 PM Inspection Rejected: ${targetTool?.toolNo}`,
+                message: `Reason: "${signData.remarks}". Technician rework required before production release.`,
+                actionLabel: '🛠 Click to Rework PM',
+                duration: 15000,
+                type: 'danger',
+                onClick: () => {
+                  onNavigateToPM?.(targetTool);
+                }
+              });
             }}>
               <div className="modal-body" style={{ padding: '24px' }}>
                 <div style={{

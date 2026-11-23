@@ -39,6 +39,8 @@ export default function MainLayout({
         {/* Top Header */}
         <Header
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          onOpenAlerts={() => onNavigate('notifications')}
+          alertCount={(urgentAlertCount || 0) + (warningAlertCount || 0)}
         />
 
         {/* View Content Body */}

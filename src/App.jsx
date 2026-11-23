@@ -96,14 +96,13 @@ export default function App() {
   // Toasts
   const [toasts, setToasts] = useState([]);
 
-  const addToast = (message, type = 'info') => {
+  const addToast = (content, type = 'info') => {
     const id = Date.now() + Math.random().toString(36).substr(2, 4);
-    setToasts(prev => [...prev, { id, message, type }]);
-
-    // Automatically close toast after 3 seconds
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    if (typeof content === 'object' && content !== null) {
+      setToasts(prev => [...prev, { id, ...content, type: content.type || type }]);
+    } else {
+      setToasts(prev => [...prev, { id, message: content, type }]);
+    }
   };
 
   const removeToast = (id) => {
@@ -327,6 +326,7 @@ export default function App() {
             onNavigateToPM={handleViewServiceHistory}
             currentUser={currentUser}
             showToast={addToast}
+            onRefresh={reloadData}
           />
         )}
 
@@ -336,6 +336,7 @@ export default function App() {
             onNavigateToPM={handleViewServiceHistory}
             currentUser={currentUser}
             showToast={addToast}
+            onRefresh={reloadData}
           />
         )}
 
