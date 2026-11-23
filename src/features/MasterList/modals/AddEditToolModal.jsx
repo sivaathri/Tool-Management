@@ -140,7 +140,7 @@ export default function AddEditToolModal({
           <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto', padding: '24px' }}>
             <div className="form-grid">
               
-              {/* Row 1: Application Part No  & Product Name */}
+              {/* Row 1: Application Part No & Tool No */}
               <div className="form-row-2">
                 <div className="form-group">
                   <SearchablePartInput
@@ -150,23 +150,11 @@ export default function AddEditToolModal({
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="inpProductName">Product Name *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    id="inpProductName"
-                    placeholder="e.g. Steering Yoke Assembly / Brake Caliper"
-                    value={formData.productName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Tool No & Description */}
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="inpToolNumber">Tool No. *</label>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: '26px', marginBottom: '6px' }}>
+                    <label className="form-label" htmlFor="inpToolNumber" style={{ margin: 0, fontWeight: 700 }}>
+                      Tool No. *
+                    </label>
+                  </div>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <input
                       type="text"
@@ -175,7 +163,7 @@ export default function AddEditToolModal({
                       placeholder="e.g. INE T 1122"
                       value={formData.toolNo}
                       onChange={(e) => setFormData(prev => ({ ...prev, toolNo: e.target.value }))}
-                      style={{ paddingRight: formData.toolNo ? '30px' : '12px' }}
+                      style={{ paddingRight: formData.toolNo ? '30px' : '12px', height: '38px', boxSizing: 'border-box', width: '100%' }}
                       required
                     />
                     {formData.toolNo && (
@@ -200,7 +188,27 @@ export default function AddEditToolModal({
                     )}
                   </div>
                   <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
-                    Format: <strong>INE T [Number]</strong> (e.g. INE T 1122 or enter 1122)
+                    Format: <strong>INE T [Number]</strong> (e.g. INE T 1122)
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: Product Name & Description */}
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="inpProductName">Product Name *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    id="inpProductName"
+                    placeholder="e.g. Steering Yoke Assembly / Brake Caliper"
+                    value={formData.productName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
+                    style={{ height: '38px', boxSizing: 'border-box' }}
+                    required
+                  />
+                  <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                    Specify product assembly or part description
                   </div>
                 </div>
                 <div className="form-group">
@@ -212,8 +220,12 @@ export default function AddEditToolModal({
                     placeholder="e.g. Yoke Pressing Upper Die"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    style={{ height: '38px', boxSizing: 'border-box' }}
                     required
                   />
+                  <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                    Tool functional description or operation name
+                  </div>
                 </div>
               </div>
 
@@ -227,8 +239,12 @@ export default function AddEditToolModal({
                     id="inpIssuedDate"
                     value={formData.toolIssuedOn}
                     onChange={(e) => setFormData(prev => ({ ...prev, toolIssuedOn: e.target.value }))}
+                    style={{ height: '38px', boxSizing: 'border-box' }}
                     required
                   />
+                  <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                    Tool commissioning or deployment date
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="inpLifeTime">Life Time (Stroke / Cycle Limit) *</label>
@@ -240,8 +256,12 @@ export default function AddEditToolModal({
                     min="1"
                     value={formData.lifetime}
                     onChange={(e) => setFormData(prev => ({ ...prev, lifetime: e.target.value }))}
+                    style={{ height: '38px', boxSizing: 'border-box' }}
                     required
                   />
+                  <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                    Maximum stroke count threshold before replacement
+                  </div>
                 </div>
               </div>
 
@@ -254,6 +274,7 @@ export default function AddEditToolModal({
                     id="inpClassification"
                     value={formData.classification}
                     onChange={(e) => setFormData(prev => ({ ...prev, classification: e.target.value }))}
+                    style={{ height: '38px', boxSizing: 'border-box' }}
                     required
                   >
                     <option value="Critical">Critical</option>
@@ -275,10 +296,15 @@ export default function AddEditToolModal({
                       backgroundColor: 'var(--slate-100)',
                       color: 'var(--slate-700)',
                       cursor: 'not-allowed',
-                      fontWeight: 600
+                      fontWeight: 600,
+                      height: '38px',
+                      boxSizing: 'border-box'
                     }}
                     title="Auto-calculated cycle count: 0 by default; becomes 1 once life time completes"
                   />
+                  <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
+                    Auto-incremented cycle count (0 on new tool)
+                  </div>
                 </div>
               </div>
 
