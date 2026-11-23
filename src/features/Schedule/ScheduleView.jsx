@@ -652,43 +652,13 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
             </div>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#0f172a' }}>
-                  {activeSelectedPlan.productName || 'Manufacturing Line'}
-                </span>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  backgroundColor: activeSelectedPlan.classification === 'Critical' ? '#fee2e2' : '#f1f5f9',
-                  color: activeSelectedPlan.classification === 'Critical' ? '#dc2626' : '#475569'
-                }}>
-                  {activeSelectedPlan.classification || 'Non-Critical'}
-                </span>
-              </div>
+              
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
-                  Dependent Tool Numbers ({(activeSelectedPlan.toolNos || []).length}):
+                  Total No of Tool  : ({(activeSelectedPlan.toolNos || []).length})
                 </span>
-                {(activeSelectedPlan.toolNos || []).map(tNo => (
-                  <span
-                    key={tNo}
-                    style={{
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: '11.5px',
-                      fontWeight: 800,
-                      backgroundColor: '#e0f2fe',
-                      color: '#0369a1',
-                      padding: '1px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #bae6fd'
-                    }}
-                  >
-                    {tNo}
-                  </span>
-                ))}
+       
                 <span style={{
                   fontSize: '11.5px',
                   fontWeight: 800,

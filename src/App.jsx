@@ -309,6 +309,7 @@ export default function App() {
             onReplaceTool={handleReplaceTool}
             currentUser={currentUser}
             showToast={addToast}
+            onRefresh={reloadData}
           />
         )}
 

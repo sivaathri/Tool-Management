@@ -44,7 +44,8 @@ export default function ServiceHistoryView({
   currentUser,
   selectedToolId: propSelectedToolId = null,
   onSelectToolId,
-  onBackToMaster
+  onBackToMaster,
+  onRefresh
 }) {
   // Helper to extract number digits from tool number for search input with static prefix
   const getToolNumberOnly = (toolNo) => {
@@ -685,7 +686,7 @@ export default function ServiceHistoryView({
       </div>
 
       {/* PREVENTIVE MAINTENANCE CHECK LIST SHEET (ENTER DATA) */}
-      <PMChecklistSheet tool={selectedTool} currentUser={currentUser} showToast={showToast} />
+      <PMChecklistSheet tool={selectedTool} currentUser={currentUser} showToast={showToast} onRefresh={onRefresh} />
 
       {/* LIFE TIME LIMIT OVERRUN ALERT BANNER */}
       {selectedTool.status === 'Replacement Due' && (

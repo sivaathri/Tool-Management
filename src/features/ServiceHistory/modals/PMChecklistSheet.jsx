@@ -3,7 +3,7 @@ import { savePMRecord, getPMRecords } from '../../../services/toolService';
 import { authService } from '../../../services/authService';
 import PMExportModal from './PMExportModal';
 
-export default function PMChecklistSheet({ tool, currentUser, showToast }) {
+export default function PMChecklistSheet({ tool, currentUser, showToast, onRefresh }) {
   if (!tool) return null;
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -213,6 +213,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
     };
 
     savePMRecord(record);
+    onRefresh?.();
     setActiveRecordId(recordId);
     setPreparedBy(activeUserName);
     setCheckedByInfo(null);

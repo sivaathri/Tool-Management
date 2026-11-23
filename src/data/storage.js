@@ -816,6 +816,12 @@ export function getDueYearlyPMSchedules(fiscalYear = '2026-2027') {
 
     const dueList = [];
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth0 = now.getMonth(); // 0 to 11
+    const currentMonthIso = now.toISOString().slice(0, 7); // e.g. "2026-11"
+    const currentMonthNumStr = String(currentMonth0 + 1).padStart(2, '0'); // e.g. "11"
+
     plans.forEach(plan => {
       const weeks = Array.isArray(plan.plannedWeeks) ? plan.plannedWeeks : [];
       // Check if current week slot is planned
@@ -824,19 +830,68 @@ export function getDueYearlyPMSchedules(fiscalYear = '2026-2027') {
       const isDueThisMonth = weeks.some(w => w.startsWith(`${currentSlot.monthKey}_`));
 
       if (isDueThisWeek || isDueThisMonth) {
-        // Check if inspection was already verified for tools of this part in this month
-        const hasVerifiedPMInMonth = (plan.toolNos || []).some(tNo => {
+        // Check if inspection was already conducted/updated/saved for tools of this part in this month
+        const hasCompletedPMInMonth = (plan.toolNos || []).some(tNo => {
           const cleanNo = tNo.toLowerCase().trim();
+          const cleanPart = (plan.applicationPartNo || '').toLowerCase().trim();
+
           return pmRecords.some(pm => {
-            const matchTool = (pm.toolNo || '').toLowerCase().trim() === cleanNo || (pm.applicationPartNo || '').toLowerCase().trim() === (plan.applicationPartNo || '').toLowerCase().trim();
-            const isVerified = pm.checkedBy?.status === 'Verified' || pm.approvedBy?.status === 'Approved';
-            const pmDate = pm.checkDate || '';
-            const inCurrentMonth = pmDate.includes(new Date().toISOString().slice(0, 7)); // e.g. 2026-11
-            return matchTool && isVerified && inCurrentMonth;
+            const pmToolNo = (pm.toolNo || '').toLowerCase().trim();
+            const pmPartNo = (pm.applicationPartNo || '').toLowerCase().trim();
+            const pmApp = (pm.application || '').toLowerCase().trim();
+
+            const matchTool = pmToolNo === cleanNo || 
+              (cleanPart && pmPartNo === cleanPart) ||
+              pmApp.includes(cleanNo) ||
+              (cleanPart && pmApp.includes(cleanPart));
+
+            if (!matchTool) return false;
+
+            // If the PM is currently marked Rejected by Management or Revision Requested, rework is pending
+            const isRejected = pm.approvedBy?.status === 'Rejected' || pm.checkedBy?.status === 'Revision Requested';
+            if (isRejected) return false;
+
+            // Check if inspection has been conducted/prepared/updated or verified
+            const isCheckedOrUpdated = Boolean(
+              pm.preparedBy || 
+              pm.inspectedBy || 
+              pm.checkedBy?.status === 'Verified' || 
+              pm.approvedBy?.status === 'Approved' ||
+              (Array.isArray(pm.items) && pm.items.length > 0)
+            );
+
+            // Safe month date comparison supporting ISO (2026-11-23), Locale (11/23/2026), etc.
+            const pmDateStr = pm.checkDate || pm.lastModifiedAt || '';
+            let isThisMonth = false;
+
+            if (pmDateStr) {
+              if (pmDateStr.includes(currentMonthIso)) {
+                isThisMonth = true;
+              } else if (pmDateStr.startsWith(`${currentMonthNumStr}/`) || pmDateStr.startsWith(`${currentMonth0 + 1}/`)) {
+                isThisMonth = true;
+              } else {
+                const parsed = new Date(pmDateStr);
+                if (!isNaN(parsed.getTime())) {
+                  isThisMonth = parsed.getFullYear() === currentYear && parsed.getMonth() === currentMonth0;
+                }
+              }
+            }
+
+            // Also check if latest revision history has an inspection from this month
+            if (!isThisMonth && Array.isArray(pm.history)) {
+              isThisMonth = pm.history.some(h => {
+                const hDate = h.checkDate || h.archivedAt || '';
+                return hDate.includes(currentMonthIso) || 
+                  hDate.startsWith(`${currentMonthNumStr}/`) ||
+                  (!isNaN(new Date(hDate).getTime()) && new Date(hDate).getMonth() === currentMonth0 && new Date(hDate).getFullYear() === currentYear);
+              });
+            }
+
+            return isCheckedOrUpdated && isThisMonth;
           });
         });
 
-        if (!hasVerifiedPMInMonth) {
+        if (!hasCompletedPMInMonth) {
           dueList.push({
             plan,
             applicationPartNo: plan.applicationPartNo,
