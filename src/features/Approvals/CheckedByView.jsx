@@ -369,19 +369,21 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: '6px' }}>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => handleOpenSign(item)}
-                            style={{
-                              padding: '5px 12px',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              backgroundColor: isVerified ? '#166534' : '#2563eb'
-                            }}
-                          >
-                            {isVerified ? 'Re-verify' : 'Verify'}
-                          </button>
+                          {!isVerified && (
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={() => handleOpenSign(item)}
+                              style={{
+                                padding: '5px 12px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                backgroundColor: '#2563eb'
+                              }}
+                            >
+                              Verify
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="btn btn-secondary"
