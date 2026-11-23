@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { getPMRecords, updateApprovedBySignOff } from '../../services/toolService';
+import PMChecklistSheet from '../ServiceHistory/modals/PMChecklistSheet';
 
 export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser, showToast }) {
   const [pmRecords, setPMRecords] = useState([]);
@@ -8,6 +9,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
   const [approvingItem, setApprovingItem] = useState(null);
+  const [viewingTool, setViewingTool] = useState(null);
   const [approvalForm, setApprovalForm] = useState({
     name: '',
     date: new Date().toISOString().slice(0, 10),
@@ -395,7 +397,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                           <button
                             type="button"
                             className="btn btn-secondary"
-                            onClick={() => onNavigateToPM?.(item.tool.id)}
+                            onClick={() => setViewingTool(item.tool)}
                             title="View Preventive Maintenance Checklist"
                             style={{ padding: '6px 10px', fontSize: '11.5px', borderRadius: '5px' }}
                           >
@@ -549,6 +551,56 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* View PM Checklist Sheet Modal */}
+      {viewingTool && (
+        <div className="modal-backdrop show" style={{ zIndex: 1100 }}>
+          <div className="modal-card modal-xl" style={{ maxWidth: '1250px', maxHeight: '92vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <div className="modal-title">
+                <span>Preventive Maintenance Checklist: {viewingTool.toolNo}</span>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setViewingTool(null)}
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <PMChecklistSheet
+                tool={viewingTool}
+                showToast={showToast}
+              />
+            </div>
+
+            <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setViewingTool(null)}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const targetItem = queueItems.find(q => q.tool.id === viewingTool.id);
+                  setViewingTool(null);
+                  if (targetItem) {
+                    handleOpenApprove(targetItem);
+                  }
+                }}
+              >
+                Authorize & Sign
+              </button>
+            </div>
           </div>
         </div>
       )}
