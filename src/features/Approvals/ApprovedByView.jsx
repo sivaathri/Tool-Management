@@ -588,19 +588,48 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               >
                 Close
               </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  const targetItem = queueItems.find(q => q.tool.id === viewingTool.id);
-                  setViewingTool(null);
-                  if (targetItem) {
-                    handleOpenApprove(targetItem);
-                  }
-                }}
-              >
-                Authorize & Sign
-              </button>
+              {(() => {
+                const targetItem = queueItems.find(q => 
+                  (viewingTool.id && q.tool.id === viewingTool.id) || 
+                  (viewingTool.toolNo && q.tool.toolNo && q.tool.toolNo.toLowerCase().trim() === viewingTool.toolNo.toLowerCase().trim())
+                );
+                const isAlreadyApproved = targetItem?.approvalStatus === 'Approved';
+
+                return !isAlreadyApproved ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      const activeName = currentUser?.name || currentUser?.username || 'Plant Incharge';
+                      const signData = {
+                        name: activeName,
+                        date: new Date().toISOString().slice(0, 10),
+                        status: 'Approved',
+                        remarks: 'Preventive maintenance check list verified and authorized for active production.'
+                      };
+                      updateApprovedBySignOff(viewingTool.id || viewingTool.toolNo, signData);
+                      loadData();
+                      setViewingTool(null);
+                      showToast?.(`Management authorization signed & approved by ${activeName} for ${viewingTool.toolNo}`, 'success');
+                    }}
+                    style={{
+                      backgroundColor: '#2563eb',
+                      padding: '8px 20px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Authorize & Sign</span>
+                  </button>
+                ) : null;
+              })()}
             </div>
           </div>
         </div>

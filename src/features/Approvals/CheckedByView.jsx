@@ -163,11 +163,8 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
       <div className="page-header" style={{ marginBottom: '20px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>Quality Assurance Verification (Checked By)</span>
+            <span>Checked By</span>
           </h1>
-          <p className="page-subtitle" style={{ color: 'var(--slate-500)', fontSize: '13px', marginTop: '4px' }}>
-            QA Lead verification queue for submitted Preventive Maintenance inspection checklists
-          </p>
         </div>
       </div>
 
@@ -496,17 +493,48 @@ export default function CheckedByView({ tools = [], onNavigateToPM, currentUser,
               >
                 Close
               </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  const targetItem = queueItems.find(q => q.tool.id === viewingTool.id);
-                  setViewingTool(null);
-                  handleOpenSign(targetItem);
-                }}
-              >
-                Verify & Sign
-              </button>
+              {(() => {
+                const targetItem = queueItems.find(q => 
+                  (viewingTool.id && q.tool.id === viewingTool.id) || 
+                  (viewingTool.toolNo && q.tool.toolNo && q.tool.toolNo.toLowerCase().trim() === viewingTool.toolNo.toLowerCase().trim())
+                );
+                const isAlreadyVerified = targetItem?.checkStatus === 'Verified';
+
+                return !isAlreadyVerified ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      const activeName = currentUser?.name || currentUser?.username || 'Admin User';
+                      const signData = {
+                        name: activeName,
+                        date: new Date().toISOString().slice(0, 10),
+                        status: 'Verified',
+                        remarks: 'Inspected check points and observation verified OK as per engineering drawings.'
+                      };
+                      updateCheckedBySignOff(viewingTool.id || viewingTool.toolNo, signData);
+                      loadData();
+                      setViewingTool(null);
+                      showToast?.(`Checked By QA verification verified & signed by ${activeName} for ${viewingTool.toolNo}`, 'success');
+                    }}
+                    style={{
+                      backgroundColor: '#16a34a',
+                      padding: '8px 20px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Verify & Sign</span>
+                  </button>
+                ) : null;
+              })()}
             </div>
           </div>
         </div>
