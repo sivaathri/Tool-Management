@@ -5,6 +5,8 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
   const [pmRecords, setPMRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
   const [approvingItem, setApprovingItem] = useState(null);
   const [approvalForm, setApprovalForm] = useState({
     name: '',
@@ -77,6 +79,42 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
       return matchSearch && matchStatus;
     });
   }, [queueItems, searchTerm, statusFilter]);
+
+  // Pagination calculation (15 per page)
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const paginatedItems = useMemo(() => {
+    return filtered.slice(startIndex, startIndex + pageSize);
+  }, [filtered, startIndex, pageSize]);
+
+  // Generate page numbers
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [];
+    if (safeCurrentPage <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i);
+      pages.push('...');
+      pages.push(totalPages);
+    } else if (safeCurrentPage >= totalPages - 3) {
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push('...');
+      pages.push(safeCurrentPage - 1);
+      pages.push(safeCurrentPage);
+      pages.push(safeCurrentPage + 1);
+      pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [totalPages, safeCurrentPage]);
 
   const handleOpenApprove = (item) => {
     setApprovingItem(item);
@@ -182,7 +220,10 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               className="form-input"
               placeholder="Search Tool No., Product Name, Part No..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
 
@@ -191,7 +232,10 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
             <select
               className="form-select"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               <option value="">All Approval Statuses</option>
               <option value="Pending Approval">Pending Approval</option>
@@ -208,6 +252,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('');
+                setCurrentPage(1);
               }}
               style={{ height: '38px', minWidth: '90px' }}
             >
@@ -248,7 +293,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                   </td>
                 </tr>
               ) : (
-                filtered.map((item, idx) => {
+                paginatedItems.map((item, idx) => {
                   const isApproved = item.approvalStatus === 'Approved';
                   const isHold = item.approvalStatus === 'Hold';
                   const isPending = item.approvalStatus === 'Pending Approval';
@@ -257,7 +302,7 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
                   return (
                     <tr key={item.tool.id || idx}>
                       <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
-                        {idx + 1}
+                        {(safeCurrentPage - 1) * pageSize + idx + 1}
                       </td>
                       <td style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-700)' }}>
                         {item.tool.toolNo}
@@ -364,6 +409,60 @@ export default function ApprovedByView({ tools = [], onNavigateToPM, currentUser
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Pagination Footer (15 rows per page) */}
+        <div className="table-pagination-footer">
+          <div className="pagination-info">
+            <span>
+              Showing <strong>{totalItems === 0 ? 0 : startIndex + 1}</strong> to{' '}
+              <strong>{Math.min(startIndex + pageSize, totalItems)}</strong> of{' '}
+              <strong>{totalItems}</strong> tools
+            </span>
+            <span style={{ color: 'var(--slate-400)' }}>•</span>
+            <span style={{ fontSize: '12px', color: 'var(--slate-500)' }}>15 per page</span>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage === 1}
+                title="Previous Page"
+              >
+                ‹
+              </button>
+
+              {pageNumbers.map((item, idx) =>
+                item === '...' ? (
+                  <span key={`dots-${idx}`} className="pagination-ellipsis">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`pagination-btn ${item === safeCurrentPage ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(item)}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage === totalPages}
+                title="Next Page"
+              >
+                ›
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
