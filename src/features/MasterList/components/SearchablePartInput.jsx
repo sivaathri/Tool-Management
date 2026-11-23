@@ -4,7 +4,7 @@ const PREFIX_OPTIONS = ['NSR', 'NRS', 'FWM', 'NIV', 'NIG'];
 
 // Helper to parse existing value into prefix and number
 function parseValue(val) {
-  if (!val) return { prefix: 'NSR', number: '' };
+  if (!val) return { prefix: '', number: '' };
   const trimmed = String(val).trim();
 
   // Match prefixes like NSR-1122, NRS_500, FWM 001, etc.
@@ -19,15 +19,17 @@ function parseValue(val) {
 
   // Pure numbers or legacy (e.g. 001)
   const numOnly = trimmed.replace(/^(NSR|NRS|FWM|NIV|NIG)[-_\s]?/i, '');
-  return { prefix: 'NSR', number: numOnly || trimmed };
+  return { prefix: '', number: numOnly || trimmed };
 }
 
 // Helper to construct the unified Application Part No
 function formatFullPart(pfx, num) {
   const cleanNum = String(num || '').trim();
   if (!cleanNum) return '';
-  const validPfx = PREFIX_OPTIONS.includes(pfx) ? pfx : 'NSR';
-  return `${validPfx}-${cleanNum}`;
+  if (!pfx || !PREFIX_OPTIONS.includes(pfx)) {
+    return cleanNum;
+  }
+  return `${pfx}-${cleanNum}`;
 }
 
 export default function SearchablePartInput({
@@ -64,13 +66,18 @@ export default function SearchablePartInput({
 
   const currentFullValue = formatFullPart(selectedPrefix, partNumber);
 
-  // Filter saved parts based on query
+  // Filter saved parts based on query and selected prefix
   const query = (partNumber || '').trim().toLowerCase();
-  const filtered = uniqueParts.filter(p => {
-    if (!query) return true;
-    const lowerP = p.toLowerCase();
-    return lowerP.includes(query) || lowerP.includes(currentFullValue.toLowerCase());
-  });
+  const filtered = useMemo(() => {
+    if (!selectedPrefix) return [];
+    return uniqueParts.filter(p => {
+      const lowerP = p.toLowerCase();
+      const prefixMatch = lowerP.startsWith(selectedPrefix.toLowerCase());
+      if (!prefixMatch) return false;
+      if (!query) return true;
+      return lowerP.includes(query);
+    });
+  }, [uniqueParts, selectedPrefix, query]);
 
   const isExactMatch = uniqueParts.some(p => p.toLowerCase() === currentFullValue.toLowerCase());
 
@@ -87,12 +94,19 @@ export default function SearchablePartInput({
 
   const handlePrefixSelect = (pfx) => {
     setSelectedPrefix(pfx);
+    setIsOpen(false);
     const updatedFull = formatFullPart(pfx, partNumber);
     onChange(updatedFull);
-    inputRef.current?.focus();
+    if (pfx) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }, 50);
+    }
   };
 
   const handleNumberChange = (e) => {
+    if (!selectedPrefix) return;
     let raw = e.target.value;
 
     // Detect if user pasted or typed full part with prefix like "NSR-1122" or "NRS 1122"
@@ -209,6 +223,9 @@ export default function SearchablePartInput({
         }}>
           <select
             value={selectedPrefix}
+            onFocus={() => setIsOpen(false)}
+            onMouseDown={() => setIsOpen(false)}
+            onClick={() => setIsOpen(false)}
             onChange={(e) => handlePrefixSelect(e.target.value)}
             style={{
               appearance: 'none',
@@ -217,10 +234,10 @@ export default function SearchablePartInput({
               backgroundColor: 'transparent',
               border: 'none',
               padding: '0 24px 0 10px',
-              fontWeight: 800,
-              fontSize: '13px',
-              fontFamily: 'var(--font-mono, monospace)',
-              color: '#1d4ed8',
+              fontWeight: selectedPrefix ? 800 : 600,
+              fontSize: '12.5px',
+              fontFamily: selectedPrefix ? 'var(--font-mono, monospace)' : 'inherit',
+              color: selectedPrefix ? '#1d4ed8' : '#64748b',
               cursor: 'pointer',
               height: '100%',
               outline: 'none',
@@ -228,8 +245,11 @@ export default function SearchablePartInput({
             }}
             title="Select Prefix (NSR, NRS, FWM, NIV, NIG)"
           >
+            <option value="" style={{ color: '#64748b', fontWeight: 600 }}>
+              Select
+            </option>
             {PREFIX_OPTIONS.map(pfx => (
-              <option key={pfx} value={pfx} style={{ fontWeight: 700, color: '#0f172a' }}>
+              <option key={pfx} value={pfx} style={{ fontWeight: 700, color: '#0f172a', fontFamily: 'var(--font-mono, monospace)' }}>
                 {pfx} -
               </option>
             ))}
@@ -240,7 +260,7 @@ export default function SearchablePartInput({
             height="10"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#1d4ed8"
+            stroke={selectedPrefix ? '#1d4ed8' : '#64748b'}
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -254,12 +274,13 @@ export default function SearchablePartInput({
           </svg>
         </div>
 
-        {/* Number Input */}
+        {/* Number Input (Disabled until prefix is selected) */}
         <input
           ref={inputRef}
           type="text"
           className="form-input combobox-input"
           id="inpAppPartNo"
+          disabled={!selectedPrefix}
           style={{
             border: 'none',
             borderRadius: 0,
@@ -268,12 +289,17 @@ export default function SearchablePartInput({
             boxShadow: 'none',
             fontFamily: 'var(--font-mono, monospace)',
             fontWeight: 600,
-            paddingRight: '36px'
+            paddingRight: '36px',
+            backgroundColor: !selectedPrefix ? '#f8fafc' : '#ffffff',
+            cursor: !selectedPrefix ? 'not-allowed' : 'text',
+            color: !selectedPrefix ? '#94a3b8' : '#0f172a'
           }}
-          placeholder="e.g. 1122 or 001"
+          placeholder={!selectedPrefix ? "Select prefix first..." : "e.g. 1122 or 001"}
           value={partNumber}
           onChange={handleNumberChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            if (selectedPrefix) setIsOpen(true);
+          }}
           onKeyDown={handleKeyDown}
           autoComplete="off"
           required
@@ -283,13 +309,21 @@ export default function SearchablePartInput({
         <button
           type="button"
           className="combobox-chevron-btn"
+          disabled={!selectedPrefix}
           onClick={() => {
+            if (!selectedPrefix) return;
             setIsOpen(!isOpen);
             inputRef.current?.focus();
           }}
           tabIndex="-1"
           aria-label="Toggle part list"
-          style={{ top: '0', bottom: '0', right: '0' }}
+          style={{
+            top: '0',
+            bottom: '0',
+            right: '0',
+            cursor: !selectedPrefix ? 'not-allowed' : 'pointer',
+            opacity: !selectedPrefix ? 0.35 : 1
+          }}
         >
           <svg
             width="15"
@@ -308,8 +342,16 @@ export default function SearchablePartInput({
       </div>
 
       {/* Helper text & Live Preview */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
-        <span>Search saved parts or enter number</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', marginTop: '4px' }}>
+        {!selectedPrefix ? (
+          <span style={{ color: '#dc2626', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span>⚠</span> Please select  (NSR, NRS, FWM, NIV, NIG) first
+          </span>
+        ) : (
+          <span style={{ color: 'var(--slate-500)' }}>
+            Search saved {selectedPrefix} parts or enter number
+          </span>
+        )}
         {currentFullValue && (
           <span style={{ fontWeight: 700, color: '#1d4ed8', fontFamily: 'var(--font-mono, monospace)' }}>
             Part: {currentFullValue}
@@ -317,8 +359,8 @@ export default function SearchablePartInput({
         )}
       </div>
 
-      {/* DROPDOWN MENU */}
-      {isOpen && (
+      {/* DROPDOWN MENU (Only visible when prefix is selected) */}
+      {isOpen && Boolean(selectedPrefix) && (
         <div className="combobox-dropdown" style={{ display: 'flex' }}>
           <div className="combobox-header">
             <span>Saved Part Numbers</span>
