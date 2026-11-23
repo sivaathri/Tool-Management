@@ -503,7 +503,6 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
             <div style={{
               display: 'grid',
               gridTemplateColumns: '130px 1fr 120px 200px',
-              borderBottom: '1px solid #334155',
               minHeight: '38px',
               alignItems: 'center'
             }}>
@@ -518,34 +517,6 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
               </div>
               <div style={{ padding: '6px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0f172a' }}>
                 {tool.toolIssuedOn || '—'}
-              </div>
-            </div>
-
-            {/* Row 4: Prepared By (Logged-in User Who Created/Edited) & Date */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '130px 1fr 120px 200px',
-              minHeight: '38px',
-              alignItems: 'center',
-              backgroundColor: '#f8fafc'
-            }}>
-              <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f1f5f9' }}>
-                Prepared By:
-              </div>
-              <div style={{ padding: '6px 12px', fontWeight: 700, color: '#0f172a', borderRight: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#15803d', fontWeight: 800 }}>✓</span>
-                <span style={{ fontSize: '13px' }}>{displayPreparedBy}</span>
-                {isEditing && (
-                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600 }}>
-                    (Logged in user)
-                  </span>
-                )}
-              </div>
-              <div style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #334155', backgroundColor: '#f1f5f9' }}>
-                Prepared Date:
-              </div>
-              <div style={{ padding: '6px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0f172a' }}>
-                {checkDate}
               </div>
             </div>
 
@@ -621,40 +592,70 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                       {row.checkPoint}
                     </td>
 
-                    {/* Checking Method (Editable input with visible field styling) */}
+                    {/* Checking Method (Dropdown to choose: Visual, Vernier, Micro meter, Flip guage) */}
                     <td style={{
                       padding: '6px 8px',
                       borderRight: '1px solid #cbd5e1',
-                      verticalAlign: 'top'
+                      verticalAlign: 'top',
+                      width: '140px'
                     }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'center', fontWeight: 600 }}>
                         {row.method || '—'}
                       </div>
-                      <textarea
-                        className="screen-only-input"
-                        rows={2}
-                        value={row.method}
-                        onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
-                        readOnly={!isEditing}
-                        placeholder={isEditing ? "Enter method..." : "—"}
-                        style={{
-                          width: '100%',
-                          minHeight: '62px',
-                          padding: '7px 8px',
-                          borderRadius: '4px',
-                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: isEditing ? '#ffffff' : '#f8fafc',
-                          textAlign: 'center',
-                          fontSize: '12px',
-                          lineHeight: 1.45,
-                          color: '#0f172a',
-                          outline: 'none',
-                          resize: isEditing ? 'vertical' : 'none',
-                          cursor: isEditing ? 'text' : 'default',
-                          fontFamily: 'inherit',
-                          boxSizing: 'border-box'
-                        }}
-                      />
+                      {isEditing ? (
+                        <select
+                          className="screen-only-input"
+                          value={row.method || ''}
+                          onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
+                          style={{
+                            width: '100%',
+                            minHeight: '40px',
+                            padding: '6px 8px',
+                            borderRadius: '4px',
+                            border: '1.5px solid #2563eb',
+                            backgroundColor: '#ffffff',
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#0f172a',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <option value="">Select Method</option>
+                          <option value="Visual">Visual</option>
+                          <option value="Vernier">Vernier</option>
+                          <option value="Micro meter">Micro meter</option>
+                          <option value="Flip guage">Flip guage</option>
+                          {row.method && !['Visual', 'Vernier', 'Micro meter', 'Flip guage'].includes(row.method) && (
+                            <option value={row.method}>{row.method}</option>
+                          )}
+                        </select>
+                      ) : (
+                        <div
+                          className="screen-only-input"
+                          style={{
+                            width: '100%',
+                            minHeight: '40px',
+                            padding: '8px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid #cbd5e1',
+                            backgroundColor: '#f8fafc',
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: row.method ? '#0f172a' : '#94a3b8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          {row.method || '—'}
+                        </div>
+                      )}
                     </td>
 
                     {/* Specification (Editable textarea for long text) */}
