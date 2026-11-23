@@ -9,6 +9,10 @@ import {
   getPMRecords,
   savePMRecord,
   deletePMRecord,
+  getSchedules,
+  saveSchedule,
+  updateCheckedBySignOff,
+  updateApprovedBySignOff,
   resetToInitialData
 } from '../data/storage';
 
@@ -23,6 +27,10 @@ export const toolService = {
   getPMRecords,
   savePMRecord,
   deletePMRecord,
+  getSchedules,
+  saveSchedule,
+  updateCheckedBySignOff,
+  updateApprovedBySignOff,
   resetToInitialData
 };
 
@@ -37,5 +45,9 @@ export {
   getPMRecords,
   savePMRecord,
   deletePMRecord,
+  getSchedules,
+  saveSchedule,
+  updateCheckedBySignOff,
+  updateApprovedBySignOff,
   resetToInitialData
 };

@@ -12,6 +12,9 @@ import MasterListView from './features/MasterList/MasterListView';
 import AddEditToolModal from './features/MasterList/modals/AddEditToolModal';
 import ToolDossierModal from './features/MasterList/modals/ToolDossierModal';
 import ServiceHistoryView from './features/ServiceHistory/ServiceHistoryView';
+import ScheduleView from './features/Schedule/ScheduleView';
+import CheckedByView from './features/Approvals/CheckedByView';
+import ApprovedByView from './features/Approvals/ApprovedByView';
 import ProductionTrackingView from './features/ProductionTracking/ProductionTrackingView';
 import ReplacementAlertsView from './features/ReplacementAlerts/ReplacementAlertsView';
 import ReportsView from './features/Reports/ReportsView';
@@ -240,6 +243,8 @@ export default function App() {
   const handleViewServiceHistory = (tool) => {
     if (tool && tool.id) {
       setSelectedServiceToolId(tool.id);
+    } else if (typeof tool === 'string') {
+      setSelectedServiceToolId(tool);
     }
     setCurrentView('service-history');
   };
@@ -303,6 +308,32 @@ export default function App() {
             onAddProductionLog={handleAddProductionLog}
             onDeleteProductionLog={handleDeleteProductionLog}
             onReplaceTool={handleReplaceTool}
+            showToast={addToast}
+          />
+        )}
+
+        {currentView === 'schedule' && (
+          <ScheduleView
+            tools={tools}
+            onNavigateToPM={handleViewServiceHistory}
+            showToast={addToast}
+          />
+        )}
+
+        {currentView === 'checked-by' && (
+          <CheckedByView
+            tools={tools}
+            onNavigateToPM={handleViewServiceHistory}
+            currentUser={currentUser}
+            showToast={addToast}
+          />
+        )}
+
+        {currentView === 'approved-by' && (
+          <ApprovedByView
+            tools={tools}
+            onNavigateToPM={handleViewServiceHistory}
+            currentUser={currentUser}
             showToast={addToast}
           />
         )}

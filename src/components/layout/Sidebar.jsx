@@ -82,6 +82,45 @@ export default function Sidebar({
           </a>
 
           <a
+            className={`nav-item ${currentView === 'schedule' ? 'active' : ''}`}
+            onClick={() => { onNavigate('schedule'); onCloseMobile?.(); }}
+          >
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Schedule</span>
+          </a>
+
+          <div className="nav-section-label">Quality & Authorization</div>
+
+          <a
+            className={`nav-item ${currentView === 'checked-by' ? 'active' : ''}`}
+            onClick={() => { onNavigate('checked-by'); onCloseMobile?.(); }}
+          >
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            <span>Checked By</span>
+          </a>
+
+          <a
+            className={`nav-item ${currentView === 'approved-by' ? 'active' : ''}`}
+            onClick={() => { onNavigate('approved-by'); onCloseMobile?.(); }}
+          >
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            <span>Approved By</span>
+          </a>
+
+          <div className="nav-section-label">Alerts & Admin</div>
+
+          <a
             className={`nav-item ${currentView === 'notifications' || currentView === 'replacement-alerts' ? 'active' : ''}`}
             onClick={() => { onNavigate('notifications'); onCloseMobile?.(); }}
           >

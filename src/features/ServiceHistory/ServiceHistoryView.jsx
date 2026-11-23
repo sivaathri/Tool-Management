@@ -119,6 +119,19 @@ export default function ServiceHistoryView({
     return tools.find(t => t.id === selectedToolId) || null;
   }, [tools, selectedToolId]);
 
+  const currentSavedPM = useMemo(() => {
+    if (!selectedTool) return null;
+    try {
+      const pmRecords = getPMRecords();
+      return pmRecords.find(r =>
+        (selectedTool.id && r.toolId === selectedTool.id) ||
+        (r.toolNo && selectedTool.toolNo && r.toolNo.toLowerCase().trim() === selectedTool.toolNo.toLowerCase().trim())
+      ) || null;
+    } catch {
+      return null;
+    }
+  }, [selectedTool]);
+
   const currentCycle = selectedTool ? (selectedTool.toolCount || 0) : 0;
 
   // Identify all past retired cycles for this tool
@@ -1313,23 +1326,41 @@ export default function ServiceHistoryView({
         }}>
           <div style={{ padding: '12px 10px', borderRight: '1px solid #0f172a' }}>
             <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Inspected & Prepared By</div>
-            <div style={{ height: '36px' }}></div>
+            <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#0f172a', fontSize: '12px' }}>
+              {currentSavedPM?.inspectedBy ? `✓ ${currentSavedPM.inspectedBy}` : 'Tool Maintenance Technician'}
+            </div>
             <div style={{ fontSize: '11.5px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '4px', color: '#0f172a' }}>
-              Tool Maintenance Technician
+              Tool Maintenance Technician {currentSavedPM?.dateOfCheck ? `(${currentSavedPM.dateOfCheck})` : ''}
             </div>
           </div>
           <div style={{ padding: '12px 10px', borderRight: '1px solid #0f172a' }}>
             <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Verified & Checked By</div>
-            <div style={{ height: '36px' }}></div>
+            <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#0f172a', fontSize: '12px' }}>
+              {currentSavedPM?.checkedBy?.name ? (
+                <span style={{ color: currentSavedPM?.checkedBy?.status === 'Revision Requested' ? '#dc2626' : '#166534' }}>
+                  ✓ {currentSavedPM.checkedBy.name}
+                </span>
+              ) : (
+                <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '11px' }}>Pending QA Check</span>
+              )}
+            </div>
             <div style={{ fontSize: '11.5px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '4px', color: '#0f172a' }}>
-              Quality Assurance Lead
+              Quality Assurance Lead {currentSavedPM?.checkedBy?.date ? `(${currentSavedPM.checkedBy.date})` : ''}
             </div>
           </div>
           <div style={{ padding: '12px 10px' }}>
             <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Approved By</div>
-            <div style={{ height: '36px' }}></div>
+            <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#0f172a', fontSize: '12px' }}>
+              {currentSavedPM?.approvedBy?.name ? (
+                <span style={{ color: currentSavedPM?.approvedBy?.status === 'On Hold' ? '#dc2626' : '#166534' }}>
+                  ✓ {currentSavedPM.approvedBy.name}
+                </span>
+              ) : (
+                <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '11px' }}>Pending Management Sign-off</span>
+              )}
+            </div>
             <div style={{ fontSize: '11.5px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '4px', color: '#0f172a' }}>
-              Tool Room Lead / Plant Incharge
+              Tool Room Lead / Plant Incharge {currentSavedPM?.approvedBy?.date ? `(${currentSavedPM.approvedBy.date})` : ''}
             </div>
           </div>
         </div>

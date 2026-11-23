@@ -275,14 +275,24 @@ export async function exportPMReportToPDF(tool, logs = [], pmRecord = null) {
       </div>
       <div style="padding: 10px 12px; border-right: 1px solid #0f172a;">
         <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569;">Verified & Checked By</div>
-        <div style="height: 38px;"></div>
+        <div style="height: 38px; display: flex; flex-direction: column; justify-content: center;">
+          ${pmRecord?.checkedBy?.name ? `
+            <div style="font-weight: 800; font-size: 12px; color: #15803d;">✓ ${pmRecord.checkedBy.name}</div>
+            <div style="font-size: 9.5px; color: #64748b;">${pmRecord.checkedBy.date || ''}</div>
+          ` : ''}
+        </div>
         <div style="font-size: 11.5px; font-weight: 700; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #0f172a;">
           Quality Assurance Lead
         </div>
       </div>
       <div style="padding: 10px 12px;">
         <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569;">Approved By</div>
-        <div style="height: 38px;"></div>
+        <div style="height: 38px; display: flex; flex-direction: column; justify-content: center;">
+          ${pmRecord?.approvedBy?.name ? `
+            <div style="font-weight: 800; font-size: 12px; color: #1d4ed8;">✓ ${pmRecord.approvedBy.name}</div>
+            <div style="font-size: 9.5px; color: #64748b;">${pmRecord.approvedBy.date || ''}</div>
+          ` : ''}
+        </div>
         <div style="font-size: 11.5px; font-weight: 700; border-top: 1px dashed #94a3b8; padding-top: 4px; color: #0f172a;">
           Tool Room Lead / Plant Incharge
         </div>

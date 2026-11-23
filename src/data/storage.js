@@ -521,6 +521,202 @@ export function deletePMRecord(id) {
   }
 }
 
+// Schedule Management
+export function getSchedules() {
+  initStorage();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SCHEDULES);
+    const savedSchedules = raw ? JSON.parse(raw) : [];
+    const tools = getTools();
+    const pmRecords = getPMRecords();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const today = new Date(todayStr);
+
+    return tools.map(t => {
+      const toolNoClean = (t.toolNo || '').toLowerCase().trim();
+      const savedSch = savedSchedules.find(s => 
+        (s.toolId && s.toolId === t.id) || 
+        (s.toolNo && s.toolNo.toLowerCase().trim() === toolNoClean)
+      );
+
+      const pm = pmRecords.find(p => 
+        (p.toolId && p.toolId === t.id) || 
+        (p.toolNo && p.toolNo.toLowerCase().trim() === toolNoClean)
+      );
+
+      // Default next due date: from PM record, or saved schedule, or 3 months from today
+      let nextDue = savedSch?.nextDueDate || pm?.nextDueDate;
+      if (!nextDue) {
+        const d = new Date();
+        d.setMonth(d.getMonth() + 3);
+        nextDue = d.toISOString().slice(0, 10);
+      }
+
+      const lastCheck = pm?.checkDate || pm?.date || savedSch?.lastCheckDate || t.toolIssuedOn || '—';
+      const frequency = savedSch?.frequency || 'Quarterly (3 Months)';
+      const assignedInspector = savedSch?.assignedInspector || 'Tool Room Lead';
+      const priority = savedSch?.priority || (t.classification === 'Critical' ? 'High' : 'Normal');
+
+      // Calculate schedule status & days remaining
+      let status = 'On Track';
+      let daysRemaining = 0;
+      if (nextDue) {
+        const dueDate = new Date(nextDue);
+        const diffTime = dueDate.getTime() - today.getTime();
+        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (daysRemaining < 0) {
+          status = 'Overdue';
+        } else if (daysRemaining <= 7) {
+          status = 'Due Soon';
+        } else {
+          status = 'On Track';
+        }
+      }
+
+      return {
+        id: savedSch?.id || `sch-${t.id}`,
+        toolId: t.id,
+        toolNo: t.toolNo,
+        applicationPartNo: t.applicationPartNo,
+        productName: t.productName,
+        classification: t.classification,
+        lifetime: t.lifetime,
+        cumulative: t.cumulative,
+        frequency,
+        lastCheckDate: lastCheck,
+        nextDueDate: nextDue,
+        daysRemaining,
+        status,
+        assignedInspector,
+        priority,
+        notes: savedSch?.notes || '',
+        updatedAt: savedSch?.updatedAt || null
+      };
+    });
+  } catch (e) {
+    console.error('Error getting schedules', e);
+    return [];
+  }
+}
+
+export function saveSchedule(scheduleData) {
+  initStorage();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SCHEDULES);
+    const existing = raw ? JSON.parse(raw) : [];
+    const cleanToolNo = (scheduleData.toolNo || '').toLowerCase().trim();
+    const idx = existing.findIndex(s => 
+      (scheduleData.toolId && s.toolId === scheduleData.toolId) ||
+      (cleanToolNo && s.toolNo && s.toolNo.toLowerCase().trim() === cleanToolNo)
+    );
+
+    const item = {
+      ...scheduleData,
+      id: scheduleData.id || `sch-${scheduleData.toolId || Date.now()}`,
+      updatedAt: new Date().toISOString()
+    };
+
+    let updated;
+    if (idx >= 0) {
+      updated = [...existing];
+      updated[idx] = { ...existing[idx], ...item };
+    } else {
+      updated = [item, ...existing];
+    }
+    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(updated));
+    return item;
+  } catch (e) {
+    console.error('Error saving schedule', e);
+    return null;
+  }
+}
+
+// Sign-off helper for Checked By (QA)
+export function updateCheckedBySignOff(toolIdOrNo, signOffData) {
+  try {
+    const records = getPMRecords();
+    const cleanNo = String(toolIdOrNo).toLowerCase().trim();
+    let pm = records.find(r => 
+      r.id === toolIdOrNo || 
+      (r.toolId && r.toolId === toolIdOrNo) || 
+      (r.toolNo && r.toolNo.toLowerCase().trim() === cleanNo)
+    );
+
+    const checkedObj = {
+      name: signOffData.name || 'Quality Assurance Lead',
+      date: signOffData.date || new Date().toISOString().slice(0, 10),
+      remarks: signOffData.remarks || 'Check points and observation verified OK as per standards.',
+      status: signOffData.status || 'Verified',
+      timestamp: new Date().toISOString()
+    };
+
+    if (pm) {
+      pm.checkedBy = checkedObj;
+      savePMRecord(pm);
+      return pm;
+    } else {
+      const tools = getTools();
+      const tool = tools.find(t => t.id === toolIdOrNo || t.toolNo.toLowerCase().trim() === cleanNo);
+      const newPm = {
+        id: `pm_${tool?.id || Date.now()}`,
+        toolId: tool?.id || toolIdOrNo,
+        toolNo: tool?.toolNo || toolIdOrNo,
+        checkDate: new Date().toISOString().slice(0, 10),
+        checkedBy: checkedObj,
+        items: []
+      };
+      savePMRecord(newPm);
+      return newPm;
+    }
+  } catch (e) {
+    console.error('Error updating Checked By sign-off', e);
+    return null;
+  }
+}
+
+// Sign-off helper for Approved By (Management / Plant Incharge)
+export function updateApprovedBySignOff(toolIdOrNo, signOffData) {
+  try {
+    const records = getPMRecords();
+    const cleanNo = String(toolIdOrNo).toLowerCase().trim();
+    let pm = records.find(r => 
+      r.id === toolIdOrNo || 
+      (r.toolId && r.toolId === toolIdOrNo) || 
+      (r.toolNo && r.toolNo.toLowerCase().trim() === cleanNo)
+    );
+
+    const approvedObj = {
+      name: signOffData.name || 'Tool Room Lead / Plant Incharge',
+      date: signOffData.date || new Date().toISOString().slice(0, 10),
+      remarks: signOffData.remarks || 'Tool maintenance and PM checklist reviewed and authorized for production release.',
+      status: signOffData.status || 'Approved',
+      timestamp: new Date().toISOString()
+    };
+
+    if (pm) {
+      pm.approvedBy = approvedObj;
+      savePMRecord(pm);
+      return pm;
+    } else {
+      const tools = getTools();
+      const tool = tools.find(t => t.id === toolIdOrNo || t.toolNo.toLowerCase().trim() === cleanNo);
+      const newPm = {
+        id: `pm_${tool?.id || Date.now()}`,
+        toolId: tool?.id || toolIdOrNo,
+        toolNo: tool?.toolNo || toolIdOrNo,
+        checkDate: new Date().toISOString().slice(0, 10),
+        approvedBy: approvedObj,
+        items: []
+      };
+      savePMRecord(newPm);
+      return newPm;
+    }
+  } catch (e) {
+    console.error('Error updating Approved By sign-off', e);
+    return null;
+  }
+}
+
 // User Management Storage
 export function getUsers() {
   try {
@@ -593,6 +789,10 @@ export const TMSStorage = {
   getPMRecords,
   savePMRecord,
   deletePMRecord,
+  getSchedules,
+  saveSchedule,
+  updateCheckedBySignOff,
+  updateApprovedBySignOff,
   getUsers,
   saveUser,
   deleteUser,
