@@ -681,7 +681,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                       )}
                     </td>
 
-                    {/* Specification (Editable textarea for long text) */}
+                    {/* Specification (Editable textarea with ⌀ and ± quick insert buttons) */}
                     <td style={{
                       padding: '6px 8px',
                       borderRight: '1px solid #cbd5e1',
@@ -690,16 +690,68 @@ export default function PMChecklistSheet({ tool, currentUser, showToast }) {
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
                         {row.specification || '—'}
                       </div>
+                      {isEditing && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          gap: '5px',
+                          marginBottom: '4px'
+                        }}>
+                          <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Insert:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleInsertSymbol(idx, '⌀')}
+                            style={{
+                              padding: '1px 8px',
+                              borderRadius: '4px',
+                              border: '1.5px solid #3b82f6',
+                              backgroundColor: '#eff6ff',
+                              color: '#1d4ed8',
+                              fontSize: '13px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              lineHeight: '1.3',
+                              fontFamily: 'system-ui, sans-serif',
+                              boxShadow: '0 1px 2px rgba(59, 130, 246, 0.15)'
+                            }}
+                            title="Insert Diameter symbol (⌀)"
+                          >
+                            ⌀
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleInsertSymbol(idx, '±')}
+                            style={{
+                              padding: '1px 8px',
+                              borderRadius: '4px',
+                              border: '1.5px solid #f97316',
+                              backgroundColor: '#fff7ed',
+                              color: '#ea580c',
+                              fontSize: '13px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              lineHeight: '1.3',
+                              fontFamily: 'system-ui, sans-serif',
+                              boxShadow: '0 1px 2px rgba(249, 115, 22, 0.15)'
+                            }}
+                            title="Insert Plus-Minus tolerance symbol (±)"
+                          >
+                            ±
+                          </button>
+                        </div>
+                      )}
                       <textarea
+                        id={`spec-input-${idx}`}
                         className="screen-only-input"
                         rows={2}
                         value={row.specification}
                         onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
                         readOnly={!isEditing}
-                        placeholder={isEditing ? "Specification standard..." : "—"}
+                        placeholder={isEditing ? "Specification standard (e.g. ⌀ 25 ± 0.05)..." : "—"}
                         style={{
                           width: '100%',
-                          minHeight: '62px',
+                          minHeight: isEditing ? '54px' : '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
                           border: isEditing ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
