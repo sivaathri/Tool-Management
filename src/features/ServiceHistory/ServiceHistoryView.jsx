@@ -220,7 +220,7 @@ export default function ServiceHistoryView({
     const rawQ = searchInput.trim().toLowerCase();
     const cleanNum = rawQ.replace(/^ine\s*t\s*/i, '').trim();
     if (!cleanNum) {
-      return tools.slice(0, 8);
+      return [];
     }
     return tools.filter(t => {
       const numOnly = t.toolNo.toLowerCase().replace(/^ine\s*t\s*/i, '').trim();
@@ -247,7 +247,7 @@ export default function ServiceHistoryView({
     // Strip leading "INE T " if user pastes full tool string
     val = val.replace(/^INE\s*T\s*/i, '');
     setSearchInput(val);
-    setIsDropdownOpen(true);
+    setIsDropdownOpen(val.trim().length > 0);
     setHighlightedIndex(-1);
   };
 
@@ -420,7 +420,11 @@ export default function ServiceHistoryView({
               placeholder="Enter number (e.g. 1122, 0652)..."
               value={searchInput}
               onChange={handleInputChange}
-              onFocus={() => setIsDropdownOpen(true)}
+              onFocus={() => {
+                if (searchInput.trim().length > 0) {
+                  setIsDropdownOpen(true);
+                }
+              }}
               onKeyDown={handleInputKeyDown}
               autoComplete="off"
             />
@@ -439,8 +443,8 @@ export default function ServiceHistoryView({
               </button>
             )}
 
-            {/* RELATED TOOLS DROPDOWN */}
-            {isDropdownOpen && (
+            {/* RELATED TOOLS DROPDOWN - Only shows when user starts typing */}
+            {isDropdownOpen && searchInput.trim().length > 0 && (
               <div className="pm-search-dropdown">
                 <div className="pm-search-header-hint">
                   {matchingTools.length === 0

@@ -139,7 +139,7 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
   const partSuggestions = useMemo(() => {
     const validPlans = yearlyPlans.filter(p => p && p.applicationPartNo && p.applicationPartNo.trim() && p.applicationPartNo.trim() !== '—' && (p.toolNos || []).length > 0);
     const q = searchTerm.toLowerCase().trim();
-    if (!q) return validPlans;
+    if (!q) return [];
     return validPlans.filter(p =>
       (p.applicationPartNo && p.applicationPartNo.toLowerCase().includes(q)) ||
       (p.productName && p.productName.toLowerCase().includes(q)) ||
@@ -580,12 +580,15 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
                   if (selectedPartNo && !searchTerm) {
                     setSearchTerm('');
                   }
-                  setIsSearchDropdownOpen(true);
+                  if (searchTerm.trim().length > 0) {
+                    setIsSearchDropdownOpen(true);
+                  }
                 }}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
+                  const val = e.target.value;
+                  setSearchTerm(val);
                   setSelectedPartNo('');
-                  setIsSearchDropdownOpen(true);
+                  setIsSearchDropdownOpen(val.trim().length > 0);
                 }}
                 onBlur={() => {
                   // Delay closing slightly so clicking dropdown item triggers first
@@ -628,8 +631,8 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
               )}
             </div>
 
-            {/* Dropdown Menu - Opens as user searches / clicks */}
-            {isSearchDropdownOpen && (
+            {/* Dropdown Menu - Only opens when user starts typing */}
+            {isSearchDropdownOpen && searchTerm.trim().length > 0 && (
               <div style={{
                 position: 'absolute',
                 top: '42px',

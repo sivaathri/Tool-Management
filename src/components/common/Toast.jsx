@@ -77,17 +77,6 @@ function ToastItem({ toast, onDismiss }) {
           )}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDismiss(toast.id);
-        }}
-        className="text-slate-400 hover:text-slate-700 shrink-0 text-base leading-none p-1 font-bold"
-        title="Dismiss"
-      >
-        &times;
-      </button>
     </div>
   );
 }
