@@ -93,8 +93,10 @@ export function generatePresetWeeks(fiscalYear = '2026-2027', frequency = 'Quart
 }
 
 // Export Yearly Schedule Matrix to CSV matching the user's manual layout
-export function exportYearlyScheduleMatrixCSV(fiscalYear, partRows = []) {
-  const months = getFiscalYearMonths(fiscalYear);
+export function exportYearlyScheduleMatrixCSV(fiscalYear, partRows = [], customMonths = null) {
+  const months = (Array.isArray(customMonths) && customMonths.length > 0)
+    ? customMonths
+    : getFiscalYearMonths(fiscalYear);
 
   // Row 1: Header MONTH (Each month spans 4 week columns)
   const row1 = ['APPLICATION PART NO', 'APPLICATION / PRODUCT', 'DEPENDENT TOOL NUMBERS'];
@@ -136,7 +138,7 @@ export function exportYearlyScheduleMatrixCSV(fiscalYear, partRows = []) {
   const encoded = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encoded);
-  link.setAttribute('download', `Yearly_PM_Schedule_${fiscalYear}_${new Date().toISOString().slice(0, 10)}.csv`);
+  link.setAttribute('download', `Yearly_PM_Schedule_${fiscalYear}_${months.length}M_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

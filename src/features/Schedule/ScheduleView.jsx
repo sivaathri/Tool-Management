@@ -17,7 +17,10 @@ import {
 
 export default function ScheduleView({ tools = [], onNavigateToPM, showToast, onRefresh }) {
   const [viewMode, setViewMode] = useState('matrix'); // 'matrix' (48-Week Grid) or 'list' (Tool List)
+  const currentFiscalYear = useMemo(() => getCurrentFiscalYear(), []);
   const [fiscalYear, setFiscalYear] = useState(() => getCurrentFiscalYear());
+  const [startMonthIndex, setStartMonthIndex] = useState(0); // 0 = Apr (Start of Fiscal Year)
+  const [endMonthIndex, setEndMonthIndex] = useState(11); // 11 = Mar (End of Fiscal Year)
   const [yearlyPlans, setYearlyPlans] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [selectedPartNo, setSelectedPartNo] = useState('');
@@ -37,6 +40,13 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
   const currentSlot = useMemo(() => getCurrentWeekSlot(), []);
   const months = useMemo(() => getFiscalYearMonths(fiscalYear), [fiscalYear]);
+
+  // Filtered month slice for month-range filtering
+  const displayedMonths = useMemo(() => {
+    const start = Math.min(startMonthIndex, endMonthIndex);
+    const end = Math.max(startMonthIndex, endMonthIndex);
+    return months.filter((_, idx) => idx >= start && idx <= end);
+  }, [months, startMonthIndex, endMonthIndex]);
 
   const loadData = () => {
     const list = getSchedules();
@@ -181,8 +191,8 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
       showToast?.('No schedule plans to export', 'info');
       return;
     }
-    exportYearlyScheduleMatrixCSV(fiscalYear, filteredPlans);
-    showToast?.(`Yearly PM Schedule (${fiscalYear}) exported successfully!`, 'success');
+    exportYearlyScheduleMatrixCSV(fiscalYear, filteredPlans, displayedMonths);
+    showToast?.(`Yearly PM Schedule (${fiscalYear} • ${displayedMonths.length} Months) exported successfully!`, 'success');
   };
 
   return (
@@ -201,7 +211,37 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
           </p>
         </div>
 
-        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Quick "This Year" Button */}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setFiscalYear(currentFiscalYear);
+              setStartMonthIndex(0);
+              setEndMonthIndex(11);
+            }}
+            style={{
+              height: '36px',
+              padding: '0 12px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              border: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+              backgroundColor: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '#eff6ff' : '#ffffff',
+              color: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '#1d4ed8' : '#334155',
+              boxShadow: (fiscalYear === currentFiscalYear && startMonthIndex === 0 && endMonthIndex === 11) ? '0 1px 3px rgba(37,99,235,0.15)' : 'none'
+            }}
+            title={`Reset to Current Fiscal Year (${currentFiscalYear}) full 12-month plan`}
+          >
+            <span>📅</span>
+            <span>This Year (FY {currentFiscalYear})</span>
+          </button>
+
           {/* Fiscal Year Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Year:</label>
@@ -211,10 +251,171 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
               onChange={(e) => setFiscalYear(e.target.value)}
               style={{ height: '36px', padding: '4px 10px', fontSize: '12.5px', fontWeight: 700 }}
             >
+              <option value="2024-2025">FY 2024-2025 (Apr 24 - Mar 25)</option>
               <option value="2025-2026">FY 2025-2026 (Apr 25 - Mar 26)</option>
               <option value="2026-2027">FY 2026-2027 (Apr 26 - Mar 27)</option>
               <option value="2027-2028">FY 2027-2028 (Apr 27 - Mar 28)</option>
+              <option value="2028-2029">FY 2028-2029 (Apr 28 - Mar 29)</option>
             </select>
+          </div>
+
+          {/* Month Range Selector to Filter and See */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            backgroundColor: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            padding: '2px 8px',
+            height: '36px'
+          }}>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>
+              Month Range:
+            </label>
+            <select
+              className="form-select"
+              value={startMonthIndex}
+              onChange={(e) => setStartMonthIndex(Number(e.target.value))}
+              style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
+            >
+              {months.map((m, idx) => (
+                <option key={`start-${m.key}`} value={idx}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>to</span>
+            <select
+              className="form-select"
+              value={endMonthIndex}
+              onChange={(e) => setEndMonthIndex(Number(e.target.value))}
+              style={{ height: '28px', padding: '0 6px', fontSize: '12px', fontWeight: 700, border: '1px solid #cbd5e1' }}
+            >
+              {months.map((m, idx) => (
+                <option key={`end-${m.key}`} value={idx}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quick Range Presets */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+            <button
+              type="button"
+              onClick={() => { setStartMonthIndex(0); setEndMonthIndex(11); }}
+              style={{
+                height: '30px',
+                padding: '0 8px',
+                fontSize: '11px',
+                fontWeight: 700,
+                borderRadius: '4px',
+                border: startMonthIndex === 0 && endMonthIndex === 11 ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: startMonthIndex === 0 && endMonthIndex === 11 ? '#eff6ff' : '#ffffff',
+                color: startMonthIndex === 0 && endMonthIndex === 11 ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer'
+              }}
+              title="Show All 12 Months"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const curIdx = months.findIndex(m => m.key === currentSlot.monthKey);
+                if (curIdx >= 0) {
+                  setStartMonthIndex(curIdx);
+                  setEndMonthIndex(curIdx);
+                }
+              }}
+              style={{
+                height: '30px',
+                padding: '0 8px',
+                fontSize: '11px',
+                fontWeight: 700,
+                borderRadius: '4px',
+                border: (startMonthIndex === endMonthIndex && months[startMonthIndex]?.key === currentSlot.monthKey) ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: (startMonthIndex === endMonthIndex && months[startMonthIndex]?.key === currentSlot.monthKey) ? '#eff6ff' : '#ffffff',
+                color: (startMonthIndex === endMonthIndex && months[startMonthIndex]?.key === currentSlot.monthKey) ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer'
+              }}
+              title={`Show Current Month (${currentSlot.monthKey})`}
+            >
+              Current Month
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStartMonthIndex(0); setEndMonthIndex(2); }}
+              style={{
+                height: '30px',
+                padding: '0 6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                borderRadius: '4px',
+                border: startMonthIndex === 0 && endMonthIndex === 2 ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: startMonthIndex === 0 && endMonthIndex === 2 ? '#eff6ff' : '#ffffff',
+                color: startMonthIndex === 0 && endMonthIndex === 2 ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer'
+              }}
+              title="Q1: Apr - Jun"
+            >
+              Q1
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStartMonthIndex(3); setEndMonthIndex(5); }}
+              style={{
+                height: '30px',
+                padding: '0 6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                borderRadius: '4px',
+                border: startMonthIndex === 3 && endMonthIndex === 5 ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: startMonthIndex === 3 && endMonthIndex === 5 ? '#eff6ff' : '#ffffff',
+                color: startMonthIndex === 3 && endMonthIndex === 5 ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer'
+              }}
+              title="Q2: Jul - Sep"
+            >
+              Q2
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStartMonthIndex(6); setEndMonthIndex(8); }}
+              style={{
+                height: '30px',
+                padding: '0 6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                borderRadius: '4px',
+                border: startMonthIndex === 6 && endMonthIndex === 8 ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: startMonthIndex === 6 && endMonthIndex === 8 ? '#eff6ff' : '#ffffff',
+                color: startMonthIndex === 6 && endMonthIndex === 8 ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer'
+              }}
+              title="Q3: Oct - Dec"
+            >
+              Q3
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStartMonthIndex(9); setEndMonthIndex(11); }}
+              style={{
+                height: '30px',
+                padding: '0 6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                borderRadius: '4px',
+                border: startMonthIndex === 9 && endMonthIndex === 11 ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: startMonthIndex === 9 && endMonthIndex === 11 ? '#eff6ff' : '#ffffff',
+                color: startMonthIndex === 9 && endMonthIndex === 11 ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer'
+              }}
+              title="Q4: Jan - Mar"
+            >
+              Q4
+            </button>
           </div>
 
           {/* Export Matrix CSV */}
@@ -728,220 +929,262 @@ export default function ScheduleView({ tools = [], onNavigateToPM, showToast, on
 
       {/* VIEW MODE 1: THE YEARLY SCHEDULE MATRIX (48-WEEK INDUSTRIAL GRID) */}
       {viewMode === 'matrix' && (
-        <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <div className="table-responsive" style={{ margin: 0, maxHeight: '68vh', overflowX: 'auto', overflowY: 'auto' }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              textAlign: 'center',
-              fontSize: '11.5px',
-              fontFamily: 'inherit'
+        <>
+          {/* Filtered Month Range Indicator Banner */}
+          {displayedMonths.length < 12 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#eff6ff',
+              border: '1.5px solid #bfdbfe',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              marginBottom: '12px',
+              fontSize: '12.5px',
+              color: '#1e40af',
+              boxShadow: '0 1px 3px rgba(37, 99, 235, 0.08)'
             }}>
-              <thead>
-                {/* Row 1: MONTH (Dark Blue Header matching the uploaded industrial sheet) */}
-                <tr style={{ backgroundColor: '#132847', color: '#fde047' }}>
-                  <th style={{
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 20,
-                    backgroundColor: '#132847',
-                    color: '#fde047',
-                    padding: '8px 14px',
-                    fontWeight: 900,
-                    fontSize: '11.5px',
-                    letterSpacing: '0.5px',
-                    borderRight: '2px solid #3b82f6',
-                    minWidth: '150px',
-                    textAlign: 'left'
-                  }}>
-                    APPLICATION PART NO
-                  </th>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px' }}>🔍</span>
+                <span>
+                  <strong>Filtered Month Range:</strong> Showing <strong>{displayedMonths.length} Months</strong> ({displayedMonths[0]?.label} &rarr; {displayedMonths[displayedMonths.length - 1]?.label}) &bull; <strong>{displayedMonths.length * 4} Weeks</strong>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setStartMonthIndex(0); setEndMonthIndex(11); }}
+                style={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #93c5fd',
+                  color: '#1d4ed8',
+                  padding: '3px 12px',
+                  borderRadius: '4px',
+                  fontWeight: 700,
+                  fontSize: '11.5px',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ Reset to Full Year (12 Months / 48 Weeks)
+              </button>
+            </div>
+          )}
 
-                  {/* 12 Month Headers (4 columns per month) */}
-                  {months.map(m => (
-                    <th
-                      key={m.key}
-                      colSpan={4}
-                      style={{
-                        padding: '8px 4px',
-                        fontWeight: 900,
-                        fontSize: '12px',
-                        letterSpacing: '0.5px',
-                        borderRight: '1.5px solid #23416d',
-                        borderLeft: '1px solid #23416d',
-                        backgroundColor: m.key === currentSlot.monthKey ? '#1e3a5f' : '#132847',
-                        color: m.key === currentSlot.monthKey ? '#fde047' : '#ffffff'
-                      }}
-                    >
-                      {m.label}
+          <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div className="table-responsive" style={{ margin: 0, maxHeight: '68vh', overflowX: 'auto', overflowY: 'auto' }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                textAlign: 'center',
+                fontSize: '11.5px',
+                fontFamily: 'inherit'
+              }}>
+                <thead>
+                  {/* Row 1: MONTH (Dark Blue Header matching the uploaded industrial sheet) */}
+                  <tr style={{ backgroundColor: '#132847', color: '#fde047' }}>
+                    <th style={{
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 20,
+                      backgroundColor: '#132847',
+                      color: '#fde047',
+                      padding: '8px 14px',
+                      fontWeight: 900,
+                      fontSize: '11.5px',
+                      letterSpacing: '0.5px',
+                      borderRight: '2px solid #3b82f6',
+                      minWidth: '150px',
+                      textAlign: 'left'
+                    }}>
+                      APPLICATION PART NO
                     </th>
-                  ))}
-                </tr>
 
-                {/* Row 2: WEEK (1, 2, 3, 4 under each month) */}
-                <tr style={{ backgroundColor: '#0f2038', color: '#94a3b8' }}>
-                  <th style={{ position: 'sticky', left: 0, zIndex: 19, backgroundColor: '#0f2038', borderRight: '2px solid #3b82f6', padding: '4px' }}></th>
+                    {/* Filtered Month Headers (4 columns per month) */}
+                    {displayedMonths.map(m => (
+                      <th
+                        key={m.key}
+                        colSpan={4}
+                        style={{
+                          padding: '8px 4px',
+                          fontWeight: 900,
+                          fontSize: '12px',
+                          letterSpacing: '0.5px',
+                          borderRight: '1.5px solid #23416d',
+                          borderLeft: '1px solid #23416d',
+                          backgroundColor: m.key === currentSlot.monthKey ? '#1e3a5f' : '#132847',
+                          color: m.key === currentSlot.monthKey ? '#fde047' : '#ffffff'
+                        }}
+                      >
+                        {m.label}
+                      </th>
+                    ))}
+                  </tr>
 
-                  {months.map(m => (
-                    <React.Fragment key={`week-group-${m.key}`}>
-                      {[1, 2, 3, 4].map(w => {
-                        const slotKey = `${m.key}_W${w}`;
-                        const isCurrent = slotKey === currentSlot.slotKey;
-                        return (
-                          <th
-                            key={slotKey}
-                            style={{
-                              padding: '4px 2px',
-                              width: '26px',
-                              minWidth: '26px',
-                              fontSize: '10.5px',
-                              fontWeight: 800,
-                              borderRight: w === 4 ? '1.5px solid #23416d' : '1px solid #1a3254',
-                              color: isCurrent ? '#fde047' : '#cbd5e1',
-                              backgroundColor: isCurrent ? '#1e40af' : '#0f2038'
+                  {/* Row 2: WEEK (1, 2, 3, 4 under each month) */}
+                  <tr style={{ backgroundColor: '#0f2038', color: '#94a3b8' }}>
+                    <th style={{ position: 'sticky', left: 0, zIndex: 19, backgroundColor: '#0f2038', borderRight: '2px solid #3b82f6', padding: '4px' }}></th>
+
+                    {displayedMonths.map(m => (
+                      <React.Fragment key={`week-group-${m.key}`}>
+                        {[1, 2, 3, 4].map(w => {
+                          const slotKey = `${m.key}_W${w}`;
+                          const isCurrent = slotKey === currentSlot.slotKey;
+                          return (
+                            <th
+                              key={slotKey}
+                              style={{
+                                padding: '4px 2px',
+                                width: '26px',
+                                minWidth: '26px',
+                                fontSize: '10.5px',
+                                fontWeight: 800,
+                                borderRight: w === 4 ? '1.5px solid #23416d' : '1px solid #1a3254',
+                                color: isCurrent ? '#fde047' : '#cbd5e1',
+                                backgroundColor: isCurrent ? '#1e40af' : '#0f2038'
+                              }}
+                              title={`${m.label} - Week ${w}`}
+                            >
+                              {w}
+                            </th>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {!hasActiveSearchOrSelect ? (
+                    <tr>
+                      <td colSpan={1 + displayedMonths.length * 4} style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#ffffff' }}>
+                        <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            backgroundColor: '#eff6ff',
+                            color: '#2563eb',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '30px',
+                            marginBottom: '16px',
+                            border: '2px solid #bfdbfe',
+                            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.1)'
+                          }}>
+                            🔍
+                          </div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                            1st: Search & Select Application Part No to Plan Schedule
+                          </div>
+                          <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0, lineHeight: 1.6 }}>
+                            Without search, no schedule data is displayed. Please select or search an Application Part Number in the search bar above to view its dependent tool numbers, plan inspection weeks, and save.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredPlans.length === 0 ? (
+                    <tr>
+                      <td colSpan={1 + displayedMonths.length * 4} style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#334155' }}>
+                          No Application Part Numbers match "{searchTerm}"
+                        </div>
+                        <div style={{ marginTop: '12px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setSearchTerm('');
+                              setSelectedPartNo('');
                             }}
-                            title={`${m.label} - Week ${w}`}
+                            style={{ fontSize: '12.5px', padding: '6px 16px' }}
                           >
-                            {w}
-                          </th>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {!hasActiveSearchOrSelect ? (
-                  <tr>
-                    <td colSpan={49} style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#ffffff' }}>
-                      <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{
-                          width: '64px',
-                          height: '64px',
-                          borderRadius: '50%',
-                          backgroundColor: '#eff6ff',
-                          color: '#2563eb',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '30px',
-                          marginBottom: '16px',
-                          border: '2px solid #bfdbfe',
-                          boxShadow: '0 4px 12px rgba(37, 99, 235, 0.1)'
-                        }}>
-                          🔍
+                            Clear Search
+                          </button>
                         </div>
-                        <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
-                          1st: Search & Select Application Part No to Plan Schedule
-                        </div>
-                        <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0, lineHeight: 1.6 }}>
-                          Without search, no schedule data is displayed. Please select or search an Application Part Number in the search bar above to view its dependent tool numbers, plan inspection weeks, and save.
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredPlans.length === 0 ? (
-                  <tr>
-                    <td colSpan={49} style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#334155' }}>
-                        No Application Part Numbers match "{searchTerm}"
-                      </div>
-                      <div style={{ marginTop: '12px' }}>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => {
-                            setSearchTerm('');
-                            setSelectedPartNo('');
-                          }}
-                          style={{ fontSize: '12.5px', padding: '6px 16px' }}
-                        >
-                          Clear Search
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPlans.map((item, pIdx) => {
-                    const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPlans.map((item, pIdx) => {
+                      const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
 
-                    return (
-                      <tr key={item.id || item.applicationPartNo || pIdx} style={{ backgroundColor: rowBg, borderBottom: '1px solid #e2e8f0' }}>
+                      return (
+                        <tr key={item.id || item.applicationPartNo || pIdx} style={{ backgroundColor: rowBg, borderBottom: '1px solid #e2e8f0' }}>
 
-                        {/* Sticky Left: Part No */}
-                        <td style={{
-                          position: 'sticky',
-                          left: 0,
-                          zIndex: 10,
-                          backgroundColor: rowBg,
-                          padding: '8px 14px',
-                          fontWeight: 800,
-                          fontFamily: 'var(--font-mono, monospace)',
-                          color: '#0f172a',
-                          borderRight: '2px solid #3b82f6',
-                          textAlign: 'left'
-                        }}>
-                          {item.applicationPartNo}
-                        </td>
+                          {/* Sticky Left: Part No */}
+                          <td style={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 10,
+                            backgroundColor: rowBg,
+                            padding: '8px 14px',
+                            fontWeight: 800,
+                            fontFamily: 'var(--font-mono, monospace)',
+                            color: '#0f172a',
+                            borderRight: '2px solid #3b82f6',
+                            textAlign: 'left'
+                          }}>
+                            {item.applicationPartNo}
+                          </td>
 
-                        {/* 48 Week Slots Grid */}
-                        {months.map(m => (
-                          <React.Fragment key={`cells-${item.applicationPartNo}-${m.key}`}>
-                            {[1, 2, 3, 4].map(w => {
-                              const slotKey = `${m.key}_W${w}`;
-                              const isPlanned = Array.isArray(item.plannedWeeks) && item.plannedWeeks.includes(slotKey);
-                              const isCurrent = slotKey === currentSlot.slotKey;
+                          {/* Filtered Week Slots Grid */}
+                          {displayedMonths.map(m => (
+                            <React.Fragment key={`cells-${item.applicationPartNo}-${m.key}`}>
+                              {[1, 2, 3, 4].map(w => {
+                                const slotKey = `${m.key}_W${w}`;
+                                const isPlanned = Array.isArray(item.plannedWeeks) && item.plannedWeeks.includes(slotKey);
+                                const isCurrent = slotKey === currentSlot.slotKey;
 
-                              return (
-                                <td
-                                  key={slotKey}
-                                  onClick={() => handleToggleCell(item.applicationPartNo, slotKey)}
-                                  style={{
-                                    padding: '2px 0',
-                                    borderRight: w === 4 ? '1.5px solid #cbd5e1' : '1px solid #f1f5f9',
-                                    cursor: 'pointer',
-                                    backgroundColor: isCurrent
-                                      ? (isPlanned ? '#fef3c7' : '#eff6ff')
-                                      : (isPlanned ? '#f8fafc' : 'transparent'),
-                                    transition: 'background-color 0.15s ease',
-                                    userSelect: 'none',
-                                    height: '38px',
-                                    verticalAlign: 'middle'
-                                  }}
-                                  title={`${item.applicationPartNo} • ${m.label} (Week ${w}): ${isPlanned ? 'Planned (*)' : 'Not Planned (Click to Plan)'}`}
-                                >
-                                  {isPlanned ? (
-                                    <span style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontSize: '22px',
-                                      fontWeight: 900,
-                                      color: '#0f172a',
-                                      lineHeight: 1,
-                                      fontFamily: 'system-ui, sans-serif'
-                                    }}>
-                                      *
-                                    </span>
-                                  ) : (
-                                    <span style={{ color: 'transparent', fontSize: '11px' }}>&bull;</span>
-                                  )}
-                                </td>
-                              );
-                            })}
-                          </React.Fragment>
-                        ))}
+                                return (
+                                  <td
+                                    key={slotKey}
+                                    onClick={() => handleToggleCell(item.applicationPartNo, slotKey)}
+                                    style={{
+                                      padding: '2px 0',
+                                      borderRight: w === 4 ? '1.5px solid #cbd5e1' : '1px solid #f1f5f9',
+                                      cursor: 'pointer',
+                                      backgroundColor: isCurrent
+                                        ? (isPlanned ? '#fef3c7' : '#eff6ff')
+                                        : (isPlanned ? '#f8fafc' : 'transparent'),
+                                      transition: 'background-color 0.15s ease',
+                                      userSelect: 'none',
+                                      height: '38px',
+                                      verticalAlign: 'middle'
+                                    }}
+                                    title={`${item.applicationPartNo} • ${m.label} (Week ${w}): ${isPlanned ? 'Planned (*)' : 'Not Planned (Click to Plan)'}`}
+                                  >
+                                    {isPlanned ? (
+                                      <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '22px',
+                                        fontWeight: 900,
+                                        color: '#0f172a',
+                                        lineHeight: 1,
+                                        fontFamily: 'system-ui, sans-serif'
+                                      }}>
+                                        *
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: 'transparent', fontSize: '11px' }}>&bull;</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </React.Fragment>
+                          ))}
 
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
           </div>
-
-        </div>
+        </>
       )}
 
       {/* VIEW MODE 2: DETAILED TOOL-BY-TOOL LIST */}
