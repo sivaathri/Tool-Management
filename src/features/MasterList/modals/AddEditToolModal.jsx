@@ -140,7 +140,7 @@ export default function AddEditToolModal({
           <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto', padding: '24px' }}>
             <div className="form-grid">
               
-              {/* Row 1: Application Part No (Parent) & Product Name */}
+              {/* Row 1: Application Part No  & Product Name */}
               <div className="form-row-2">
                 <div className="form-group">
                   <SearchablePartInput

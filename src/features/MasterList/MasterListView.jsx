@@ -250,7 +250,7 @@ export default function MasterList({
                       {(safeCurrentPage - 1) * pageSize + index + 1}
                     </td>
 
-                    {/* App Part No (Parent) */}
+                    {/* App Part No  */}
                     <td>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--slate-900)' }}>
                         {tool.applicationPartNo}

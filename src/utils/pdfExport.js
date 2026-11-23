@@ -93,7 +93,7 @@ export async function exportPMReportToPDF(tool, logs = [], pmRecord = null) {
       <!-- 9 Meta Items Grid -->
       <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 11px;">
         <div>
-          <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: #64748b;">App Part No (Parent)</div>
+          <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: #64748b;">App Part No </div>
           <div style="font-size: 12.5px; font-weight: 800; font-family: monospace; color: #1e40af; margin-top: 2px;">${tool.applicationPartNo || '—'}</div>
         </div>
         <div>

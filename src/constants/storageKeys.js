@@ -4,5 +4,6 @@ export const STORAGE_KEYS = {
   USERS: 'tms_users_real',
   AUTH_USER: 'tms_auth_user',
   CURRENT_VIEW: 'tms_current_view',
-  SELECTED_PM_TOOL: 'tms_selected_pm_tool'
+  SELECTED_PM_TOOL: 'tms_selected_pm_tool',
+  SCHEDULES: 'tms_schedules_real'
 };

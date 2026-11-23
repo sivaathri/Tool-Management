@@ -68,7 +68,7 @@ export default function ToolDossierModal({ tool, onClose }) {
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', background: '#fff', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <div>
-                <div style={{ fontSize: '11.5px', color: 'var(--slate-400)' }}>Application Part No (Parent)</div>
+                <div style={{ fontSize: '11.5px', color: 'var(--slate-400)' }}>Application Part No </div>
                 <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#1e40af', marginTop: '2px' }}>
                   {tool.applicationPartNo}
                 </div>

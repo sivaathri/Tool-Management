@@ -87,7 +87,7 @@ export function exportPMReportToCSV(tool, logs = []) {
 
   lines.push('1. TOOL SPECIFICATION & METADATA');
   lines.push(`Tool No,"${tool.toolNo || ''}"`);
-  lines.push(`Application Part No (Parent),"${tool.applicationPartNo || ''}"`);
+  lines.push(`Application Part No ,"${tool.applicationPartNo || ''}"`);
   lines.push(`Product Name,"${(tool.productName || '').replace(/"/g, '""')}"`);
   lines.push(`Description,"${(tool.description || '').replace(/"/g, '""')}"`);
   lines.push(`Classification,"${tool.classification || 'Non-Critical'}"`);
