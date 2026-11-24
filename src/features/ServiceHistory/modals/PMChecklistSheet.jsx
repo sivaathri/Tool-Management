@@ -1121,95 +1121,40 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                         }}
                       />
 
-                      {/* Row-associated inspection photos & quick snap */}
+                      {/* Row-associated inspection photos */}
                       {(() => {
                         const rowPhotos = displayPhotos.filter(p => p.checkpointIdx === idx);
+                        if (rowPhotos.length === 0) return null;
                         return (
                           <div style={{ marginTop: '6px' }}>
-                            {rowPhotos.length > 0 && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                                {rowPhotos.map((p) => (
-                                  <div
-                                    key={p.id}
-                                    onClick={() => setPreviewPhoto(p)}
-                                    style={{
-                                      position: 'relative',
-                                      width: '32px',
-                                      height: '32px',
-                                      borderRadius: '4px',
-                                      border: '1.5px solid #2563eb',
-                                      overflow: 'hidden',
-                                      cursor: 'pointer',
-                                      backgroundColor: '#0f172a'
-                                    }}
-                                    title="Click to view full photo"
-                                  >
-                                    <img
-                                      src={p.dataUrl}
-                                      alt="Checkpoint Evidence"
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                  </div>
-                                ))}
-                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#2563eb' }}>
-                                  ({rowPhotos.length} {rowPhotos.length === 1 ? 'photo' : 'photos'})
-                                </span>
-                              </div>
-                            )}
-
-                            {isEditing && !isHistorical && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                <label
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                              {rowPhotos.map((p) => (
+                                <div
+                                  key={p.id}
+                                  onClick={() => setPreviewPhoto(p)}
                                   style={{
-                                    padding: '2px 8px',
-                                    fontSize: '10.5px',
-                                    fontWeight: 700,
+                                    position: 'relative',
+                                    width: '32px',
+                                    height: '32px',
                                     borderRadius: '4px',
-                                    border: '1px solid #bfdbfe',
-                                    backgroundColor: '#eff6ff',
-                                    color: '#1d4ed8',
+                                    border: '1.5px solid #2563eb',
+                                    overflow: 'hidden',
                                     cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px'
+                                    backgroundColor: '#0f172a'
                                   }}
-                                  title={`Open device camera for Checkpoint #${row.sno || idx + 1}`}
+                                  title="Click to view full photo"
                                 >
-                                  📷 Camera
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => handleFilesUpload(e, idx)}
+                                  <img
+                                    src={p.dataUrl}
+                                    alt="Checkpoint Evidence"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                   />
-                                </label>
-                                <label
-                                  style={{
-                                    padding: '2px 8px',
-                                    fontSize: '10.5px',
-                                    fontWeight: 700,
-                                    borderRadius: '4px',
-                                    border: '1px solid #cbd5e1',
-                                    backgroundColor: '#ffffff',
-                                    color: '#475569',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px'
-                                  }}
-                                  title="Upload photo for this checkpoint"
-                                >
-                                  📁 Upload
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => handleFilesUpload(e, idx)}
-                                  />
-                                </label>
-                              </div>
-                            )}
+                                </div>
+                              ))}
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#2563eb' }}>
+                                ({rowPhotos.length} {rowPhotos.length === 1 ? 'photo' : 'photos'})
+                              </span>
+                            </div>
                           </div>
                         );
                       })()}
