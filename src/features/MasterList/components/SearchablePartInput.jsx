@@ -36,7 +36,9 @@ export default function SearchablePartInput({
   value = '',
   onChange,
   onSelectPart,
-  existingTools = []
+  existingTools = [],
+  hasError = false,
+  errorMessage = ''
 }) {
   const initialParsed = useMemo(() => parseValue(value), []);
   const [selectedPrefix, setSelectedPrefix] = useState(initialParsed.prefix);
@@ -182,7 +184,7 @@ export default function SearchablePartInput({
         minHeight: '26px'
       }}>
         <label className="form-label" htmlFor="inpAppPartNo" style={{ margin: 0, fontWeight: 700 }}>
-          Application Part No. *
+          Application Part No. <span style={{ color: '#ef4444' }}>*</span>
         </label>
         {currentFullValue && (
           <span style={{
@@ -204,9 +206,10 @@ export default function SearchablePartInput({
       <div className="combobox-input-wrapper" style={{
         display: 'flex',
         alignItems: 'stretch',
-        border: '1px solid var(--border-subtle)',
+        border: hasError ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+        boxShadow: hasError ? '0 0 0 1px #ef4444' : 'none',
         borderRadius: 'var(--radius-md)',
-        backgroundColor: '#ffffff',
+        backgroundColor: hasError ? '#fef2f2' : '#ffffff',
         position: 'relative',
         height: '38px',
         boxSizing: 'border-box'

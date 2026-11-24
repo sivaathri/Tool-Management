@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function CheckPointsTable({ checkPoints = [], onChange }) {
+export default function CheckPointsTable({ checkPoints = [], onChange, hasError = false, errorMessage = '' }) {
   const handleTextChange = (index, value) => {
     const updated = [...checkPoints];
     updated[index] = { ...updated[index], point: value };
@@ -27,7 +27,7 @@ export default function CheckPointsTable({ checkPoints = [], onChange }) {
     <div className="form-group" style={{ marginTop: '18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <div>
-          <label className="form-label" style={{ marginBottom: '2px' }}>Check Points *</label>
+          <label className="form-label" style={{ marginBottom: '2px' }}>Check Points <span style={{ color: '#ef4444' }}>*</span></label>
         </div>
         <button
           type="button"
@@ -46,10 +46,11 @@ export default function CheckPointsTable({ checkPoints = [], onChange }) {
       <div
         className="table-responsive"
         style={{
-          border: '1px solid var(--border-subtle)',
+          border: hasError ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+          boxShadow: hasError ? '0 0 0 1px #ef4444' : 'none',
           borderRadius: 'var(--radius-md)',
           overflow: 'hidden',
-          background: '#fff'
+          background: hasError ? '#fef2f2' : '#fff'
         }}
       >
         <table className="enterprise-table" style={{ margin: 0, fontSize: '12.5px' }}>
@@ -124,6 +125,11 @@ export default function CheckPointsTable({ checkPoints = [], onChange }) {
           </tbody>
         </table>
       </div>
+      {hasError && (
+        <div style={{ fontSize: '11.5px', color: '#ef4444', fontWeight: 600, marginTop: '5px' }}>
+          {errorMessage || 'Please enter at least 1 Check Point.'}
+        </div>
+      )}
     </div>
   );
 }
