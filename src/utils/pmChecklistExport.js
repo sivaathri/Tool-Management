@@ -186,7 +186,44 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
 }
 
 /**
+ * Generates the photos section HTML for a PM inspection to place in the bottom half of the page.
+ */
+function generatePMPhotosHTML(photos = []) {
+  if (!Array.isArray(photos) || photos.length === 0) {
+    return `
+      <div style="border: 1.5px dashed #cbd5e1; border-radius: 4px; padding: 16px; background-color: #f8fafc; text-align: center; color: #94a3b8; font-size: 11px; display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box;">
+        <span>No Inspection Photos Attached For This PM Check</span>
+      </div>
+    `;
+  }
+
+  // Display up to 4 photos side by side in the bottom half
+  const displayPhotos = photos.slice(0, 4);
+  return `
+    <div style="border: 1.5px solid #0f172a; border-radius: 4px; padding: 8px 12px; background-color: #ffffff; box-sizing: border-box; height: 100%; display: flex; flex-direction: column;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #1e3a8a; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <span>📷 Preventive Maintenance Inspection Photos (${photos.length} Captured)</span>
+        <span style="font-size: 9.5px; color: #64748b; font-weight: 600;">Standard Evidence Verification</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(${displayPhotos.length}, 1fr); gap: 10px; flex: 1; align-items: center;">
+        ${displayPhotos.map((p, pIdx) => `
+          <div style="border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background-color: #f8fafc; height: 100%; display: flex; flex-direction: column;">
+            <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: #000000; max-height: 145px;">
+              <img src="${p.dataUrl}" alt="PM Evidence ${pIdx + 1}" style="max-width: 100%; max-height: 145px; object-fit: contain;" />
+            </div>
+            <div style="padding: 4px 6px; font-size: 9.5px; font-weight: 700; color: #0f172a; background-color: #ffffff; border-top: 1px solid #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">
+              ${p.checkpointName || `Photo #${pIdx + 1}`}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Exports ONLY the Preventive Maintenance Check List for the current active inspection of this tool.
+ * Page 1 contains: Top half = PM Checklist, Bottom half = Photos of this PM.
  */
 export async function exportSinglePMChecklistPDF(tool, pmRecord = null) {
   if (!tool) return;
@@ -194,7 +231,7 @@ export async function exportSinglePMChecklistPDF(tool, pmRecord = null) {
   const pdf = new jsPDF('l', 'mm', 'a4');
   const pdfWidth = 297;
   const pdfHeight = 210;
-  const margin = 8;
+  const margin = 6;
   const contentWidth = pdfWidth - (margin * 2);
 
   const container = document.createElement('div');
@@ -202,14 +239,32 @@ export async function exportSinglePMChecklistPDF(tool, pmRecord = null) {
   container.style.left = '-9999px';
   container.style.top = '0';
   container.style.width = '1120px';
+  container.style.height = '780px';
   container.style.backgroundColor = '#ffffff';
   container.style.color = '#0f172a';
   container.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  container.style.padding = '14px 18px';
+  container.style.padding = '6px 10px';
   container.style.boxSizing = 'border-box';
   container.style.zIndex = '-9999';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.justifyContent = 'space-between';
+  container.style.gap = '8px';
 
-  container.innerHTML = generatePMChecklistHTML(tool, pmRecord, 'Current Active Inspection', false);
+  const photos = Array.isArray(pmRecord?.photos) ? pmRecord.photos : [];
+
+  container.innerHTML = `
+    <!-- Top Half: PM Checklist Sheet -->
+    <div style="flex: 1.15; display: flex; flex-direction: column; min-height: 0;">
+      ${generatePMChecklistHTML(tool, pmRecord, 'Current Active Inspection', 2)}
+    </div>
+
+    <!-- Bottom Half: PM Inspection Photos -->
+    <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
+      ${generatePMPhotosHTML(photos)}
+    </div>
+  `;
+
   document.body.appendChild(container);
 
   try {
@@ -221,20 +276,8 @@ export async function exportSinglePMChecklistPDF(tool, pmRecord = null) {
     });
 
     const imgData = canvas.toDataURL('image/png');
-    const contentHeight = (canvas.height * contentWidth) / canvas.width;
-
-    let heightLeft = contentHeight;
-    let position = margin;
-
-    pdf.addImage(imgData, 'PNG', margin, position, contentWidth, contentHeight);
-    heightLeft -= (pdfHeight - (margin * 2));
-
-    while (heightLeft > 0) {
-      position = heightLeft - contentHeight + margin;
-      pdf.addPage('a4', 'l');
-      pdf.addImage(imgData, 'PNG', margin, position, contentWidth, contentHeight);
-      heightLeft -= (pdfHeight - (margin * 2));
-    }
+    const targetFullPageHeight = pdfHeight - (margin * 2);
+    pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, targetFullPageHeight);
 
     const cleanToolNo = (tool.toolNo || 'TOOL').replace(/\s+/g, '_');
     const filename = `PM_Checklist_${cleanToolNo}_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -245,8 +288,9 @@ export async function exportSinglePMChecklistPDF(tool, pmRecord = null) {
 }
 
 /**
- * Exports ALL PM records of THIS TOOL with EXACTLY 2 PM INSPECTIONS PER PAGE!
- * Each page contains 2 PM checklists stacked with a clean divider.
+ * Exports ALL PM records of THIS TOOL:
+ * Each Page contains: Top Half = That PM Inspection, Bottom Half = That PM's Photos!
+ * Example: 2 PMs = Total 2 Pages (Page 1 = 1st PM + 1st PM Photos, Page 2 = 2nd PM + 2nd PM Photos).
  */
 export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgress = null) {
   if (!tool) return;
@@ -272,7 +316,8 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
       toolDescription: tool.description,
       application: tool.applicationPartNo ? `${tool.applicationPartNo}${tool.productName ? ' - ' + tool.productName : ''}` : (tool.productName || ''),
       classification: tool.classification,
-      revisionLabel: `Historical Inspection: Revision ${h.revisionNumber || (idx + 1)} (${h.checkDate || ''})`
+      revisionLabel: `Historical Inspection: Revision ${h.revisionNumber || (idx + 1)} (${h.checkDate || ''})`,
+      photos: Array.isArray(h.photos) ? h.photos : []
     });
   });
 
@@ -284,37 +329,31 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
     application: tool.applicationPartNo ? `${tool.applicationPartNo}${tool.productName ? ' - ' + tool.productName : ''}` : (tool.productName || ''),
     classification: tool.classification,
     items: pmRecord?.items || pmRecord?.rows || [],
+    photos: Array.isArray(pmRecord?.photos) ? pmRecord.photos : (Array.isArray(saved?.photos) ? saved.photos : []),
     revisionLabel: history.length > 0 
       ? `Current Active Inspection: Revision ${history.length + 1} (${pmRecord?.checkDate || ''})`
       : `Current Active Inspection (${pmRecord?.checkDate || ''})`
   });
-
-  // Chunk into groups of 3 PMs per page!
-  const groups = [];
-  for (let i = 0; i < allInspections.length; i += 3) {
-    groups.push(allInspections.slice(i, i + 3));
-  }
 
   const pdf = new jsPDF('l', 'mm', 'a4');
   const pdfWidth = 297;
   const pdfHeight = 210;
   const margin = 6;
   const contentWidth = pdfWidth - (margin * 2);
+  const targetFullPageHeight = pdfHeight - (margin * 2);
 
-  for (let pIdx = 0; pIdx < groups.length; pIdx++) {
-    const group = groups[pIdx];
-    const insp1 = group[0];
-    const insp2 = group[1] || null;
-    const insp3 = group[2] || null;
+  for (let pIdx = 0; pIdx < allInspections.length; pIdx++) {
+    const insp = allInspections[pIdx];
+    const inspPhotos = Array.isArray(insp.photos) ? insp.photos : [];
 
-    onProgress?.(`Generating Page ${pIdx + 1} of ${groups.length} (3 PMs per page)...`, pIdx + 1, groups.length);
+    onProgress?.(`Generating Page ${pIdx + 1} of ${allInspections.length} (${insp.revisionLabel})...`, pIdx + 1, allInspections.length);
 
     const container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.left = '-9999px';
     container.style.top = '0';
     container.style.width = '1120px';
-    container.style.height = group.length === 3 ? '780px' : 'auto';
+    container.style.height = '780px';
     container.style.backgroundColor = '#ffffff';
     container.style.color = '#0f172a';
     container.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -323,33 +362,18 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
     container.style.zIndex = '-9999';
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
-    container.style.justifyContent = group.length === 3 ? 'space-between' : 'flex-start';
-    container.style.gap = '6px';
+    container.style.justifyContent = 'space-between';
+    container.style.gap = '8px';
 
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between; gap: 6px;">
-        <!-- PM 1 on this page -->
-        <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-          ${generatePMChecklistHTML(tool, insp1, insp1.revisionLabel, 3)}
-        </div>
+      <!-- Top Half: PM Checklist -->
+      <div style="flex: 1.15; display: flex; flex-direction: column; min-height: 0;">
+        ${generatePMChecklistHTML(tool, insp, insp.revisionLabel, 2)}
+      </div>
 
-        ${insp2 ? `
-          <!-- Divider between PM 1 and PM 2 -->
-          <div style="border-top: 1.5px dashed #94a3b8; margin: 0;"></div>
-          <!-- PM 2 on this page -->
-          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-            ${generatePMChecklistHTML(tool, insp2, insp2.revisionLabel, 3)}
-          </div>
-        ` : ''}
-
-        ${insp3 ? `
-          <!-- Divider between PM 2 and PM 3 -->
-          <div style="border-top: 1.5px dashed #94a3b8; margin: 0;"></div>
-          <!-- PM 3 on this page -->
-          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-            ${generatePMChecklistHTML(tool, insp3, insp3.revisionLabel, 3)}
-          </div>
-        ` : ''}
+      <!-- Bottom Half: This PM's Photos -->
+      <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
+        ${generatePMPhotosHTML(inspPhotos)}
       </div>
     `;
 
@@ -364,16 +388,12 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const contentHeight = (canvas.height * contentWidth) / canvas.width;
-      const targetFullPageHeight = pdfHeight - (margin * 2);
 
       if (pIdx > 0) {
         pdf.addPage('a4', 'l');
       }
 
-      // When 3 PMs are generated on a page, fill the full landscape A4 height to eliminate bottom white space
-      const renderHeight = group.length === 3 ? targetFullPageHeight : Math.min(contentHeight, targetFullPageHeight);
-      pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, renderHeight);
+      pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, targetFullPageHeight);
     } finally {
       document.body.removeChild(container);
     }
