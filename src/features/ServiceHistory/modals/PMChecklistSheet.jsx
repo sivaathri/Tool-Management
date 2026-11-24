@@ -66,6 +66,10 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
   const [approvedByInfo, setApprovedByInfo] = useState(null);
   const [historyList, setHistoryList] = useState([]);
   const [selectedRevisionIndex, setSelectedRevisionIndex] = useState(-1);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  // Helper key to identify draft in localStorage
+  const getDraftKey = () => `pm_draft_${tool.id || (tool.toolNo ? tool.toolNo.replace(/\s+/g, '_') : 'unknown')}`;
 
   // Helper to load or initialize PM Checklist data for current tool from storage
   const loadPMDataForTool = () => {
@@ -79,38 +83,57 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     const loggedUser = currentUser || authService.getCurrentUser();
     const loggedName = loggedUser?.name || loggedUser?.username || 'Maintenance Technician';
 
-    if (saved && Array.isArray(saved.items) && saved.items.length > 0) {
+    // Check if there is an unsaved draft
+    let draftData = null;
+    try {
+      const rawDraft = localStorage.getItem(getDraftKey());
+      if (rawDraft) {
+        draftData = JSON.parse(rawDraft);
+      }
+    } catch (e) {}
+
+    const sourceData = draftData || saved;
+    const isFromDraft = Boolean(draftData);
+    setHasDraft(isFromDraft);
+
+    if (sourceData && Array.isArray(sourceData.items) && sourceData.items.length > 0) {
       const mergedRows = defaultRows.map((dRow, idx) => {
-        const match = saved.items.find(s => 
-          s.checkPoint && dRow.checkPoint &&
-          s.checkPoint.trim().toLowerCase() === dRow.checkPoint.trim().toLowerCase()
-        );
+        // Match primarily by row index, or fallback by distinct checkpoint name
+        let match = null;
+        if (sourceData.items[idx]) {
+          match = sourceData.items[idx];
+        } else {
+          match = sourceData.items.find(s => 
+            s.checkPoint && dRow.checkPoint &&
+            s.checkPoint.trim().toLowerCase() === dRow.checkPoint.trim().toLowerCase()
+          );
+        }
 
         if (match) {
           return {
             ...dRow,
             method: dRow.method || match.method || '',
             specification: dRow.specification || match.specification || '',
-            actualCondition: dRow.actualCondition || match.actualCondition || '',
+            actualCondition: (dRow.actualCondition !== undefined && dRow.actualCondition !== '') 
+              ? dRow.actualCondition 
+              : (match.actualCondition !== undefined ? match.actualCondition : ''),
             actionTaken: match.actionTaken !== undefined ? match.actionTaken : ''
           };
         }
         return dRow;
       });
 
-      const extraItems = saved.items.filter(s =>
-        !defaultRows.some(d => (d.checkPoint || '').trim().toLowerCase() === (s.checkPoint || '').trim().toLowerCase())
-      );
+      const extraItems = sourceData.items.slice(defaultRows.length);
 
       setRows([...mergedRows, ...extraItems]);
-      if (saved.checkDate) setCheckDate(saved.checkDate);
-      if (saved.nextDueDate) setNextDueDate(saved.nextDueDate);
-      setPhotos(Array.isArray(saved.photos) ? saved.photos : []);
-      setPreparedBy(saved.preparedBy || saved.inspectedBy || loggedName);
-      setCheckedByInfo(saved.checkedBy || null);
-      setApprovedByInfo(saved.approvedBy || null);
-      setActiveRecordId(saved.id);
-      setHistoryList(Array.isArray(saved.history) ? saved.history : []);
+      if (sourceData.checkDate) setCheckDate(sourceData.checkDate);
+      if (sourceData.nextDueDate) setNextDueDate(sourceData.nextDueDate);
+      setPhotos(Array.isArray(sourceData.photos) ? sourceData.photos : []);
+      setPreparedBy(sourceData.preparedBy || sourceData.inspectedBy || loggedName);
+      setCheckedByInfo(saved?.checkedBy || null);
+      setApprovedByInfo(saved?.approvedBy || null);
+      setActiveRecordId(saved?.id || null);
+      setHistoryList(Array.isArray(saved?.history) ? saved.history : []);
       setSelectedRevisionIndex(-1);
     } else {
       // Show empty text boxes by default ready for entering inspection data
@@ -139,6 +162,23 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     setRows(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
+
+      // Auto-save draft so unsaved edits persist when reopening or navigating away
+      try {
+        const draftObj = {
+          toolId: tool.id,
+          toolNo: tool.toolNo,
+          checkDate,
+          nextDueDate,
+          items: updated,
+          photos,
+          preparedBy,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(getDraftKey(), JSON.stringify(draftObj));
+        setHasDraft(true);
+      } catch (e) {}
+
       return updated;
     });
   };
@@ -163,6 +203,23 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
       } else {
         updated[index] = { ...updated[index], [field]: currentText ? `${currentText}${symbol}` : symbol };
       }
+
+      // Auto-save draft
+      try {
+        const draftObj = {
+          toolId: tool.id,
+          toolNo: tool.toolNo,
+          checkDate,
+          nextDueDate,
+          items: updated,
+          photos,
+          preparedBy,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(getDraftKey(), JSON.stringify(draftObj));
+        setHasDraft(true);
+      } catch (e) {}
+
       return updated;
     });
   };
@@ -222,6 +279,10 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     };
 
     savePMRecord(record);
+    try {
+      localStorage.removeItem(getDraftKey());
+    } catch (e) {}
+    setHasDraft(false);
     onRefresh?.();
     setActiveRecordId(recordId);
     setPreparedBy(activeUserName);
@@ -236,25 +297,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
   const handleCancel = () => {
     loadPMDataForTool();
     setIsEditing(false);
-    showToast?.('Exited edit mode without saving changes.', 'info');
-  };
-
-  const handleEditBlockedAction = (e) => {
-    if (isEditing) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      showToast?.('⚠️ Please save your changes by clicking "Save PM Record" before leaving!', 'warning');
-      const saveBtn = document.getElementById('btnSavePMRecord');
-      if (saveBtn) {
-        saveBtn.focus();
-        saveBtn.style.transform = 'scale(1.08)';
-        setTimeout(() => {
-          if (saveBtn) saveBtn.style.transform = 'scale(1)';
-        }, 200);
-      }
-    }
+    showToast?.('Exited edit mode', 'info');
   };
 
   const isCritical = tool.classification === 'Critical';
@@ -320,35 +363,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
   };
 
   return (
-    <>
-      {/* Edit Mode Backdrop Overlay: Prevents clicking outside sidebar, menus, or other tool buttons */}
-      {isEditing && (
-        <div
-          onClick={handleEditBlockedAction}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.45)',
-            backdropFilter: 'blur(2px)',
-            zIndex: 900,
-            cursor: 'not-allowed'
-          }}
-          title="Edit mode active — Please Save PM Record or Cancel before navigating"
-        />
-      )}
-
-      <div
-        className="card pm-sheet-card"
-        style={{
-          marginTop: '24px',
-          padding: '0',
-          overflow: 'hidden',
-          position: isEditing ? 'relative' : 'static',
-          zIndex: isEditing ? 950 : 'auto',
-          boxShadow: isEditing ? '0 12px 36px rgba(0,0,0,0.22), 0 0 0 2px #2563eb' : 'var(--shadow-sm)',
-          transition: 'box-shadow 0.2s ease'
-        }}
-      >
+    <div className="card pm-sheet-card" style={{ marginTop: '24px', padding: '0', overflow: 'hidden' }}>
       
       {/* Top Action Bar */}
       <div className="pm-action-toolbar" style={{
@@ -376,8 +391,50 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
               gap: '6px'
             }}>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
-              Edit Mode Active
+              Edit Mode Active (Auto-saved as Draft)
             </span>
+          ) : hasDraft ? (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                fontSize: '11.5px',
+                padding: '4px 12px',
+                backgroundColor: '#fef3c7',
+                color: '#b45309',
+                borderRadius: '12px',
+                fontWeight: 700,
+                border: '1.5px solid #f59e0b',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#d97706' }}></span>
+                Draft In Progress (Unsaved Edits)
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem(getDraftKey());
+                  } catch (e) {}
+                  setHasDraft(false);
+                  loadPMDataForTool();
+                  showToast?.('Draft discarded. Restored saved inspection.', 'info');
+                }}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#dc2626',
+                  backgroundColor: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  cursor: 'pointer'
+                }}
+                title="Discard unsaved draft changes"
+              >
+                Discard Draft
+              </button>
+            </div>
           ) : isHistorical ? (
             <span style={{
               fontSize: '11.5px',
@@ -488,7 +545,6 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
 
               <button
                 type="button"
-                id="btnSavePMRecord"
                 className="btn btn-primary"
                 onClick={handleSave}
                 style={{
@@ -500,8 +556,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                   alignItems: 'center',
                   gap: '7px',
                   boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
-                  borderRadius: '6px',
-                  transition: 'transform 0.15s ease'
+                  borderRadius: '6px'
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1614,6 +1669,5 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
       )}
 
     </div>
-    </>
   );
 }
