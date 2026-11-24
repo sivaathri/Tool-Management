@@ -1370,7 +1370,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            border: '1.5px solid #0f172a',
+           
             borderTop: 'none',
             textAlign: 'center',
             backgroundColor: '#ffffff',
