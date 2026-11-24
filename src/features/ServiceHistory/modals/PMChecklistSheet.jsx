@@ -236,7 +236,25 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
   const handleCancel = () => {
     loadPMDataForTool();
     setIsEditing(false);
-    showToast?.('Exited edit mode', 'info');
+    showToast?.('Exited edit mode without saving changes.', 'info');
+  };
+
+  const handleEditBlockedAction = (e) => {
+    if (isEditing) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      showToast?.('⚠️ Please save your changes by clicking "Save PM Record" before leaving!', 'warning');
+      const saveBtn = document.getElementById('btnSavePMRecord');
+      if (saveBtn) {
+        saveBtn.focus();
+        saveBtn.style.transform = 'scale(1.08)';
+        setTimeout(() => {
+          if (saveBtn) saveBtn.style.transform = 'scale(1)';
+        }, 200);
+      }
+    }
   };
 
   const isCritical = tool.classification === 'Critical';
@@ -302,7 +320,35 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
   };
 
   return (
-    <div className="card pm-sheet-card" style={{ marginTop: '24px', padding: '0', overflow: 'hidden' }}>
+    <>
+      {/* Edit Mode Backdrop Overlay: Prevents clicking outside sidebar, menus, or other tool buttons */}
+      {isEditing && (
+        <div
+          onClick={handleEditBlockedAction}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 900,
+            cursor: 'not-allowed'
+          }}
+          title="Edit mode active — Please Save PM Record or Cancel before navigating"
+        />
+      )}
+
+      <div
+        className="card pm-sheet-card"
+        style={{
+          marginTop: '24px',
+          padding: '0',
+          overflow: 'hidden',
+          position: isEditing ? 'relative' : 'static',
+          zIndex: isEditing ? 950 : 'auto',
+          boxShadow: isEditing ? '0 12px 36px rgba(0,0,0,0.22), 0 0 0 2px #2563eb' : 'var(--shadow-sm)',
+          transition: 'box-shadow 0.2s ease'
+        }}
+      >
       
       {/* Top Action Bar */}
       <div className="pm-action-toolbar" style={{
@@ -442,6 +488,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
 
               <button
                 type="button"
+                id="btnSavePMRecord"
                 className="btn btn-primary"
                 onClick={handleSave}
                 style={{
@@ -453,7 +500,8 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                   alignItems: 'center',
                   gap: '7px',
                   boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
-                  borderRadius: '6px'
+                  borderRadius: '6px',
+                  transition: 'transform 0.15s ease'
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1566,5 +1614,6 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
       )}
 
     </div>
+    </>
   );
 }
