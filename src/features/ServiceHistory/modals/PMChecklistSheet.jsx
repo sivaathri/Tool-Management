@@ -330,7 +330,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
               gap: '6px'
             }}>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
-              Edit Mode Active — Enter inspection details below
+              Edit Mode Active
             </span>
           ) : isHistorical ? (
             <span style={{
