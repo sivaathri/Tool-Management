@@ -162,13 +162,13 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
           </thead>
           <tbody>
             ${checkItems.map((item, idx) => `
-              <tr style="border-bottom: 1px solid #cbd5e1; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="text-align: center; font-weight: 700; padding: ${cellPadding}; border-right: 1px solid #cbd5e1;">${item.sno || idx + 1}</td>
-                <td style="padding: ${cellPadding}; font-weight: 800; color: #0f172a; border-right: 1px solid #cbd5e1; line-height: ${cellLineHeight};">${item.checkPoint || ''}</td>
-                <td style="text-align: center; padding: ${cellPadding}; font-weight: 700; color: #334155; border-right: 1px solid #cbd5e1;">${item.method || 'Visual'}</td>
-                <td style="padding: ${cellPadding}; color: #1e293b; border-right: 1px solid #cbd5e1; line-height: ${cellLineHeight};">${item.specification || '—'}</td>
-                <td style="padding: ${cellPadding}; font-weight: 700; color: #1e3a8a; border-right: 1px solid #cbd5e1; background-color: #eff6ff;">${item.actualCondition || 'OK / Verified'}</td>
-                <td style="padding: ${cellPadding}; color: #1e293b;">${item.actionTaken || 'None required'}</td>
+              <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                <td style="text-align: center; font-weight: 700; padding: ${cellPadding}; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">${item.sno || idx + 1}</td>
+                <td style="padding: ${cellPadding}; font-weight: 800; color: #0f172a; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; line-height: ${cellLineHeight};">${item.checkPoint || ''}</td>
+                <td style="text-align: center; padding: ${cellPadding}; font-weight: 700; color: #334155; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">${item.method || 'Visual'}</td>
+                <td style="padding: ${cellPadding}; color: #1e293b; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; line-height: ${cellLineHeight};">${item.specification || '—'}</td>
+                <td style="padding: ${cellPadding}; font-weight: 700; color: #1e3a8a; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; background-color: #eff6ff;">${item.actualCondition || 'OK / Verified'}</td>
+                <td style="padding: ${cellPadding}; color: #1e293b; border-bottom: 1px solid #cbd5e1;">${item.actionTaken || 'None required'}</td>
               </tr>
             `).join('')}
           </tbody>
