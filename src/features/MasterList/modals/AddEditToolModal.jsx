@@ -42,12 +42,22 @@ export default function AddEditToolModal({
       const existingDigits = extractDigits(currentTool.toolNo || currentTool.toolNumber || '');
       setToolNumberDigits(existingDigits);
 
-      let initialCheckPoints = [{ sno: 1, point: '' }];
+      let initialCheckPoints = [{ sno: 1, point: '', method: '', specification: '', actualCondition: '' }];
       if (Array.isArray(currentTool.checkPoints) && currentTool.checkPoints.length > 0) {
         initialCheckPoints = currentTool.checkPoints.map((cp, idx) => {
-          if (typeof cp === 'string') return { sno: idx + 1, point: cp };
-          if (cp && typeof cp === 'object') return { sno: idx + 1, point: cp.point || cp.text || '' };
-          return { sno: idx + 1, point: '' };
+          if (typeof cp === 'string') {
+            return { sno: idx + 1, point: cp, method: '', specification: '', actualCondition: '' };
+          }
+          if (cp && typeof cp === 'object') {
+            return {
+              sno: idx + 1,
+              point: cp.point || cp.text || cp.description || cp.checkPoint || '',
+              method: cp.method || '',
+              specification: cp.specification || cp.spec || '',
+              actualCondition: cp.actualCondition || ''
+            };
+          }
+          return { sno: idx + 1, point: '', method: '', specification: '', actualCondition: '' };
         });
       }
 
@@ -74,7 +84,7 @@ export default function AddEditToolModal({
         lifetime: '',
         classification: 'Critical',
         toolCount: 0,
-        checkPoints: [{ sno: 1, point: '' }]
+        checkPoints: [{ sno: 1, point: '', method: '', specification: '', actualCondition: '' }]
       });
     }
   }, [currentTool, isOpen]);
@@ -105,8 +115,35 @@ export default function AddEditToolModal({
       newErrors.lifetime = 'Please enter a valid Life Time limit.';
     }
     const validCheckPoints = formData.checkPoints
-      .map(cp => (cp.point || '').trim())
-      .filter(Boolean);
+      .filter(cp => (typeof cp === 'object' ? (cp.point || '').trim() : String(cp || '').trim()))
+      .map((cp, idx) => {
+        if (typeof cp === 'object') {
+          const pt = (cp.point || '').trim();
+          const spec = cp.specification || cp.spec || '';
+          return {
+            sno: idx + 1,
+            point: pt,
+            description: pt,
+            checkPoint: pt,
+            method: cp.method || '',
+            specification: spec,
+            spec: spec,
+            actualCondition: cp.actualCondition || ''
+          };
+        }
+        const str = String(cp).trim();
+        return {
+          sno: idx + 1,
+          point: str,
+          description: str,
+          checkPoint: str,
+          method: '',
+          specification: '',
+          spec: '',
+          actualCondition: ''
+        };
+      });
+
     if (validCheckPoints.length === 0) {
       newErrors.checkPoints = 'Please enter at least 1 Check Point.';
     }
@@ -159,7 +196,7 @@ export default function AddEditToolModal({
 
   return (
     <div className="modal-backdrop show" id="modalAddTool">
-      <div className="modal-card modal-lg">
+      <div className="modal-card modal-lg" style={{ maxWidth: '1280px', width: '96%' }}>
         {/* Modal Header */}
         <div className="modal-header">
           <div className="modal-title">
@@ -381,13 +418,26 @@ export default function AddEditToolModal({
                 <div className="form-group">
                   <label className="form-label" htmlFor="inpLifeTime">Life Time (Stroke / Cycle Limit) <span style={{ color: '#ef4444' }}>*</span></label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     className="form-input"
                     id="inpLifeTime"
                     placeholder="Enter life time limit..."
-                    min="1"
                     value={formData.lifetime}
-                    onChange={(e) => handleFieldChange('lifetime', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (
+                        !/[0-9]/.test(e.key) &&
+                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'].includes(e.key) &&
+                        !e.ctrlKey &&
+                        !e.metaKey
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const numericOnly = e.target.value.replace(/[^0-9]/g, '');
+                      handleFieldChange('lifetime', numericOnly);
+                    }}
                     style={{
                       height: '38px',
                       boxSizing: 'border-box',

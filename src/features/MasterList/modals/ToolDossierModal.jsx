@@ -108,29 +108,47 @@ export default function ToolDossierModal({ tool, onClose }) {
             <div className="table-responsive" style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
               <table className="enterprise-table" style={{ margin: 0, fontSize: '12.5px' }}>
                 <thead>
-                  <tr style={{ background: 'var(--slate-100)' }}>
-                    <th style={{ width: '70px', textAlign: 'center' }}>S.no</th>
+                  <tr style={{ background: 'var(--slate-100)', color: 'var(--slate-700)', fontWeight: 700 }}>
+                    <th style={{ width: '50px', textAlign: 'center' }}>S.no</th>
                     <th>Check Point Description</th>
+                    <th style={{ width: '130px', textAlign: 'center' }}>Checking Method</th>
+                    <th style={{ width: '170px' }}>Specification</th>
+                    <th style={{ width: '170px' }}>Actual condition</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(!tool.checkPoints || tool.checkPoints.length === 0) ? (
                     <tr>
-                      <td colSpan="2" style={{ textAlign: 'center', padding: '20px', color: 'var(--slate-400)' }}>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--slate-400)' }}>
                         No check points configured for this tool.
                       </td>
                     </tr>
                   ) : (
-                    tool.checkPoints.map((cp, idx) => (
-                      <tr key={idx}>
-                        <td style={{ width: '70px', textAlign: 'center', fontWeight: 700, color: 'var(--slate-600)' }}>
-                          {idx + 1}
-                        </td>
-                        <td style={{ color: 'var(--slate-800)', fontWeight: 500, whiteSpace: 'pre-wrap' }}>
-                          {cp}
-                        </td>
-                      </tr>
-                    ))
+                    tool.checkPoints.map((cp, idx) => {
+                      const text = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || cp.checkPoint || '') : String(cp || '');
+                      const method = typeof cp === 'object' && cp !== null ? (cp.method || '—') : '—';
+                      const spec = typeof cp === 'object' && cp !== null ? (cp.specification || cp.spec || '—') : '—';
+                      const actual = typeof cp === 'object' && cp !== null ? (cp.actualCondition || '—') : '—';
+                      return (
+                        <tr key={idx}>
+                          <td style={{ width: '50px', textAlign: 'center', fontWeight: 700, color: 'var(--slate-600)' }}>
+                            {idx + 1}
+                          </td>
+                          <td style={{ color: 'var(--slate-800)', fontWeight: 600, whiteSpace: 'pre-wrap' }}>
+                            {text}
+                          </td>
+                          <td style={{ textAlign: 'center', color: 'var(--slate-700)', fontWeight: 600 }}>
+                            {method}
+                          </td>
+                          <td style={{ color: 'var(--slate-700)', fontWeight: 500 }}>
+                            {spec}
+                          </td>
+                          <td style={{ color: 'var(--slate-700)', fontWeight: 500 }}>
+                            {actual}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

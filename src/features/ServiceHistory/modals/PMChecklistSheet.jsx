@@ -21,7 +21,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     return d.toISOString().slice(0, 10);
   };
 
-  // Default rows derived directly from tool checkPoints created in Master List (All text boxes empty by default)
+  // Default rows derived directly from tool checkPoints created in Master List
   const createDefaultRows = () => {
     let rawPoints = [];
     if (Array.isArray(tool.checkPoints) && tool.checkPoints.length > 0) {
@@ -37,15 +37,16 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     }
 
     return rawPoints.map((cp, idx) => {
-      const text = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || '') : String(cp || '');
+      const text = typeof cp === 'object' && cp !== null ? (cp.point || cp.description || cp.checkPoint || '') : String(cp || '');
       const method = (typeof cp === 'object' && cp !== null && cp.method) ? cp.method : '';
-      const specification = (typeof cp === 'object' && cp !== null && (cp.spec || cp.specification)) ? (cp.spec || cp.specification) : '';
+      const specification = (typeof cp === 'object' && cp !== null && (cp.specification || cp.spec)) ? (cp.specification || cp.spec) : '';
+      const actualCondition = (typeof cp === 'object' && cp !== null && cp.actualCondition) ? cp.actualCondition : '';
       return {
         sno: idx + 1,
         checkPoint: text,
         method: method,
         specification: specification,
-        actualCondition: '',
+        actualCondition: actualCondition,
         actionTaken: ''
       };
     });
@@ -83,14 +84,14 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
         const match = saved.items.find(s => 
           s.checkPoint && dRow.checkPoint &&
           s.checkPoint.trim().toLowerCase() === dRow.checkPoint.trim().toLowerCase()
-        ) || saved.items[idx];
+        );
 
         if (match) {
           return {
             ...dRow,
-            method: match.method !== undefined ? match.method : '',
-            specification: match.specification !== undefined ? match.specification : '',
-            actualCondition: match.actualCondition !== undefined ? match.actualCondition : '',
+            method: dRow.method || match.method || '',
+            specification: dRow.specification || match.specification || '',
+            actualCondition: dRow.actualCondition || match.actualCondition || '',
             actionTaken: match.actionTaken !== undefined ? match.actionTaken : ''
           };
         }
@@ -142,24 +143,25 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     });
   };
 
-  // Helper to insert symbols (⌀, ±) into specification at cursor position or append
-  const handleInsertSymbol = (index, symbol) => {
+  // Helper to insert symbols (⌀, ±) into specification or actual condition at cursor position or append
+  const handleInsertSymbol = (index, symbol, field = 'specification') => {
     if (!isEditing) return;
     setRows(prev => {
       const updated = [...prev];
-      const currentText = updated[index]?.specification || '';
-      const inputEl = document.getElementById(`spec-input-${index}`);
+      const currentText = updated[index]?.[field] || '';
+      const inputId = field === 'actualCondition' ? `actual-input-${index}` : `spec-input-${index}`;
+      const inputEl = document.getElementById(inputId);
       if (inputEl && typeof inputEl.selectionStart === 'number') {
         const start = inputEl.selectionStart;
         const end = inputEl.selectionEnd;
         const newText = currentText.substring(0, start) + symbol + currentText.substring(end);
-        updated[index] = { ...updated[index], specification: newText };
+        updated[index] = { ...updated[index], [field]: newText };
         setTimeout(() => {
           inputEl.focus();
           inputEl.setSelectionRange(start + symbol.length, start + symbol.length);
         }, 10);
       } else {
-        updated[index] = { ...updated[index], specification: currentText ? `${currentText}${symbol}` : symbol };
+        updated[index] = { ...updated[index], [field]: currentText ? `${currentText}${symbol}` : symbol };
       }
       return updated;
     });
@@ -863,7 +865,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                     Actual condition *
                   </th>
                   <th className="pm-col-action" style={{ minWidth: '220px', textAlign: 'left', padding: '10px 12px' }}>
-                    Action Taken
+                    Remarks
                   </th>
                 </tr>
               </thead>
@@ -901,7 +903,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                       {row.checkPoint}
                     </td>
 
-                    {/* Checking Method (Dropdown to choose: Visual, Vernier, Micro meter, Flip guage) */}
+                    {/* Checking Method (Fixed specification from Master List - Read-only in PM sheet) */}
                     <td style={{
                       padding: '6px 8px',
                       borderRight: '1px solid #334155',
@@ -911,63 +913,30 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'center', fontWeight: 600 }}>
                         {row.method || '—'}
                       </div>
-                      {isEditing && !isHistorical ? (
-                        <select
-                          className="screen-only-input"
-                          value={row.method || ''}
-                          onChange={(e) => handleRowChange(idx, 'method', e.target.value)}
-                          style={{
-                            width: '100%',
-                            minHeight: '40px',
-                            padding: '6px 8px',
-                            borderRadius: '4px',
-                            border: '1.5px solid #2563eb',
-                            backgroundColor: '#ffffff',
-                            textAlign: 'center',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: '#0f172a',
-                            outline: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            boxSizing: 'border-box'
-                          }}
-                        >
-                          <option value="">Select Method</option>
-                          <option value="Visual">Visual</option>
-                          <option value="Vernier">Vernier</option>
-                          <option value="Micro meter">Micro meter</option>
-                          <option value="Flip guage">Flip guage</option>
-                          {row.method && !['Visual', 'Vernier', 'Micro meter', 'Flip guage'].includes(row.method) && (
-                            <option value={row.method}>{row.method}</option>
-                          )}
-                        </select>
-                      ) : (
-                        <div
-                          className="screen-only-input"
-                          style={{
-                            width: '100%',
-                            minHeight: '40px',
-                            padding: '8px 6px',
-                            borderRadius: '4px',
-                            border: '1px solid #cbd5e1',
-                            backgroundColor: '#f8fafc',
-                            textAlign: 'center',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: row.method ? '#0f172a' : '#94a3b8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxSizing: 'border-box'
-                          }}
-                        >
-                          {row.method || '—'}
-                        </div>
-                      )}
+                      <div
+                        className="screen-only-input"
+                        style={{
+                          width: '100%',
+                          minHeight: '40px',
+                          padding: '8px 6px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#f8fafc',
+                          textAlign: 'center',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: row.method ? '#0f172a' : '#94a3b8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        {row.method || '—'}
+                      </div>
                     </td>
 
-                    {/* Specification (Editable textarea with ⌀ and ± quick insert buttons) */}
+                    {/* Specification (Fixed standard from Master List - Read-only in PM sheet, no quick buttons) */}
                     <td style={{
                       padding: '6px 8px',
                       borderRight: '1px solid #334155',
@@ -975,6 +944,38 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                     }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
                         {row.specification || '—'}
+                      </div>
+                      <div
+                        className="screen-only-input"
+                        style={{
+                          width: '100%',
+                          minHeight: '54px',
+                          padding: '8px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#f8fafc',
+                          fontSize: '12px',
+                          lineHeight: 1.45,
+                          color: row.specification ? '#0f172a' : '#94a3b8',
+                          fontWeight: 500,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        {row.specification || '—'}
+                      </div>
+                    </td>
+
+                    {/* Actual Condition (Multi-line Textarea with ⌀ and ± quick insert buttons) */}
+                    <td style={{
+                      padding: '6px 8px',
+                      borderRight: '1px solid #334155',
+                      backgroundColor: '#f0f9ff',
+                      verticalAlign: 'top'
+                    }}>
+                      <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left', fontWeight: 600, color: '#0f172a' }}>
+                        {row.actualCondition || '—'}
                       </div>
                       {isEditing && !isHistorical && (
                         <div style={{
@@ -987,7 +988,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                           <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Insert:</span>
                           <button
                             type="button"
-                            onClick={() => handleInsertSymbol(idx, '⌀')}
+                            onClick={() => handleInsertSymbol(idx, '⌀', 'actualCondition')}
                             style={{
                               padding: '1px 8px',
                               borderRadius: '4px',
@@ -1007,7 +1008,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleInsertSymbol(idx, '±')}
+                            onClick={() => handleInsertSymbol(idx, '±', 'actualCondition')}
                             style={{
                               padding: '1px 8px',
                               borderRadius: '4px',
@@ -1028,43 +1029,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                         </div>
                       )}
                       <textarea
-                        id={`spec-input-${idx}`}
-                        className="screen-only-input"
-                        rows={2}
-                        value={row.specification}
-                        onChange={(e) => handleRowChange(idx, 'specification', e.target.value)}
-                        readOnly={!isEditing || isHistorical}
-                        placeholder={isEditing && !isHistorical ? "Specification standard (e.g. ⌀ 25 ± 0.05)..." : "—"}
-                        style={{
-                          width: '100%',
-                          minHeight: isEditing && !isHistorical ? '54px' : '62px',
-                          padding: '7px 10px',
-                          borderRadius: '4px',
-                          border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
-                          fontSize: '12px',
-                          lineHeight: 1.45,
-                          color: '#0f172a',
-                          outline: 'none',
-                          resize: isEditing && !isHistorical ? 'vertical' : 'none',
-                          cursor: isEditing && !isHistorical ? 'text' : 'default',
-                          fontFamily: 'inherit',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </td>
-
-                    {/* Actual Condition (Multi-line Textarea for comfortable reading & long text) */}
-                    <td style={{
-                      padding: '6px 8px',
-                      borderRight: '1px solid #334155',
-                      backgroundColor: '#f0f9ff',
-                      verticalAlign: 'top'
-                    }}>
-                      <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left', fontWeight: 600, color: '#0f172a' }}>
-                        {row.actualCondition || '—'}
-                      </div>
-                      <textarea
+                        id={`actual-input-${idx}`}
                         className="screen-only-input"
                         rows={2}
                         value={row.actualCondition}
@@ -1073,7 +1038,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                         placeholder={isEditing && !isHistorical ? "Enter actual condition / observation..." : "—"}
                         style={{
                           width: '100%',
-                          minHeight: '62px',
+                          minHeight: isEditing && !isHistorical ? '54px' : '62px',
                           padding: '7px 10px',
                           borderRadius: '4px',
                           border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
@@ -1091,35 +1056,30 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                       />
                     </td>
 
-                    {/* Action Taken (Multi-line Textarea for comfortable long text) */}
+                    {/* Remarks (Read-only observation / notes) */}
                     <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
                         {row.actionTaken || '—'}
                       </div>
-                      <textarea
+                      <div
                         className="screen-only-input"
-                        rows={2}
-                        value={row.actionTaken}
-                        onChange={(e) => handleRowChange(idx, 'actionTaken', e.target.value)}
-                        readOnly={!isEditing || isHistorical}
-                        placeholder={isEditing && !isHistorical ? "Enter action taken..." : "—"}
                         style={{
                           width: '100%',
-                          minHeight: '62px',
-                          padding: '7px 10px',
+                          minHeight: '54px',
+                          padding: '8px 10px',
                           borderRadius: '4px',
-                          border: isEditing && !isHistorical ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: isEditing && !isHistorical ? '#ffffff' : '#f8fafc',
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#f8fafc',
                           fontSize: '12px',
                           lineHeight: 1.45,
-                          color: '#0f172a',
-                          outline: 'none',
-                          resize: isEditing && !isHistorical ? 'vertical' : 'none',
-                          cursor: isEditing && !isHistorical ? 'text' : 'default',
-                          fontFamily: 'inherit',
+                          color: row.actionTaken ? '#0f172a' : '#94a3b8',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
                           boxSizing: 'border-box'
                         }}
-                      />
+                      >
+                        {row.actionTaken || '—'}
+                      </div>
 
                       {/* Row-associated inspection photos */}
                       {(() => {

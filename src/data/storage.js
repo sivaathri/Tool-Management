@@ -102,7 +102,7 @@ export function exportPMReportToCSV(tool, logs = []) {
   lines.push('');
 
   lines.push('2. PREVENTIVE MAINTENANCE CHECK POINTS & INSPECTION RECORD');
-  lines.push('S.No,Check Points,Checking Method,Specification,Actual Condition / Observation,Action Taken');
+  lines.push('S.No,Check Points,Checking Method,Specification,Actual Condition / Observation,Remarks');
   
   if (savedRows.length > 0) {
     savedRows.forEach((r, idx) => {
@@ -181,13 +181,29 @@ function normalizeToolItem(raw, productionLogs = []) {
   const toolCount = Number(raw.toolCount !== undefined && raw.toolCount !== null ? raw.toolCount : 0);
   const replacements = Array.isArray(raw.replacements) ? raw.replacements : [];
 
-  // Normalize checkPoints to array of string strings
+  // Normalize checkPoints (preserve structured objects with method, specification, actualCondition)
   let checkPoints = [];
   if (Array.isArray(raw.checkPoints)) {
-    checkPoints = raw.checkPoints.map(cp => {
-      if (typeof cp === 'string') return cp;
-      if (cp && typeof cp === 'object') return cp.point || cp.text || '';
-      return '';
+    checkPoints = raw.checkPoints.map((cp, idx) => {
+      if (typeof cp === 'string') {
+        const trimmed = cp.trim();
+        return trimmed ? { sno: idx + 1, point: trimmed, description: trimmed, checkPoint: trimmed, method: '', specification: '', spec: '', actualCondition: '' } : null;
+      }
+      if (cp && typeof cp === 'object') {
+        const pt = (cp.point || cp.description || cp.checkPoint || cp.text || '').trim();
+        const spec = cp.specification || cp.spec || '';
+        return pt ? {
+          sno: idx + 1,
+          point: pt,
+          description: pt,
+          checkPoint: pt,
+          method: cp.method || '',
+          specification: spec,
+          spec: spec,
+          actualCondition: cp.actualCondition || ''
+        } : null;
+      }
+      return null;
     }).filter(Boolean);
   }
 

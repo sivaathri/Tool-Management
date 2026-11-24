@@ -137,7 +137,7 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
               <th style="width: 14%; text-align: center; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Checking Method</th>
               <th style="width: 18%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a;">Specification</th>
               <th style="width: 20%; text-align: left; padding: ${cellPadding}; border-right: 1px solid #0f172a; background-color: #eff6ff;">Actual condition *</th>
-              <th style="width: 17%; text-align: left; padding: ${cellPadding};">Action Taken</th>
+              <th style="width: 17%; text-align: left; padding: ${cellPadding};">Remarks</th>
             </tr>
           </thead>
           <tbody>
@@ -419,7 +419,7 @@ export function exportPMChecklistOnlyCSV(tool, pmRecord = null) {
   lines.push(`"Tool description","${(tool.description || '').replace(/"/g, '""')}","Next due Date","${nextDueDate}"`);
   lines.push(`"Application","${((tool.applicationPartNo ? tool.applicationPartNo + ' - ' : '') + (tool.productName || '')).replace(/"/g, '""')}","Tool Issued On","${tool.toolIssuedOn || ''}"`);
   lines.push('');
-  lines.push('"S.No","Check points","Checking Method","Specification","Actual condition","Action Taken"');
+  lines.push('"S.No","Check points","Checking Method","Specification","Actual condition","Remarks"');
 
   checkItems.forEach((r, idx) => {
     lines.push(`${idx + 1},"${(r.checkPoint || '').replace(/"/g, '""')}","${(r.method || 'Visual').replace(/"/g, '""')}","${(r.specification || '').replace(/"/g, '""')}","${(r.actualCondition || '').replace(/"/g, '""')}","${(r.actionTaken || '').replace(/"/g, '""')}"`);
@@ -494,7 +494,7 @@ export function exportToolAllPMHistoryCSV(tool, pmRecord = null) {
   lines.push(`"Document Reference","MFG/FR/075"`);
   lines.push(`"Tool Number","${tool.toolNo}","Application","${tool.applicationPartNo || ''} - ${tool.productName || ''}","Description","${tool.description || ''}"`);
   lines.push('');
-  lines.push('"Inspection / Revision","Date of Check","Next Due Date","Ref No","S.No","Check Points","Checking Method","Specification","Actual Condition","Action Taken","Prepared By","Checked By (QA)","Approved By (Management)"');
+  lines.push('"Inspection / Revision","Date of Check","Next Due Date","Ref No","S.No","Check Points","Checking Method","Specification","Actual Condition","Remarks","Prepared By","Checked By (QA)","Approved By (Management)"');
 
   allInspections.forEach(insp => {
     const items = insp.items && insp.items.length > 0 ? insp.items : [];
