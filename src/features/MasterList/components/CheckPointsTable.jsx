@@ -46,7 +46,7 @@ export default function CheckPointsTable({ checkPoints = [], onChange, hasError 
       <div
         className="table-responsive"
         style={{
-          border: hasError ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+          border: hasError ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
           boxShadow: hasError ? '0 0 0 1px #ef4444' : 'none',
           borderRadius: 'var(--radius-md)',
           overflow: 'hidden',

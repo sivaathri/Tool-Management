@@ -25,6 +25,9 @@ export default function AddEditToolModal({
   });
 
   const [errors, setErrors] = useState({});
+  const [toolNumberDigits, setToolNumberDigits] = useState('');
+
+  const extractDigits = (val) => String(val || '').replace(/^INE\s*T\s*/i, '').replace(/[^0-9]/g, '');
 
   const handleFieldChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -36,6 +39,9 @@ export default function AddEditToolModal({
   useEffect(() => {
     setErrors({});
     if (currentTool) {
+      const existingDigits = extractDigits(currentTool.toolNo || currentTool.toolNumber || '');
+      setToolNumberDigits(existingDigits);
+
       let initialCheckPoints = [{ sno: 1, point: '' }];
       if (Array.isArray(currentTool.checkPoints) && currentTool.checkPoints.length > 0) {
         initialCheckPoints = currentTool.checkPoints.map((cp, idx) => {
@@ -49,7 +55,7 @@ export default function AddEditToolModal({
         id: currentTool.id,
         applicationPartNo: currentTool.applicationPartNo || '',
         productName: currentTool.productName || '',
-        toolNo: currentTool.toolNo || currentTool.toolNumber || '',
+        toolNo: existingDigits ? `INE T ${existingDigits}` : '',
         description: currentTool.description || currentTool.toolDescription || '',
         toolIssuedOn: currentTool.toolIssuedOn || currentTool.issuedDate || new Date().toISOString().slice(0, 10),
         lifetime: currentTool.lifetime !== undefined && currentTool.lifetime !== null ? currentTool.lifetime : (currentTool.lifeTime || ''),
@@ -58,6 +64,7 @@ export default function AddEditToolModal({
         checkPoints: initialCheckPoints
       });
     } else {
+      setToolNumberDigits('');
       setFormData({
         applicationPartNo: '',
         productName: '',
@@ -191,39 +198,82 @@ export default function AddEditToolModal({
                       Tool No. <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                   </div>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <div style={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    border: errors.toolNo ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
+                    boxShadow: errors.toolNo ? '0 0 0 1px #ef4444' : 'none',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: errors.toolNo ? '#fef2f2' : '#ffffff',
+                    overflow: 'hidden',
+                    height: '38px',
+                    boxSizing: 'border-box'
+                  }}>
+                    {/* Fixed uneditable INE T prefix box */}
+                    <div style={{
+                      padding: '0 12px',
+                      backgroundColor: '#f8fafc',
+                      color: '#1d4ed8',
+                      fontWeight: 800,
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: '13px',
+                      letterSpacing: '0.5px',
+                      borderRight: '1.5px solid #cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      userSelect: 'none',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      INE T
+                    </div>
+
+                    {/* Number-only input box */}
                     <input
                       type="text"
-                      className="form-input"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       id="inpToolNumber"
-                      placeholder="e.g. INE T 1122"
-                      value={formData.toolNo}
-                      onChange={(e) => handleFieldChange('toolNo', e.target.value)}
+                      placeholder="Enter number (e.g. 1122, 0624)..."
+                      value={toolNumberDigits}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^0-9]/g, '');
+                        setToolNumberDigits(digits);
+                        handleFieldChange('toolNo', digits ? `INE T ${digits}` : '');
+                      }}
                       style={{
-                        paddingRight: formData.toolNo ? '30px' : '12px',
-                        height: '38px',
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        border: errors.toolNo ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
-                        boxShadow: errors.toolNo ? '0 0 0 1px #ef4444' : 'none',
-                        backgroundColor: errors.toolNo ? '#fef2f2' : '#ffffff'
+                        border: 'none',
+                        outline: 'none',
+                        flex: 1,
+                        padding: '0 12px',
+                        height: '100%',
+                        fontSize: '13.5px',
+                        fontFamily: 'var(--font-mono, monospace)',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        backgroundColor: 'transparent'
                       }}
                     />
-                    {formData.toolNo && (
+
+                    {toolNumberDigits && (
                       <button
                         type="button"
-                        onClick={() => handleFieldChange('toolNo', '')}
-                        title="Clear Tool No"
+                        onClick={() => {
+                          setToolNumberDigits('');
+                          handleFieldChange('toolNo', '');
+                        }}
+                        title="Clear number"
                         style={{
-                          position: 'absolute',
-                          right: '8px',
                           background: 'none',
                           border: 'none',
                           color: 'var(--slate-400)',
                           cursor: 'pointer',
                           fontSize: '17px',
                           lineHeight: '1',
-                          padding: '4px'
+                          padding: '0 10px',
+                          display: 'flex',
+                          alignItems: 'center'
                         }}
                       >
                         &times;
@@ -236,7 +286,7 @@ export default function AddEditToolModal({
                     </div>
                   ) : (
                     <div style={{ fontSize: '11.5px', color: 'var(--slate-500)', marginTop: '4px' }}>
-                      Format: <strong>INE T [Number]</strong> (e.g. INE T 1122)
+                      <strong>INE T</strong> is fixed; enter tool number only (e.g. 1122)
                     </div>
                   )}
                 </div>
@@ -256,7 +306,7 @@ export default function AddEditToolModal({
                     style={{
                       height: '38px',
                       boxSizing: 'border-box',
-                      border: errors.productName ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+                      border: errors.productName ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
                       boxShadow: errors.productName ? '0 0 0 1px #ef4444' : 'none',
                       backgroundColor: errors.productName ? '#fef2f2' : '#ffffff'
                     }}
@@ -283,7 +333,7 @@ export default function AddEditToolModal({
                     style={{
                       height: '38px',
                       boxSizing: 'border-box',
-                      border: errors.description ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+                      border: errors.description ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
                       boxShadow: errors.description ? '0 0 0 1px #ef4444' : 'none',
                       backgroundColor: errors.description ? '#fef2f2' : '#ffffff'
                     }}
@@ -313,7 +363,7 @@ export default function AddEditToolModal({
                     style={{
                       height: '38px',
                       boxSizing: 'border-box',
-                      border: errors.toolIssuedOn ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+                      border: errors.toolIssuedOn ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
                       boxShadow: errors.toolIssuedOn ? '0 0 0 1px #ef4444' : 'none',
                       backgroundColor: errors.toolIssuedOn ? '#fef2f2' : '#ffffff'
                     }}
@@ -341,7 +391,7 @@ export default function AddEditToolModal({
                     style={{
                       height: '38px',
                       boxSizing: 'border-box',
-                      border: errors.lifetime ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+                      border: errors.lifetime ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
                       boxShadow: errors.lifetime ? '0 0 0 1px #ef4444' : 'none',
                       backgroundColor: errors.lifetime ? '#fef2f2' : '#ffffff'
                     }}

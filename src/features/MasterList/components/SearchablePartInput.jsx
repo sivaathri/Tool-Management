@@ -206,7 +206,7 @@ export default function SearchablePartInput({
       <div className="combobox-input-wrapper" style={{
         display: 'flex',
         alignItems: 'stretch',
-        border: hasError ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
+        border: hasError ? '1px solid #ef4444' : '1px solid var(--border-subtle)',
         boxShadow: hasError ? '0 0 0 1px #ef4444' : 'none',
         borderRadius: 'var(--radius-md)',
         backgroundColor: hasError ? '#fef2f2' : '#ffffff',
