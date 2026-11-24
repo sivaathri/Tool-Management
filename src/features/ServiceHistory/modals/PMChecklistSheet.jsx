@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { savePMRecord, getPMRecords } from '../../../services/toolService';
 import { authService } from '../../../services/authService';
 import PMExportModal from './PMExportModal';
+import { compressImage } from '../../../utils/imageCompressor';
 
 export default function PMChecklistSheet({ tool, currentUser, showToast, onRefresh }) {
   if (!tool) return null;
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [photos, setPhotos] = useState([]);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   // Format today's date (YYYY-MM-DD)
   const getTodayDate = () => new Date().toISOString().slice(0, 10);
@@ -101,6 +104,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
       setRows([...mergedRows, ...extraItems]);
       if (saved.checkDate) setCheckDate(saved.checkDate);
       if (saved.nextDueDate) setNextDueDate(saved.nextDueDate);
+      setPhotos(Array.isArray(saved.photos) ? saved.photos : []);
       setPreparedBy(saved.preparedBy || saved.inspectedBy || loggedName);
       setCheckedByInfo(saved.checkedBy || null);
       setApprovedByInfo(saved.approvedBy || null);
@@ -110,6 +114,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     } else {
       // Show empty text boxes by default ready for entering inspection data
       setRows(defaultRows);
+      setPhotos([]);
       setCheckDate(getTodayDate());
       setNextDueDate(getNextDueDate());
       setPreparedBy(loggedName);
@@ -184,7 +189,8 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
         preparedBy: existing.preparedBy || existing.inspectedBy || 'Technician',
         checkedBy: existing.checkedBy || null,
         approvedBy: existing.approvedBy || null,
-        items: existing.items || existing.rows || []
+        items: existing.items || existing.rows || [],
+        photos: Array.isArray(existing.photos) ? existing.photos : []
       };
       updatedHistory.push(snapshot);
     }
@@ -202,6 +208,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
       classification: tool.classification || 'Non-Critical',
       items: rows,
       rows: rows,
+      photos: photos,
       preparedBy: activeUserName,
       inspectedBy: activeUserName,
       checkedBy: null, // Reset: waiting for QA Check
@@ -247,6 +254,50 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
     : (isEditing ? loggedUserName : (preparedBy || loggedUserName));
   const displayCheckedBy = isHistorical ? currentHist.checkedBy : checkedByInfo;
   const displayApprovedBy = isHistorical ? currentHist.approvedBy : approvedByInfo;
+  const displayPhotos = isHistorical ? (Array.isArray(currentHist?.photos) ? currentHist.photos : []) : photos;
+
+  // Photo Upload & Camera Helpers
+  const handleFilesUpload = async (e, checkpointIdx = null) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    try {
+      const compressedList = [];
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 960, quality: 0.72 });
+        const dataUrl = typeof compressed === 'string' ? compressed : (compressed?.dataUrl || '');
+        const size = typeof compressed === 'object' && compressed?.size ? compressed.size : `${Math.round(file.size / 1024)} KB`;
+
+        if (!dataUrl) continue;
+
+        compressedList.push({
+          id: `photo_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          dataUrl: dataUrl,
+          name: file.name || 'Inspection Photo',
+          size: size,
+          checkpointIdx: checkpointIdx !== null ? checkpointIdx : null,
+          checkpointName: checkpointIdx !== null
+            ? (displayRows[checkpointIdx]?.checkPoint || `Check Point #${checkpointIdx + 1}`)
+            : 'General Inspection',
+          capturedAt: new Date().toISOString()
+        });
+      }
+      if (compressedList.length > 0) {
+        setPhotos(prev => [...prev, ...compressedList]);
+        showToast?.(`Added ${compressedList.length} inspection photo(s)`, 'success');
+      }
+    } catch (err) {
+      console.error('Image compression error:', err);
+      showToast?.('Error processing image: ' + err.message, 'error');
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleDeletePhoto = (photoId) => {
+    setPhotos(prev => prev.filter(p => p.id !== photoId));
+    showToast?.('Photo removed', 'info');
+  };
 
   return (
     <div className="card pm-sheet-card" style={{ marginTop: '24px', padding: '0', overflow: 'hidden' }}>
@@ -1069,11 +1120,305 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                           boxSizing: 'border-box'
                         }}
                       />
+
+                      {/* Row-associated inspection photos & quick snap */}
+                      {(() => {
+                        const rowPhotos = displayPhotos.filter(p => p.checkpointIdx === idx);
+                        return (
+                          <div style={{ marginTop: '6px' }}>
+                            {rowPhotos.length > 0 && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                                {rowPhotos.map((p) => (
+                                  <div
+                                    key={p.id}
+                                    onClick={() => setPreviewPhoto(p)}
+                                    style={{
+                                      position: 'relative',
+                                      width: '32px',
+                                      height: '32px',
+                                      borderRadius: '4px',
+                                      border: '1.5px solid #2563eb',
+                                      overflow: 'hidden',
+                                      cursor: 'pointer',
+                                      backgroundColor: '#0f172a'
+                                    }}
+                                    title="Click to view full photo"
+                                  >
+                                    <img
+                                      src={p.dataUrl}
+                                      alt="Checkpoint Evidence"
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                  </div>
+                                ))}
+                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#2563eb' }}>
+                                  ({rowPhotos.length} {rowPhotos.length === 1 ? 'photo' : 'photos'})
+                                </span>
+                              </div>
+                            )}
+
+                            {isEditing && !isHistorical && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <label
+                                  style={{
+                                    padding: '2px 8px',
+                                    fontSize: '10.5px',
+                                    fontWeight: 700,
+                                    borderRadius: '4px',
+                                    border: '1px solid #bfdbfe',
+                                    backgroundColor: '#eff6ff',
+                                    color: '#1d4ed8',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                  title={`Open device camera for Checkpoint #${row.sno || idx + 1}`}
+                                >
+                                  📷 Camera
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => handleFilesUpload(e, idx)}
+                                  />
+                                </label>
+                                <label
+                                  style={{
+                                    padding: '2px 8px',
+                                    fontSize: '10.5px',
+                                    fontWeight: 700,
+                                    borderRadius: '4px',
+                                    border: '1px solid #cbd5e1',
+                                    backgroundColor: '#ffffff',
+                                    color: '#475569',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                  title="Upload photo for this checkpoint"
+                                >
+                                  📁 Upload
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => handleFilesUpload(e, idx)}
+                                  />
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Inspection Photos & Visual Evidence Gallery */}
+          <div style={{
+            borderTop: '1.5px solid #334155',
+            padding: '16px 18px',
+            backgroundColor: '#ffffff'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Inspection Photos &amp; Visual Evidence
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '2px 9px',
+                  borderRadius: '12px',
+                  backgroundColor: displayPhotos.length > 0 ? '#eff6ff' : '#f1f5f9',
+                  color: displayPhotos.length > 0 ? '#1d4ed8' : '#64748b',
+                  border: displayPhotos.length > 0 ? '1px solid #bfdbfe' : '1px solid #cbd5e1'
+                }}>
+                  {displayPhotos.length} {displayPhotos.length === 1 ? 'Photo' : 'Photos'}
+                </span>
+              </div>
+
+              {isEditing && !isHistorical && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Device Camera Access Button */}
+                  <label
+                    style={{
+                      backgroundColor: '#2563eb',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontWeight: 700,
+                      padding: '7px 14px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 3px rgba(37,99,235,0.25)'
+                    }}
+                    title="Open device camera to capture inspection photo"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Device Camera</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleFilesUpload(e, null)}
+                    />
+                  </label>
+
+                  {/* Upload Images Button */}
+                  <label
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#334155',
+                      border: '1.5px solid #cbd5e1',
+                      fontWeight: 700,
+                      padding: '7px 14px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                    title="Upload image files from computer or device"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Upload Images</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleFilesUpload(e, null)}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Photos List Grid */}
+            {displayPhotos.length === 0 ? (
+              <div style={{
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#f8fafc',
+                borderRadius: '8px',
+                border: '1.5px dashed #cbd5e1'
+              }}>
+                <div style={{ fontSize: '24px', marginBottom: '6px' }}>📷</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                  {isEditing ? 'No photos attached yet. Click Device Camera or Upload Images to add inspection evidence.' : 'No inspection photos recorded for this PM revision.'}
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                gap: '14px'
+              }}>
+                {displayPhotos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    style={{
+                      borderRadius: '8px',
+                      border: '1.5px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                  >
+                    <div
+                      onClick={() => setPreviewPhoto(photo)}
+                      style={{ cursor: 'pointer', position: 'relative', width: '100%', height: '120px', backgroundColor: '#0f172a' }}
+                      title="Click to zoom / view full size"
+                    >
+                      <img
+                        src={photo.dataUrl}
+                        alt={photo.name || 'Inspection'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+
+                    <div style={{ padding: '8px 10px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#1d4ed8',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }} title={photo.checkpointName || 'General Inspection'}>
+                          {photo.checkpointName || 'General Inspection'}
+                        </div>
+                        <div style={{
+                          fontSize: '10px',
+                          color: '#64748b',
+                          marginTop: '3px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <span>{photo.capturedAt ? new Date(photo.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                          {photo.size && <span>{photo.size}</span>}
+                        </div>
+                      </div>
+
+                      {isEditing && !isHistorical && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          style={{
+                            marginTop: '8px',
+                            width: '100%',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#dc2626',
+                            backgroundColor: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          ✕ Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Official Bottom 3-Column Sign-Off Block */}
@@ -1211,6 +1556,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
             application,
             classification: tool.classification,
             items: displayRows,
+            photos: displayPhotos,
             preparedBy: displayPreparedBy,
             checkedBy: displayCheckedBy,
             approvedBy: displayApprovedBy,
@@ -1218,6 +1564,100 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
           }}
           showToast={showToast}
         />
+      )}
+
+      {/* Lightbox Zoom / Full View Modal */}
+      {previewPhoto && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setPreviewPhoto(null)}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '850px',
+              width: '100%',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: '12px 18px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#f8fafc'
+            }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
+                  {previewPhoto.checkpointName || 'Inspection Photo'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>
+                  Captured: {previewPhoto.capturedAt ? new Date(previewPhoto.capturedAt).toLocaleString() : 'N/A'} {previewPhoto.size ? `• ${previewPhoto.size}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPhoto(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '22px',
+                  fontWeight: 700,
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  lineHeight: '1'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div style={{
+              backgroundColor: '#090d16',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '12px',
+              minHeight: '240px',
+              maxHeight: '75vh'
+            }}>
+              {previewPhoto.dataUrl ? (
+                <img
+                  src={previewPhoto.dataUrl}
+                  alt={previewPhoto.name || 'Inspection full view'}
+                  style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '4px' }}
+                />
+              ) : (
+                <div style={{ color: '#94a3b8', fontSize: '13px', textAlign: 'center', padding: '24px' }}>
+                  No preview available for this photo
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '10px 18px', display: 'flex', justifyContent: 'flex-end', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setPreviewPhoto(null)}
+                style={{ padding: '6px 16px', fontSize: '12px', fontWeight: 700 }}
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
