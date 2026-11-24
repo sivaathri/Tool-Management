@@ -882,7 +882,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                       fontWeight: 700,
                       color: '#475569',
                       padding: '10px 4px',
-                      borderRight: '1px solid #cbd5e1',
+                      borderRight: '1px solid #334155',
                       verticalAlign: 'top'
                     }}>
                       {row.sno}
@@ -893,7 +893,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                       padding: '10px 14px',
                       fontWeight: 700,
                       color: '#0f172a',
-                      borderRight: '1px solid #cbd5e1',
+                      borderRight: '1px solid #334155',
                       verticalAlign: 'top',
                       lineHeight: 1.5,
                       fontSize: '12.5px'
@@ -904,7 +904,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                     {/* Checking Method (Dropdown to choose: Visual, Vernier, Micro meter, Flip guage) */}
                     <td style={{
                       padding: '6px 8px',
-                      borderRight: '1px solid #cbd5e1',
+                      borderRight: '1px solid #334155',
                       verticalAlign: 'top',
                       width: '140px'
                     }}>
@@ -970,7 +970,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                     {/* Specification (Editable textarea with ⌀ and ± quick insert buttons) */}
                     <td style={{
                       padding: '6px 8px',
-                      borderRight: '1px solid #cbd5e1',
+                      borderRight: '1px solid #334155',
                       verticalAlign: 'top'
                     }}>
                       <div className="print-only-text" style={{ fontSize: '11px', textAlign: 'left' }}>
@@ -1057,7 +1057,7 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
                     {/* Actual Condition (Multi-line Textarea for comfortable reading & long text) */}
                     <td style={{
                       padding: '6px 8px',
-                      borderRight: '1px solid #cbd5e1',
+                      borderRight: '1px solid #334155',
                       backgroundColor: '#f0f9ff',
                       verticalAlign: 'top'
                     }}>
