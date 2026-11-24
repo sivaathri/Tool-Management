@@ -110,13 +110,17 @@ export default function PMChecklistSheet({ tool, currentUser, showToast, onRefre
         }
 
         if (match) {
+          // When loading from draft, draft edit takes complete precedence!
+          // When loading without draft, prefer inspected record over default
+          const actualVal = isFromDraft 
+            ? (match.actualCondition !== undefined ? match.actualCondition : (dRow.actualCondition || ''))
+            : (match.actualCondition !== undefined && match.actualCondition !== '' ? match.actualCondition : (dRow.actualCondition || ''));
+
           return {
             ...dRow,
             method: dRow.method || match.method || '',
             specification: dRow.specification || match.specification || '',
-            actualCondition: (dRow.actualCondition !== undefined && dRow.actualCondition !== '') 
-              ? dRow.actualCondition 
-              : (match.actualCondition !== undefined ? match.actualCondition : ''),
+            actualCondition: actualVal,
             actionTaken: match.actionTaken !== undefined ? match.actionTaken : ''
           };
         }
