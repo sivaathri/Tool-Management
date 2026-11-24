@@ -315,12 +315,12 @@ export default function PMExportModal({
                       color: '#15803d',
                       border: '1px solid #bbf7d0'
                     }}>
-                      {totalInspections} {totalInspections === 1 ? 'Inspection' : 'Inspections'} &bull; 3 PM per page
+                      {totalInspections} {totalInspections === 1 ? 'Inspection' : 'Inspections'} &bull; 1 PM per page
                     </span>
                   </div>
                   <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '3px' }}>
                     {selectedFormat === 'pdf'
-                      ? `Exports all past revision records and active PM inspection for ${tool.toolNo} (3 PM checklists per page in the PDF).`
+                      ? `Exports all past revision records and active PM inspection for ${tool.toolNo} (Each inspection on its own page with PM checklist and photos).`
                       : `Exports all past revision records and active PM data for ${tool.toolNo} in a single spreadsheet.`}
                   </div>
                 </div>

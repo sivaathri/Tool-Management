@@ -57,21 +57,41 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
     ? `${tool.applicationPartNo}${tool.productName ? ' - ' + tool.productName : ''}`
     : (tool.productName || '—');
 
-  // Dynamic styling based on compactCount (1 = normal, 2 = 2 PMs/page, 3 = 3 PMs/page)
+  // Dynamic styling based on row count and compactCount
+  const rowCount = checkItems.length;
   const is3 = compactCount === 3;
   const is2 = compactCount === 2;
   const isCompact = is3 || is2;
 
+  // Dynamically calculate font and padding so ALL rows (1 to 25+) fit perfectly without truncation
+  let tableFontSize = '11px';
+  let cellPadding = '6px 8px';
+  let cellLineHeight = '1.3';
+  if (rowCount > 15) {
+    tableFontSize = '8px';
+    cellPadding = '2px 4px';
+    cellLineHeight = '1.1';
+  } else if (rowCount > 10) {
+    tableFontSize = '9px';
+    cellPadding = '3px 6px';
+    cellLineHeight = '1.15';
+  } else if (rowCount > 6) {
+    tableFontSize = '10px';
+    cellPadding = '4px 6px';
+    cellLineHeight = '1.2';
+  } else if (isCompact) {
+    tableFontSize = '10px';
+    cellPadding = '5px 6px';
+  }
+
   const logoSize = is3 ? '30px' : is2 ? '28px' : '38px';
   const companyTitleSize = is3 ? '11px' : is2 ? '11px' : '13px';
-  const sheetTitleSize = is3 ? '12.5px' : is2 ? '12.5px' : '15px';
-  const metaMinHeight = is3 ? '25px' : is2 ? '26px' : '34px';
-  const metaPadding = is3 ? '4px 8px' : is2 ? '4px 8px' : '6px 10px';
-  const metaFontSize = is3 ? '10px' : is2 ? '10px' : '11.5px';
-  const tableFontSize = is3 ? '10px' : is2 ? '10px' : '11px';
-  const cellPadding = is3 ? '6px 8px' : is2 ? '5px 6px' : '8px 8px';
-  const signoffMinHeight = is3 ? '46px' : is2 ? '46px' : '65px';
-  const signoffPadding = is3 ? '6px 10px' : is2 ? '6px 10px' : '12px 14px';
+  const sheetTitleSize = is3 ? '12px' : is2 ? '12px' : '14px';
+  const metaMinHeight = is3 ? '24px' : is2 ? '24px' : '30px';
+  const metaPadding = is3 ? '3px 6px' : is2 ? '3px 6px' : '5px 8px';
+  const metaFontSize = is3 ? '9.5px' : is2 ? '9.5px' : '11px';
+  const signoffMinHeight = is3 ? '42px' : is2 ? '42px' : '55px';
+  const signoffPadding = is3 ? '5px 8px' : is2 ? '5px 8px' : '8px 12px';
 
   return `
     <div style="border: 1.5px solid #0f172a; border-radius: 4px; overflow: hidden; background-color: #ffffff; width: 100%; box-sizing: border-box; flex: 1; min-height: ${is3 ? '236px' : 'auto'}; display: flex; flex-direction: column; justify-content: space-between;">
@@ -128,8 +148,8 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
       </div>
 
       <!-- 3. Checklist Items Table -->
-      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-        <table style="width: 100%; height: 100%; border-collapse: collapse; font-size: ${tableFontSize}; table-layout: fixed;">
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: visible;">
+        <table style="width: 100%; border-collapse: collapse; font-size: ${tableFontSize}; table-layout: fixed;">
           <thead>
             <tr style="background-color: #f1f5f9; border-bottom: 1.5px solid #0f172a; font-weight: 800; text-transform: uppercase;">
               <th style="width: 5%; text-align: center; padding: ${cellPadding}; border-right: 1px solid #0f172a;">S.no</th>
@@ -144,9 +164,9 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
             ${checkItems.map((item, idx) => `
               <tr style="border-bottom: 1px solid #cbd5e1; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
                 <td style="text-align: center; font-weight: 700; padding: ${cellPadding}; border-right: 1px solid #cbd5e1;">${item.sno || idx + 1}</td>
-                <td style="padding: ${cellPadding}; font-weight: 800; color: #0f172a; border-right: 1px solid #cbd5e1; line-height: 1.3;">${item.checkPoint || ''}</td>
+                <td style="padding: ${cellPadding}; font-weight: 800; color: #0f172a; border-right: 1px solid #cbd5e1; line-height: ${cellLineHeight};">${item.checkPoint || ''}</td>
                 <td style="text-align: center; padding: ${cellPadding}; font-weight: 700; color: #334155; border-right: 1px solid #cbd5e1;">${item.method || 'Visual'}</td>
-                <td style="padding: ${cellPadding}; color: #1e293b; border-right: 1px solid #cbd5e1; line-height: 1.3;">${item.specification || '—'}</td>
+                <td style="padding: ${cellPadding}; color: #1e293b; border-right: 1px solid #cbd5e1; line-height: ${cellLineHeight};">${item.specification || '—'}</td>
                 <td style="padding: ${cellPadding}; font-weight: 700; color: #1e3a8a; border-right: 1px solid #cbd5e1; background-color: #eff6ff;">${item.actualCondition || 'OK / Verified'}</td>
                 <td style="padding: ${cellPadding}; color: #1e293b;">${item.actionTaken || 'None required'}</td>
               </tr>
@@ -191,7 +211,7 @@ export function generatePMChecklistHTML(tool, pmRecord = null, revisionLabel = '
 function generatePMPhotosHTML(photos = []) {
   if (!Array.isArray(photos) || photos.length === 0) {
     return `
-      <div style="border: 1.5px dashed #cbd5e1; border-radius: 4px; padding: 16px; background-color: #f8fafc; text-align: center; color: #94a3b8; font-size: 11px; display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box;">
+      <div style="border: 1.5px dashed #cbd5e1; border-radius: 4px; padding: 10px; background-color: #f8fafc; text-align: center; color: #94a3b8; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box;">
         <span>No Inspection Photos Attached For This PM Check</span>
       </div>
     `;
@@ -200,18 +220,18 @@ function generatePMPhotosHTML(photos = []) {
   // Display up to 4 photos side by side in the bottom half
   const displayPhotos = photos.slice(0, 4);
   return `
-    <div style="border: 1.5px solid #0f172a; border-radius: 4px; padding: 8px 12px; background-color: #ffffff; box-sizing: border-box; height: 100%; display: flex; flex-direction: column;">
-      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #1e3a8a; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="border: 1.5px solid #0f172a; border-radius: 4px; padding: 6px 10px; background-color: #ffffff; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #1e3a8a; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
         <span>📷 Preventive Maintenance Inspection Photos (${photos.length} Captured)</span>
-        <span style="font-size: 9.5px; color: #64748b; font-weight: 600;">Standard Evidence Verification</span>
+        <span style="font-size: 9px; color: #64748b; font-weight: 600;">Standard Evidence Verification</span>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(${displayPhotos.length}, 1fr); gap: 10px; flex: 1; align-items: center;">
+      <div style="display: flex; gap: 10px; flex: 1; min-height: 0; align-items: stretch; justify-content: ${displayPhotos.length === 1 ? 'center' : 'space-between'}; overflow: hidden;">
         ${displayPhotos.map((p, pIdx) => `
-          <div style="border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background-color: #f8fafc; height: 100%; display: flex; flex-direction: column;">
-            <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: #000000; max-height: 145px;">
-              <img src="${p.dataUrl}" alt="PM Evidence ${pIdx + 1}" style="max-width: 100%; max-height: 145px; object-fit: contain;" />
+          <div style="border: 1.5px solid #cbd5e1; border-radius: 5px; overflow: hidden; background-color: #ffffff; height: 100%; display: flex; flex-direction: column; ${displayPhotos.length === 1 ? 'width: 440px; max-width: 60%;' : 'flex: 1; min-width: 0;'} box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: #f8fafc; padding: 4px;">
+              <img src="${p.dataUrl}" alt="PM Evidence ${pIdx + 1}" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 3px;" />
             </div>
-            <div style="padding: 4px 6px; font-size: 9.5px; font-weight: 700; color: #0f172a; background-color: #ffffff; border-top: 1px solid #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">
+            <div style="padding: 3px 6px; font-size: 9.5px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; border-top: 1px solid #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">
               ${p.checkpointName || `Photo #${pIdx + 1}`}
             </div>
           </div>
@@ -252,17 +272,20 @@ export async function exportSinglePMChecklistPDF(tool, pmRecord = null) {
   container.style.gap = '8px';
 
   const photos = Array.isArray(pmRecord?.photos) ? pmRecord.photos : [];
+  const hasPhotos = photos.length > 0;
 
   container.innerHTML = `
     <!-- Top Half: PM Checklist Sheet -->
-    <div style="flex: 1.15; display: flex; flex-direction: column; min-height: 0;">
+    <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
       ${generatePMChecklistHTML(tool, pmRecord, 'Current Active Inspection', 2)}
     </div>
 
     <!-- Bottom Half: PM Inspection Photos -->
-    <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
-      ${generatePMPhotosHTML(photos)}
-    </div>
+    ${hasPhotos ? `
+      <div style="flex: 0 0 185px; height: 185px; display: flex; flex-direction: column; overflow: hidden;">
+        ${generatePMPhotosHTML(photos)}
+      </div>
+    ` : ''}
   `;
 
   document.body.appendChild(container);
@@ -345,6 +368,7 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
   for (let pIdx = 0; pIdx < allInspections.length; pIdx++) {
     const insp = allInspections[pIdx];
     const inspPhotos = Array.isArray(insp.photos) ? insp.photos : [];
+    const hasPhotos = inspPhotos.length > 0;
 
     onProgress?.(`Generating Page ${pIdx + 1} of ${allInspections.length} (${insp.revisionLabel})...`, pIdx + 1, allInspections.length);
 
@@ -367,14 +391,16 @@ export async function exportToolAllPMHistoryPDF(tool, pmRecord = null, onProgres
 
     container.innerHTML = `
       <!-- Top Half: PM Checklist -->
-      <div style="flex: 1.15; display: flex; flex-direction: column; min-height: 0;">
+      <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
         ${generatePMChecklistHTML(tool, insp, insp.revisionLabel, 2)}
       </div>
 
       <!-- Bottom Half: This PM's Photos -->
-      <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
-        ${generatePMPhotosHTML(inspPhotos)}
-      </div>
+      ${hasPhotos ? `
+        <div style="flex: 0 0 185px; height: 185px; display: flex; flex-direction: column; overflow: hidden;">
+          ${generatePMPhotosHTML(inspPhotos)}
+        </div>
+      ` : ''}
     `;
 
     document.body.appendChild(container);
