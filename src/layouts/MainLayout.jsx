@@ -11,7 +11,9 @@ export default function MainLayout({
   userCount = 0,
   urgentAlertCount = 0,
   warningAlertCount = 0,
-  onLogout
+  onLogout,
+  onExportAllData,
+  onUploadBackupFile
 }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -41,6 +43,8 @@ export default function MainLayout({
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           onOpenAlerts={() => onNavigate('notifications')}
           alertCount={(urgentAlertCount || 0) + (warningAlertCount || 0)}
+          onExportAllData={onExportAllData}
+          onUploadBackupFile={onUploadBackupFile}
         />
 
         {/* View Content Body */}

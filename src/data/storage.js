@@ -1153,6 +1153,182 @@ export function deleteUser(userId) {
   }
 }
 
+// Export all menu data stored in localStorage into a single JSON backup file
+function readStorageJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+export function exportAllMenuData() {
+  initStorage();
+
+  const tools = readStorageJSON(STORAGE_KEYS.TOOLS, []);
+  const production = readStorageJSON(STORAGE_KEYS.PRODUCTION, []);
+  const pmRecords = readStorageJSON('tms_pm_records', []);
+  const schedules = readStorageJSON(STORAGE_KEYS.SCHEDULES, []);
+  const yearlyPlans = readStorageJSON(YEARLY_PLANS_KEY, []);
+  const users = readStorageJSON(STORAGE_KEYS.USERS, INITIAL_USERS);
+
+  const pmDrafts = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('pm_draft_')) {
+        const draftVal = readStorageJSON(k, null);
+        if (draftVal !== null) {
+          pmDrafts[k] = draftVal;
+        }
+      }
+    }
+  } catch (e) {}
+
+  const summary = {
+    toolsCount: Array.isArray(tools) ? tools.length : 0,
+    productionCount: Array.isArray(production) ? production.length : 0,
+    pmRecordsCount: Array.isArray(pmRecords) ? pmRecords.length : 0,
+    schedulesCount: Array.isArray(schedules) ? schedules.length : 0,
+    yearlyPlansCount: Array.isArray(yearlyPlans) ? yearlyPlans.length : 0,
+    usersCount: Array.isArray(users) ? users.length : 0,
+    draftsCount: Object.keys(pmDrafts).length
+  };
+
+  const payload = {
+    app: 'Tools-History-Management-System',
+    backupVersion: 1,
+    exportedAt: new Date().toISOString(),
+    summary,
+    data: {
+      tools: Array.isArray(tools) ? tools : [],
+      production: Array.isArray(production) ? production : [],
+      pmRecords: Array.isArray(pmRecords) ? pmRecords : [],
+      schedules: Array.isArray(schedules) ? schedules : [],
+      yearlyPlans: Array.isArray(yearlyPlans) ? yearlyPlans : [],
+      users: Array.isArray(users) && users.length > 0 ? users : INITIAL_USERS,
+      pmDrafts
+    }
+  };
+
+  const jsonString = JSON.stringify(payload, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `TMS_All_Menu_Data_${dateStamp}.json`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  return { payload, summary };
+}
+
+export function parseBackupFile(jsonText) {
+  try {
+    const parsed = JSON.parse(jsonText);
+    if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
+      return { valid: false, error: 'Invalid backup file format. Please select a file exported from this application.' };
+    }
+
+    const { data } = parsed;
+    const tools = Array.isArray(data.tools) ? data.tools : [];
+    const production = Array.isArray(data.production) ? data.production : [];
+    const pmRecords = Array.isArray(data.pmRecords) ? data.pmRecords : [];
+    const schedules = Array.isArray(data.schedules) ? data.schedules : [];
+    const yearlyPlans = Array.isArray(data.yearlyPlans) ? data.yearlyPlans : [];
+    const users = Array.isArray(data.users) ? data.users : [];
+    const pmDrafts = data.pmDrafts && typeof data.pmDrafts === 'object' && !Array.isArray(data.pmDrafts) ? data.pmDrafts : {};
+
+    const summary = {
+      toolsCount: tools.length,
+      productionCount: production.length,
+      pmRecordsCount: pmRecords.length,
+      schedulesCount: schedules.length,
+      yearlyPlansCount: yearlyPlans.length,
+      usersCount: users.length,
+      draftsCount: Object.keys(pmDrafts).length
+    };
+
+    return {
+      valid: true,
+      exportedAt: parsed.exportedAt || null,
+      summary,
+      payload: {
+        ...parsed,
+        data: { tools, production, pmRecords, schedules, yearlyPlans, users, pmDrafts }
+      }
+    };
+  } catch (e) {
+    return { valid: false, error: 'Could not read JSON file. Please verify the file is not corrupted.' };
+  }
+}
+
+export function importAllMenuData(parsedBackup) {
+  try {
+    if (!parsedBackup || !parsedBackup.data) {
+      return { success: false, error: 'Invalid backup payload.' };
+    }
+
+    const { tools, production, pmRecords, schedules, yearlyPlans, users, pmDrafts } = parsedBackup.data;
+
+    localStorage.setItem('tms_mock_purged_flag_v2', 'true');
+    localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(Array.isArray(tools) ? tools : []));
+    localStorage.setItem(STORAGE_KEYS.PRODUCTION, JSON.stringify(Array.isArray(production) ? production : []));
+    localStorage.setItem('tms_pm_records', JSON.stringify(Array.isArray(pmRecords) ? pmRecords : []));
+    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(Array.isArray(schedules) ? schedules : []));
+    localStorage.setItem(YEARLY_PLANS_KEY, JSON.stringify(Array.isArray(yearlyPlans) ? yearlyPlans : []));
+    localStorage.setItem(
+      STORAGE_KEYS.USERS,
+      JSON.stringify(Array.isArray(users) && users.length > 0 ? users : INITIAL_USERS)
+    );
+
+    // Clear existing PM drafts before restoring backed-up drafts
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('pm_draft_')) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    if (pmDrafts && typeof pmDrafts === 'object') {
+      Object.entries(pmDrafts).forEach(([k, v]) => {
+        if (k.startsWith('pm_draft_') && v !== null && v !== undefined) {
+          localStorage.setItem(k, JSON.stringify(v));
+        }
+      });
+    }
+
+    initStorage();
+
+    return {
+      success: true,
+      summary: {
+        toolsCount: Array.isArray(tools) ? tools.length : 0,
+        productionCount: Array.isArray(production) ? production.length : 0,
+        pmRecordsCount: Array.isArray(pmRecords) ? pmRecords.length : 0,
+        schedulesCount: Array.isArray(schedules) ? schedules.length : 0,
+        yearlyPlansCount: Array.isArray(yearlyPlans) ? yearlyPlans.length : 0,
+        usersCount: Array.isArray(users) && users.length > 0 ? users.length : INITIAL_USERS.length,
+        draftsCount: pmDrafts ? Object.keys(pmDrafts).length : 0
+      }
+    };
+  } catch (e) {
+    console.error('Error importing backup data', e);
+    return {
+      success: false,
+      error: e?.name === 'QuotaExceededError'
+        ? 'Browser localStorage quota exceeded while importing backup.'
+        : 'Failed to store imported data into localStorage.'
+    };
+  }
+}
+
 export const TMSStorage = {
   getTools,
   saveTool,
@@ -1178,6 +1354,9 @@ export const TMSStorage = {
   deleteUser,
   calculateMetrics,
   resetToInitialData,
+  exportAllMenuData,
+  parseBackupFile,
+  importAllMenuData,
   formatNumber,
   formatToolNumber,
   exportToolsToCSV,

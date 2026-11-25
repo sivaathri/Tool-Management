@@ -18,7 +18,10 @@ import {
   updateCheckedBySignOff,
   updateApprovedBySignOff,
   sendPMToolsToApprovedBy,
-  resetToInitialData
+  resetToInitialData,
+  exportAllMenuData,
+  parseBackupFile,
+  importAllMenuData
 } from '../data/storage';
 
 export const toolService = {
@@ -41,7 +44,10 @@ export const toolService = {
   updateCheckedBySignOff,
   updateApprovedBySignOff,
   sendPMToolsToApprovedBy,
-  resetToInitialData
+  resetToInitialData,
+  exportAllMenuData,
+  parseBackupFile,
+  importAllMenuData
 };
 
 export {
@@ -64,5 +70,8 @@ export {
   updateCheckedBySignOff,
   updateApprovedBySignOff,
   sendPMToolsToApprovedBy,
-  resetToInitialData
+  resetToInitialData,
+  exportAllMenuData,
+  parseBackupFile,
+  importAllMenuData
 };

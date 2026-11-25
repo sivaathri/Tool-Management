@@ -30,7 +30,10 @@ import {
   deleteTool,
   getProductionLogs,
   addProductionLog,
-  deleteProductionLog
+  deleteProductionLog,
+  exportAllMenuData,
+  parseBackupFile,
+  importAllMenuData
 } from './services/toolService';
 import {
   authService,
@@ -78,6 +81,8 @@ export default function App() {
   const [dossierTool, setDossierTool] = useState(null);
   const [toolToDelete, setToolToDelete] = useState(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [pendingBackup, setPendingBackup] = useState(null);
+  const [dataVersion, setDataVersion] = useState(0);
 
   // Persist view across browser refresh
   useEffect(() => {
@@ -230,6 +235,48 @@ export default function App() {
     reloadData();
   };
 
+  // Export / Upload Full Backup Data (all menus)
+  const handleExportAllData = () => {
+    const { summary } = exportAllMenuData();
+    addToast(
+      `Exported all menu data (${summary.toolsCount} tools, ${summary.productionCount} logs, ${summary.pmRecordsCount} PM records, ${summary.yearlyPlansCount} yearly plans, ${summary.usersCount} users).`,
+      'success'
+    );
+  };
+
+  const handleUploadBackupFile = async (file) => {
+    try {
+      const text = await file.text();
+      const result = parseBackupFile(text);
+      if (!result.valid) {
+        addToast(result.error, 'danger');
+        return;
+      }
+      setPendingBackup({
+        ...result,
+        fileName: file.name
+      });
+    } catch (e) {
+      addToast('Failed to read the selected backup file.', 'danger');
+    }
+  };
+
+  const handleConfirmImportBackup = () => {
+    if (!pendingBackup) return;
+    const res = importAllMenuData(pendingBackup.payload);
+    if (!res.success) {
+      addToast(res.error || 'Failed to restore backup data.', 'danger');
+      return;
+    }
+    setPendingBackup(null);
+    reloadData();
+    setDataVersion(v => v + 1);
+    addToast(
+      `All menu data restored (${res.summary.toolsCount} tools, ${res.summary.productionCount} logs, ${res.summary.pmRecordsCount} PM records, ${res.summary.yearlyPlansCount} yearly plans).`,
+      'success'
+    );
+  };
+
   // Logout
   const handleConfirmLogout = () => {
     setIsLogoutConfirmOpen(false);
@@ -259,6 +306,7 @@ export default function App() {
   return (
     <>
       <MainLayout
+        key={dataVersion}
         currentUser={currentUser}
         currentView={currentView}
         onNavigate={(view) => {
@@ -272,6 +320,8 @@ export default function App() {
         urgentAlertCount={metrics.criticalAlertsCount}
         warningAlertCount={metrics.warningAlertsCount}
         onLogout={() => setIsLogoutConfirmOpen(true)}
+        onExportAllData={handleExportAllData}
+        onUploadBackupFile={handleUploadBackupFile}
       >
         {currentView === 'dashboard' && (
           <DashboardView
@@ -420,6 +470,47 @@ export default function App() {
           confirmVariant="danger"
           onConfirm={handleConfirmLogout}
           onCancel={() => setIsLogoutConfirmOpen(false)}
+        />
+      )}
+
+      {pendingBackup && (
+        <ConfirmModal
+          isOpen={true}
+          title="Restore All Menu Data"
+          confirmLabel="Restore All Data"
+          confirmVariant="primary"
+          onConfirm={handleConfirmImportBackup}
+          onCancel={() => setPendingBackup(null)}
+          message={
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                Load data from <strong>{pendingBackup.fileName}</strong>
+                {pendingBackup.exportedAt ? ` (exported ${new Date(pendingBackup.exportedAt).toLocaleString()})` : ''}?
+                This will replace existing browser data across all menus.
+              </div>
+              <div style={{
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '12.5px',
+                color: '#334155',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '6px 12px'
+              }}>
+                <div>Tools (Master List): <strong>{pendingBackup.summary.toolsCount}</strong></div>
+                <div>Production Logs: <strong>{pendingBackup.summary.productionCount}</strong></div>
+                <div>PM Checklists / Sign-offs: <strong>{pendingBackup.summary.pmRecordsCount}</strong></div>
+                <div>Schedules: <strong>{pendingBackup.summary.schedulesCount}</strong></div>
+                <div>Yearly PM Plans: <strong>{pendingBackup.summary.yearlyPlansCount}</strong></div>
+                <div>Users: <strong>{pendingBackup.summary.usersCount}</strong></div>
+                {pendingBackup.summary.draftsCount > 0 && (
+                  <div>Unsaved PM Drafts: <strong>{pendingBackup.summary.draftsCount}</strong></div>
+                )}
+              </div>
+            </div>
+          }
         />
       )}
 

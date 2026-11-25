@@ -439,7 +439,22 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+}
+
+.header-backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .header-backup-actions .btn span {
+    display: none;
+  }
+  .header-backup-actions .btn {
+    padding: 8px 10px;
+  }
 }
 
 .header-action-btn {
